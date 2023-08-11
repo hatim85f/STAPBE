@@ -31,6 +31,10 @@ const ReturnsSchema = new Schema({
     type: String,
     required: true,
   },
+  timeStamp: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = Returns = mongoose.model("returns", ReturnsSchema);
