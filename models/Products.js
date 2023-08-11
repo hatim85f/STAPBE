@@ -5,41 +5,49 @@ const ProductSchema = Schema({
   _id: {
     type: mongoose.Types.ObjectId,
   },
-  userId: {
-    type: mongoose.Types.ObjectId,
-    ref: "user",
+  type: {
+    type: String,
+    required: false,
   },
   businessId: {
     type: mongoose.Types.ObjectId,
     ref: "business",
+    required: true,
   },
   productName: {
     type: String,
     required: true,
   },
-  nickName: {
+  productNickName: {
     type: String,
   },
-  productType: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-  },
-  image: {
-    type: String,
+  costPrice: {
+    type: Number,
   },
   retailPrice: {
     type: Number,
     required: true,
   },
-  costPrice: {
+  sellingPrice: {
     type: Number,
     required: true,
   },
-  publicSellingPrice: {
+  description: {
+    type: String,
+    required: true,
+  },
+  imageURL: {
+    type: String,
+    required: true,
+  },
+  minimunmDiscount: {
     type: Number,
+  },
+  maximumDiscount: {
+    type: Number,
+  },
+  currency: {
+    type: String,
     required: true,
   },
 });

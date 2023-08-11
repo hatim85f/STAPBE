@@ -37,9 +37,9 @@ const BusinessSchema = Schema({
     type: String,
     required: true,
   },
-  businessOwner: {
-    type: mongoose.Types.ObjectId,
-    ref: "user",
+  numberOfEmployees: {
+    type: Number,
+    required: false,
   },
 });
 
