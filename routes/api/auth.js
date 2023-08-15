@@ -78,8 +78,16 @@ router.post(
 
 // creating new user
 router.post("/register", async (req, res) => {
-  const { email, password, userName, firstName, lastName, phone, designation } =
-    req.body;
+  const {
+    email,
+    password,
+    userName,
+    firstName,
+    lastName,
+    phone,
+    designation,
+    userType,
+  } = req.body;
 
   try {
     // check if user exists
