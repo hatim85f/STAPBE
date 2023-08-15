@@ -93,12 +93,13 @@ router.post("/register", async (req, res) => {
     }
 
     const newUser = new User({
-      email,
-      password,
       userName,
+      email,
+      userType,
       firstName,
       lastName,
       phone,
+      password,
       designation,
     });
 
