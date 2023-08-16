@@ -249,7 +249,7 @@ router.put("/newPassword", auth, async (req, res) => {
         },
       }
     );
-    return res.status(200).send(user);
+    return res.status(200).send({ message: "Password Changed Successfully" });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
