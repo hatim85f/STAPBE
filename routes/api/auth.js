@@ -9,6 +9,7 @@ const User = require("../../models/User");
 const crypto = require("crypto");
 const sgMail = require("@sendgrid/mail");
 const ResetPassword = require("../../models/ResetPassword");
+const moment = require("moment/moment");
 
 const mailApi = config.get("Mail_API_Key");
 
@@ -183,6 +184,7 @@ router.post("/reset", async (req, res) => {
         user_name: isUser.firstName + " " + isUser.lastName, // Replace with your user's name field
         reset_code: resetCode,
         user_id: isUser._id,
+        code_requested: moment(new Date()).format("DD/MM/YYYY hh:mm a"),
       },
     };
 
