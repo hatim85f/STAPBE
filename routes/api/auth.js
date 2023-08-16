@@ -234,7 +234,7 @@ router.post("/code", async (req, res) => {
 });
 
 // change user password
-router.put("/", auth, async (req, res) => {
+router.put("/newPassword", auth, async (req, res) => {
   const { newPassword } = req.body;
   const salt = await bcrypt.genSalt(10);
 
