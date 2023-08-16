@@ -6,6 +6,11 @@ const jwt = require("jsonwebtoken");
 const config = require("config");
 const { check, validationResult } = require("express-validator");
 const User = require("../../models/User");
+const crypto = require("crypto");
+const sgMail = require("@sendgrid/mail");
+const ResetPassword = require("../../models/ResetPassword");
+
+const mailApi = config.get("Mail_API_Key");
 
 // getting user profile
 // access   Private needs login token
@@ -132,6 +137,99 @@ router.post("/register", async (req, res) => {
       error: "Error",
       message: error.message,
     });
+  }
+});
+
+// sending reset password email
+router.post("/reset", async (req, res) => {
+  const { userEmail } = req.body;
+
+  try {
+    const isUser = await User.findOne({ email: userEmail });
+
+    if (!isUser) {
+      return res.status(500).send({
+        error: "Error",
+        message: "Provided Email is not valid, Please check the right email",
+      });
+    }
+    const resetCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    await User.updateOne(
+      { email: userEmail },
+      {
+        $set: {
+          resetCode,
+          resetCodeExpiration: new Date(Date.now() + 3 * 60 * 1000),
+        },
+      }
+    );
+
+    // Store the reset code in your ResetPassword collection
+    const resetPasswordEntry = new ResetPassword({
+      resetCode,
+      resetCodeExpiration: new Date(Date.now() + 3 * 60 * 1000), // 3 minutes from now
+    });
+    await resetPasswordEntry.save();
+
+    sgMail.setApiKey(mailApi);
+
+    // Send the email with SendGrid
+    const msg = {
+      to: userEmail,
+      from: "info@codexpandit.com",
+      templateId: "d-30d5f20f453044508ebc61fab39c6c77", // Your dynamic template ID
+      dynamicTemplateData: {
+        user_name: isUser.firstName + " " + isUser.lastName, // Replace with your user's name field
+        reset_code: resetCode,
+        user_id: isUser._id,
+      },
+    };
+
+    await sgMail.send(msg);
+
+    res.status(200).json({ message: "Password reset code sent successfully" });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error",
+      message: error.message,
+    });
+  }
+});
+
+// verify user code to reset password.
+router.post("/code", async (req, res) => {
+  const { userEmail, resetCode } = req.body;
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ email: userEmail });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the reset code in the ResetPassword collection
+    const resetPasswordEntry = await ResetPassword.findOne({
+      resetCode,
+      resetCodeExpiration: { $gt: new Date() }, // Check if reset code is not expired
+    });
+
+    if (!resetPasswordEntry) {
+      return res.status(400).json({ message: "Invalid reset code" });
+    }
+
+    // Check if the current time is within the valid range of reset code's expiration time
+    const currentTime = new Date();
+    if (currentTime > resetPasswordEntry.resetCodeExpiration) {
+      return res.status(400).json({ message: "Reset code has expired" });
+    }
+
+    // Code is valid
+    res.status(200).json({ message: "Reset code is valid" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
