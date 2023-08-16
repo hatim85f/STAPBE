@@ -11,7 +11,8 @@ const sgMail = require("@sendgrid/mail");
 const ResetPassword = require("../../models/ResetPassword");
 const moment = require("moment/moment");
 
-const mailApi = config.get("Mail_API_Key");
+const mailApi = process.env.Mail_API_Key;
+const setcretToken = process.env.jwtSecret;
 
 // getting user profile
 // access   Private needs login token
@@ -72,7 +73,7 @@ router.post(
         },
       };
 
-      jwt.sign(payload, config.get("jwtSecret"), (error, token) => {
+      jwt.sign(payload, setcretToken, (error, token) => {
         if (error) throw error;
         res.json({ token, user });
       });
@@ -129,7 +130,7 @@ router.post("/register", async (req, res) => {
 
     await newUser.save();
 
-    jwt.sign(payload, config.get("jwtSecret"), (error, token) => {
+    jwt.sign(payload, setcretToken, (error, token) => {
       if (error) throw error;
       res.json({ token, user: newUser });
     });
