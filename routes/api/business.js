@@ -91,12 +91,24 @@ router.post("/create", async (req, res) => {
     });
 
     // save new business
-    await newBusiness.save();
+    await Business.insertMany(newBusiness);
 
     // adding user to business
     // get the newBusiness id to add to businessUsers
 
-    const businessId = newBusiness._id;
+    const businessNeeded = await Business.findOne({
+      businessName,
+      businessType,
+      businessDescription,
+      officeLocation,
+      contactPerson,
+      contactPersonEmail,
+      contactNumber,
+      numberOfEmployees,
+      webSite,
+    });
+
+    const businessId = businessNeeded._id;
     const newBusinessUser = new BusinessUsers({
       userId: userId,
       businessId,
@@ -104,7 +116,7 @@ router.post("/create", async (req, res) => {
     });
 
     // save new business user
-    await newBusinessUser.save();
+    await BusinessUsers.insertMany(newBusinessUser);
 
     res.status(200).json({ message: "Your New Business created successfully" });
   } catch (error) {
