@@ -41,6 +41,9 @@ const BusinessSchema = Schema({
     type: Number,
     required: false,
   },
+  webSite: {
+    type: String,
+  },
 });
 
 module.exports = Business = mongoose.model("business", BusinessSchema);

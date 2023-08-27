@@ -8,6 +8,12 @@ const BusinessUsersSchema = Schema({
   userId: {
     type: mongoose.Types.ObjectId,
     required: true,
+    ref: "users",
+  },
+  businessId: {
+    type: mongoose.Types.ObjectId,
+    required: true,
+    ref: "businesses",
   },
   isBusinessOwner: {
     type: Boolean,
