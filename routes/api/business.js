@@ -12,7 +12,7 @@ router.get("/all", async (req, res) => {
   try {
     const userBusinesses = await BusinessUsers.find({
       userId,
-      isBusinessOwner,
+      isBusinessOwner: true,
     });
     return res.status(200).json({ userBusinesses });
   } catch (error) {
