@@ -70,7 +70,12 @@ router.post("/create", async (req, res) => {
       !contactPersonEmail ||
       !contactNumber
     ) {
-      return res.status(500).json({ message: "Please fill all fields" });
+      return res
+        .status(500)
+        .json({
+          error: "Something Went Wron",
+          message: "Please fill all fields",
+        });
     }
 
     // check if business already exists
