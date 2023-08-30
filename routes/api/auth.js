@@ -94,6 +94,7 @@ router.post("/register", async (req, res) => {
     phone,
     designation,
     userType,
+    profilePicture,
   } = req.body;
 
   try {
@@ -116,6 +117,7 @@ router.post("/register", async (req, res) => {
       phone,
       password,
       designation,
+      profilePicture,
     });
 
     const payload = {

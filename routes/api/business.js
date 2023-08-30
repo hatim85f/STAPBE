@@ -1,6 +1,7 @@
 const express = require("express");
 const Business = require("../../models/Business");
 const BusinessUsers = require("../../models/BusinessUsers");
+const { mongoose } = require("mongoose");
 const router = express.Router();
 
 // getting all businesses for the user
@@ -9,11 +10,16 @@ const router = express.Router();
 
 router.get("/all", async (req, res) => {
   const { userId } = req.query; // destructuring
+
   try {
-    const userBusinesses = await BusinessUsers.find({
-      userId,
-      isBusinessOwner: true,
-    });
+    const userBusinesses = await BusinessUsers.aggregate([
+      {
+        $match: {
+          userId,
+          isBusinessOwner: true,
+        },
+      },
+    ]);
     return res.status(200).json({ userBusinesses });
   } catch (error) {
     return res.status(500).json({ error: "Error", message: error.message });
@@ -48,7 +54,6 @@ router.post("/create", async (req, res) => {
     contactPerson,
     contactPersonEmail,
     contactNumber,
-    numberOfEmployees,
     webSite,
     userId,
   } = req.body; // destructuring
@@ -63,10 +68,9 @@ router.post("/create", async (req, res) => {
       !officeLocation ||
       !contactPerson ||
       !contactPersonEmail ||
-      !contactNumber ||
-      !numberOfEmployees
+      !contactNumber
     ) {
-      return res.status(500).json({ msg: "Please fill all fields" });
+      return res.status(500).json({ message: "Please fill all fields" });
     }
 
     // check if business already exists
@@ -86,7 +90,6 @@ router.post("/create", async (req, res) => {
       contactPerson,
       contactPersonEmail,
       contactNumber,
-      numberOfEmployees,
       webSite,
     });
 
@@ -104,7 +107,6 @@ router.post("/create", async (req, res) => {
       contactPerson,
       contactPersonEmail,
       contactNumber,
-      numberOfEmployees,
       webSite,
     });
 

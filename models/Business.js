@@ -39,7 +39,7 @@ const BusinessSchema = Schema({
   },
   numberOfEmployees: {
     type: Number,
-    required: false,
+    default: 0,
   },
   webSite: {
     type: String,
