@@ -11,8 +11,14 @@ const sgMail = require("@sendgrid/mail");
 const ResetPassword = require("../../models/ResetPassword");
 const moment = require("moment/moment");
 
-const mailApi = process.env.Mail_API_Key;
-const setcretToken = process.env.jwtSecret;
+const mailApi =
+  process.env.NODE_ENV === "production"
+    ? process.env.Mail_API_Key
+    : config.get("Mail_API_Key");
+const setcretToken =
+  process.env.NODE_ENV === "production"
+    ? process.env.jwtSecret
+    : config.get("jwtSecret");
 
 // getting user profile
 // access   Private needs login token

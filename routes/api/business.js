@@ -2,25 +2,47 @@ const express = require("express");
 const Business = require("../../models/Business");
 const BusinessUsers = require("../../models/BusinessUsers");
 const { mongoose } = require("mongoose");
+const auth = require("../../middleware/auth");
 const router = express.Router();
 
 // getting all businesses for the user
 // collection: businessUsers has userId and businessId
 // if he is the owner of the business
 
-router.get("/all", async (req, res) => {
+router.get("/all", auth, async (req, res) => {
   const { userId } = req.query; // destructuring
 
   try {
-    const userBusinesses = await BusinessUsers.aggregate([
+    let userObjId = new mongoose.Types.ObjectId(req.query.userId);
+
+    console.log(userObjId);
+    const userBusiness = await BusinessUsers.aggregate([
       {
         $match: {
-          userId,
+          userId: userObjId,
           isBusinessOwner: true,
         },
       },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $unwind: "$business",
+      },
+      {
+        $project: {
+          business: 1,
+          _id: 0,
+        },
+      },
     ]);
-    return res.status(200).json({ userBusinesses });
+
+    return res.status(200).send({ userBusiness });
   } catch (error) {
     return res.status(500).json({ error: "Error", message: error.message });
   }
@@ -30,7 +52,7 @@ router.get("/all", async (req, res) => {
 // collection: businessUsers has userId and businessId
 // if he is not the owner of the business
 
-router.get("/employee", async (req, res) => {
+router.get("/employee", auth, async (req, res) => {
   const { userId } = req.query; // destructuring
   try {
     const userBusinesses = await BusinessUsers.find({
@@ -70,12 +92,10 @@ router.post("/create", async (req, res) => {
       !contactPersonEmail ||
       !contactNumber
     ) {
-      return res
-        .status(500)
-        .json({
-          error: "Something Went Wron",
-          message: "Please fill all fields",
-        });
+      return res.status(500).json({
+        error: "Something Went Wron",
+        message: "Please fill all fields",
+      });
     }
 
     // check if business already exists
@@ -133,7 +153,7 @@ router.post("/create", async (req, res) => {
 
 //updating business details if he is the owner
 
-router.put("/update", async (req, res) => {
+router.put("/update", auth, async (req, res) => {
   const {
     businessLogo,
     businessName,
@@ -175,7 +195,7 @@ router.put("/update", async (req, res) => {
 
 // deleting business if he is the owner
 
-router.delete("/delete", async (req, res) => {
+router.delete("/delete", auth, async (req, res) => {
   try {
     const { businessId } = req.body; // destructuring
     await Business.deleteOne({ _id: businessId });
