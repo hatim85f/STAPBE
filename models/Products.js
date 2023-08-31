@@ -40,15 +40,13 @@ const ProductSchema = Schema({
     type: String,
     required: true,
   },
-  minimunmDiscount: {
+  minimumDiscount: {
     type: Number,
+    default: 0,
   },
   maximumDiscount: {
     type: Number,
-  },
-  currency: {
-    type: String,
-    required: true,
+    default: 0,
   },
 });
 

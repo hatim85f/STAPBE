@@ -50,6 +50,13 @@ const UserSchema = Schema({
     type: Boolean,
     default: false,
   },
+  isAuthorized: {
+    type: Boolean,
+    default: false,
+  },
+  authority: {
+    type: Array,
+  },
 });
 
 module.exports = User = mongoose.model("user", UserSchema);
