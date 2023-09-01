@@ -36,6 +36,7 @@ router.post("/", auth, async (req, res) => {
     minimumDiscount,
     maximumDiscount,
     category,
+    productType,
   } = req.body;
 
   try {
@@ -65,6 +66,7 @@ router.post("/", auth, async (req, res) => {
       minimumDiscount,
       maximumDiscount,
       category,
+      productType,
     });
 
     await Products.insertMany(newProduct);
@@ -93,6 +95,7 @@ router.put("/", auth, async (req, res) => {
     minimumDiscount,
     maximumDiscount,
     category,
+    productType,
   } = req.body;
 
   try {
@@ -110,6 +113,7 @@ router.put("/", auth, async (req, res) => {
           minimumDiscount,
           maximumDiscount,
           category,
+          productType,
         },
       }
     );
