@@ -35,6 +35,7 @@ router.post("/", auth, async (req, res) => {
     imageURL,
     minimumDiscount,
     maximumDiscount,
+    category,
   } = req.body;
 
   try {
@@ -63,6 +64,7 @@ router.post("/", auth, async (req, res) => {
       imageURL,
       minimumDiscount,
       maximumDiscount,
+      category,
     });
 
     await Products.insertMany(newProduct);
@@ -90,6 +92,7 @@ router.put("/", auth, async (req, res) => {
     imageURL,
     minimumDiscount,
     maximumDiscount,
+    category,
   } = req.body;
 
   try {
@@ -106,6 +109,7 @@ router.put("/", auth, async (req, res) => {
           imageURL,
           minimumDiscount,
           maximumDiscount,
+          category,
         },
       }
     );
@@ -123,7 +127,7 @@ router.put("/", auth, async (req, res) => {
 // @desc    Delete a product
 // @access  Private
 router.delete("/:id", auth, async (req, res) => {
-  const { productId } = req.params.id;
+  const productId = req.params.id;
 
   try {
     await Products.deleteOne({ _id: productId });

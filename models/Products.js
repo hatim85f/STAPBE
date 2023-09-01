@@ -48,6 +48,9 @@ const ProductSchema = Schema({
     type: Number,
     default: 0,
   },
+  category: {
+    type: String,
+  },
 });
 
 module.exports = Product = mongoose.model("product", ProductSchema);
