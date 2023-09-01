@@ -122,8 +122,8 @@ router.put("/", auth, async (req, res) => {
 // @route   DELETE api/products
 // @desc    Delete a product
 // @access  Private
-router.delete("/", auth, async (req, res) => {
-  const { productId } = req.body;
+router.delete("/:id", auth, async (req, res) => {
+  const { productId } = req.params.id;
 
   try {
     await Products.deleteOne({ _id: productId });
