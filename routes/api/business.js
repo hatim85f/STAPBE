@@ -14,8 +14,6 @@ router.get("/all", auth, async (req, res) => {
 
   try {
     let userObjId = new mongoose.Types.ObjectId(req.query.userId);
-
-    console.log(userObjId);
     const userBusiness = await BusinessUsers.aggregate([
       {
         $match: {

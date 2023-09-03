@@ -8,6 +8,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sgMail = require("@sendgrid/mail");
 const Business = require("../../models/Business");
+const { default: mongoose } = require("mongoose");
 
 const mailApi =
   process.env.NODE_ENV === "production"
@@ -25,6 +26,105 @@ const setcretToken =
 // deleting team member
 // getting team member
 // getting all team members
+
+// @route    GET api/team/:userId
+// @desc     Get team member by userId
+// @access   Private needs login token
+router.get("/:userId", auth, async (req, res) => {
+  const userId = req.params.userId;
+
+  // aggregate the businessUsers collection to get the businessUsers while isBusinessOwner is true
+  // then lookup the businessUsers collection to get the isBusinessOwner false
+  // then lookup the users collection to get the user details
+  // should return [{businessId: businessId, team: [userDetails]}]
+
+  try {
+    const team = await BusinessUsers.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          isBusinessOwner: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "businessusers",
+          localField: "businessId",
+          pipeline: [
+            {
+              $match: {
+                isBusinessOwner: false,
+              },
+            },
+          ],
+          foreignField: "businessId",
+          as: "team",
+        },
+      },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "team.userId",
+          foreignField: "_id",
+          as: "team",
+        },
+      },
+
+      {
+        $project: {
+          businessId: 1,
+          team: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json(team);
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
+// getting team for selected business
+// @route    GET api/team/business/:businessId
+// @desc     Get team member by businessId
+// @access   Private needs login token
+router.get("/business/:businessId", auth, async (req, res) => {
+  const businessId = req.params.businessId;
+
+  // aggregate the businessUsers collection to get the businessUsers while isBusinessOwner is false
+  // then lookup the users collection to get the user details
+
+  try {
+    const businessTeam = await BusinessUsers.aggregate([
+      {
+        $match: {
+          businessId: new mongoose.Types.ObjectId(businessId),
+          isBusinessOwner: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "team",
+        },
+      },
+
+      {
+        $project: {
+          businessId: 1,
+          team: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json(businessTeam);
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
 
 // creating new team member
 // access   Private needs login token
@@ -48,9 +148,10 @@ router.post("/", auth, async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user) {
-      return res
-        .status(400)
-        .json({ error: "Error", message: "User already exists" });
+      return res.status(400).json({
+        error: "Error",
+        message: "User with the same email already exists",
+      });
     }
 
     const newUser = new User({
