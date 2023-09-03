@@ -43,4 +43,10 @@ router.get("/business", auth, async (req, res) => {
   }
 });
 
+router.put("/", async (req, res) => {
+  const users = await User.updateMany({}, { $set: { isActivated: true } });
+
+  return res.status(200).send({ users });
+});
+
 module.exports = router;
