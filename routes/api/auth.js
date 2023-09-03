@@ -124,6 +124,7 @@ router.post("/register", async (req, res) => {
       password,
       designation,
       profilePicture,
+      isActivated: true,
     });
 
     const payload = {

@@ -57,6 +57,10 @@ const UserSchema = Schema({
   authority: {
     type: Array,
   },
+  isActivated: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 module.exports = User = mongoose.model("user", UserSchema);

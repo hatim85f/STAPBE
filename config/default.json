@@ -1,5 +1,5 @@
 {
   "mongoURI": "mongodb+srv://hatimfayez85:Baskota8411@stap.alfunsc.mongodb.net/",
   "jwtSecret": "mysecrettoken",
-  "Mail_API_Key": "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"
+  "Mail_API_Key": "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"
 }

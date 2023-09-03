@@ -1,10 +1,10 @@
 const express = require("express");
+const router = express.Router();
 const auth = require("../../middleware/auth");
 const User = require("../../models/User");
 const BusinessUsers = require("../../models/BusinessUsers");
 const Business = require("../../models/Business");
 const { default: mongoose } = require("mongoose");
-const router = express.Router();
 
 router.get("/", auth, async (req, res) => {
   res.status(200).send("API Running");
