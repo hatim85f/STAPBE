@@ -113,7 +113,7 @@ router.post("/", auth, async (req, res) => {
     jwt.sign(payload, setcretToken, (error, token) => {
       if (error) throw error;
       res.json({
-        message: `User ${userName} created Successfully and we sent an email to ${email} with the password`,
+        message: `User ${userName} created Successfully and we sent an email to ${email} with temporary password`,
       });
     });
   } catch (error) {
