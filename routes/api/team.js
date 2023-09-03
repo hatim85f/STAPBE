@@ -37,6 +37,8 @@ router.get("/:userId", auth, async (req, res) => {
   // then lookup the businessUsers collection to get the isBusinessOwner false
   // then lookup the users collection to get the user details
   // should return [{businessId: businessId, team: [userDetails]}]
+  // team is an array of users
+  // add to every member a field called {team : businessName} collected from business collection
 
   try {
     const team = await BusinessUsers.aggregate([
@@ -45,6 +47,17 @@ router.get("/:userId", auth, async (req, res) => {
           userId: new mongoose.Types.ObjectId(userId),
           isBusinessOwner: true,
         },
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $unwind: "$business",
       },
       {
         $lookup: {
@@ -67,14 +80,19 @@ router.get("/:userId", auth, async (req, res) => {
           from: "users",
           localField: "team.userId",
           foreignField: "_id",
-          as: "team",
+          as: "teamMembers",
         },
       },
-
+      {
+        $addFields: {
+          "teamMembers.businessName": "$business.businessName",
+          "teamMembers.businessLogo": "$business.businessLogo",
+        },
+      },
       {
         $project: {
           businessId: 1,
-          team: 1,
+          teamMembers: 1,
         },
       },
     ]);
@@ -176,6 +194,13 @@ router.post("/", auth, async (req, res) => {
     newUser.password = await bcrypt.hash(password, salt);
 
     await User.insertMany(newUser);
+
+    // after adding new user should add increase numberOfEmployees in the business collection +1
+
+    await Business.updateOne(
+      { _id: businessId },
+      { $inc: { numberOfEmployees: 1 } }
+    );
 
     const business = await Business.findOne({ _id: businessId });
 
