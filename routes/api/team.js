@@ -27,123 +27,6 @@ const setcretToken =
 // getting team member
 // getting all team members
 
-// @route    GET api/team/:userId
-// @desc     Get team member by userId
-// @access   Private needs login token
-router.get("/:userId", auth, async (req, res) => {
-  const userId = req.params.userId;
-
-  // aggregate the businessUsers collection to get the businessUsers while isBusinessOwner is true
-  // then lookup the businessUsers collection to get the isBusinessOwner false
-  // then lookup the users collection to get the user details
-  // should return [{businessId: businessId, team: [userDetails]}]
-  // team is an array of users
-  // add to every member a field called {team : businessName} collected from business collection
-
-  try {
-    const team = await BusinessUsers.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(userId),
-          isBusinessOwner: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "businesses",
-          localField: "businessId",
-          foreignField: "_id",
-          as: "business",
-        },
-      },
-      {
-        $unwind: "$business",
-      },
-      {
-        $lookup: {
-          from: "businessusers",
-          localField: "businessId",
-          pipeline: [
-            {
-              $match: {
-                isBusinessOwner: false,
-              },
-            },
-          ],
-          foreignField: "businessId",
-          as: "team",
-        },
-      },
-
-      {
-        $lookup: {
-          from: "users",
-          localField: "team.userId",
-          foreignField: "_id",
-          as: "teamMembers",
-        },
-      },
-      {
-        $addFields: {
-          "teamMembers.businessName": "$business.businessName",
-          "teamMembers.businessLogo": "$business.businessLogo",
-        },
-      },
-      {
-        $project: {
-          businessId: 1,
-          teamMembers: 1,
-        },
-      },
-    ]);
-
-    return res.status(200).json(team);
-  } catch (error) {
-    return res.status(500).send({ error: "Error", message: error.message });
-  }
-});
-
-// getting team for selected business
-// @route    GET api/team/business/:businessId
-// @desc     Get team member by businessId
-// @access   Private needs login token
-router.get("/business/:businessId", auth, async (req, res) => {
-  const businessId = req.params.businessId;
-
-  // aggregate the businessUsers collection to get the businessUsers while isBusinessOwner is false
-  // then lookup the users collection to get the user details
-
-  try {
-    const businessTeam = await BusinessUsers.aggregate([
-      {
-        $match: {
-          businessId: new mongoose.Types.ObjectId(businessId),
-          isBusinessOwner: false,
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "team",
-        },
-      },
-
-      {
-        $project: {
-          businessId: 1,
-          team: 1,
-        },
-      },
-    ]);
-
-    return res.status(200).json(businessTeam);
-  } catch (error) {
-    return res.status(500).send({ error: "Error", message: error.message });
-  }
-});
-
 // creating new team member
 // access   Private needs login token
 router.post("/", auth, async (req, res) => {
@@ -244,6 +127,82 @@ router.post("/", auth, async (req, res) => {
     });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
+// edit team member based on his id
+// access   Private needs login token
+router.put("/:id", auth, async (req, res) => {
+  const { designation, userType, isAuthorized, authority } = req.body;
+
+  // if is Authorized is true then we will check authority array and add the new authority to it
+  // authority coming from the front end is an array of strings
+  // if isAuthorized is false then we will check authority array and remove the authority from it
+  // authority coming from the front end is an array of strings
+  // finally if isAuthorized we will return unique values in the authority array
+
+  try {
+    const user = await User.findOne({ _id: req.params.id });
+
+    if (isAuthorized) {
+      const newAuthority = [...user.authority, ...authority];
+      const uniqueAuthority = [...new Set(newAuthority)];
+      await User.updateOne(
+        { _id: req.params.id },
+        {
+          $set: {
+            designation,
+            userType,
+            isAuthorized,
+            authority: uniqueAuthority,
+          },
+        }
+      );
+    } else {
+      const newAuthority = user.authority.filter(
+        (auth) => !authority.includes(auth)
+      );
+      await User.updateOne(
+        { _id: req.params.id },
+        {
+          $set: {
+            designation,
+            userType,
+            isAuthorized,
+            authority: newAuthority,
+          },
+        }
+      );
+    }
+
+    res
+      .status(200)
+      .json({ message: `User ${user.userName} updated Successfully` });
+  } catch (error) {
+    return res.status(500).json({ error: "Error", message: error.message });
+  }
+});
+
+// delete team member based on his id
+// access   Private needs login token
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    await User.deleteOne({ _id: req.params.id });
+
+    // after deleting user should decrease numberOfEmployees in the business collection -1
+
+    const userBusiness = await BusinessUsers.findOne({ userId: req.params.id });
+
+    await Business.updateOne(
+      { _id: userBusiness.businessId },
+      { $inc: { numberOfEmployees: -1 } }
+    );
+
+    await BusinessUsers.deleteOne({ userId: req.params.id });
+
+    res.status(200).json({ message: "User deleted Successfully" });
+  } catch (error) {
+    return res.status(500).json({ error: "Error", message: error.message });
   }
 });
 

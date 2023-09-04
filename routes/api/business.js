@@ -65,7 +65,7 @@ router.get("/:userId", auth, async (req, res) => {
       {
         $project: {
           business: 1,
-          teamMembers: 1,
+          team: 1,
           _id: 0,
         },
       },
