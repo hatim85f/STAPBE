@@ -54,7 +54,7 @@ router.get("/:userId", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).send(userProfile);
+    return res.status(200).json({ userProfile });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
