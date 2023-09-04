@@ -9,11 +9,11 @@ const router = express.Router();
 // collection: businessUsers has userId and businessId
 // if he is the owner of the business
 
-router.get("/all", auth, async (req, res) => {
-  const { userId } = req.query; // destructuring
+router.get("/:userId", auth, async (req, res) => {
+  const userId = req.params.userId;
 
   try {
-    let userObjId = new mongoose.Types.ObjectId(req.query.userId);
+    let userObjId = new mongoose.Types.ObjectId(userId);
     const userBusiness = await BusinessUsers.aggregate([
       {
         $match: {
@@ -33,8 +33,39 @@ router.get("/all", auth, async (req, res) => {
         $unwind: "$business",
       },
       {
+        $lookup: {
+          from: "businessusers",
+          localField: "businessId",
+          pipeline: [
+            {
+              $match: {
+                isBusinessOwner: false,
+              },
+            },
+          ],
+          foreignField: "businessId",
+          as: "team",
+        },
+      },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "team.userId",
+          foreignField: "_id",
+          as: "teamMembers",
+        },
+      },
+      {
+        $addFields: {
+          "teamMembers.businessName": "$business.businessName",
+          "teamMembers.businessLogo": "$business.businessLogo",
+        },
+      },
+      {
         $project: {
           business: 1,
+          teamMembers: 1,
           _id: 0,
         },
       },
