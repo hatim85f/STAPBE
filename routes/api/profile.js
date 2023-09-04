@@ -48,7 +48,7 @@ router.get("/:userId", auth, async (req, res) => {
           email: 1,
           designation: 1,
           phoneVerified: 1,
-          mailVerified: 1,
+          emailVerified: 1,
           business: 1,
           numberOfBusinesses: { $size: "$business" },
         },
