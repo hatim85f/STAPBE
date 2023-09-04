@@ -43,6 +43,7 @@ router.get("/:userId", auth, async (req, res) => {
         $project: {
           _id: 1,
           userName: 1,
+          profilePicture: 1,
           phone: 1,
           email: 1,
           designation: 1,
