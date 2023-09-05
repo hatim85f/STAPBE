@@ -6,6 +6,7 @@ const router = express.Router();
 const moment = require("moment");
 const sgMail = require("@sendgrid/mail");
 const VerifyEmail = require("../../models/VerifyEmail");
+const config = require("config");
 
 const mailApi =
   process.env.NODE_ENV === "production"
@@ -86,14 +87,14 @@ router.post("/verifyEmail", auth, async (req, res) => {
 
     const verifyingCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // send email to user
+    // // send email to user
     sgMail.setApiKey(mailApi);
 
     // Send the email with SendGrid
     const msg = {
       to: userEmail,
       from: "info@stap-crm.com",
-      templateId: " d-d2cf2a8fa1e04b76b50b4fa43e46ba9a", // Your dynamic template ID
+      templateId: "d-d2cf2a8fa1e04b76b50b4fa43e46ba9a", // Your dynamic template ID
       dynamicTemplateData: {
         user_name: user.userName, // Replace with your user's name field
         reset_code: verifyingCode,
