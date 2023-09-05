@@ -105,7 +105,7 @@ router.post("/verifyEmail", auth, async (req, res) => {
     await sgMail.send(msg);
 
     const verification = new VerifyEmail({
-      userId: userId._id,
+      userId: userId,
       verifyCode: verifyingCode,
       verifyCodeExpiration: moment(new Date())
         .add(1, "hours")
@@ -131,7 +131,7 @@ router.post("/confirmEmail", auth, async (req, res) => {
   try {
     // check if the code is valid and not expired
     const verification = await VerifyEmail.findOne({
-      userId: userId,
+      userId: new mongoose.Types.ObjectId(userId),
       verifyCode: code,
       verifyCodeExpiration: {
         $gte: moment(new Date()).format("DD/MM/YYYY hh:mm a"),
