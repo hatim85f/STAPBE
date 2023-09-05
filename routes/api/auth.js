@@ -237,6 +237,8 @@ router.post("/code", async (req, res) => {
       return res.status(400).json({ message: "Reset code has expired" });
     }
 
+    await ResetPassword.deleteMany({ resetCode });
+
     // Code is valid
     res.status(200).json({ message: "Reset code is valid" });
   } catch (error) {
