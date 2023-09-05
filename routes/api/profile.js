@@ -4,6 +4,7 @@ const User = require("../../models/User");
 const { default: mongoose } = require("mongoose");
 const router = express.Router();
 const moment = require("moment");
+const sgMail = require("@sendgrid/mail");
 const VerifyEmail = require("../../models/VerifyEmail");
 
 const mailApi =
