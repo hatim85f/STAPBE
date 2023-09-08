@@ -108,6 +108,9 @@ router.post("/create", async (req, res) => {
     contactNumber,
     webSite,
     userId,
+    currencyCode,
+    currencyName,
+    currencySymbol,
   } = req.body; // destructuring
 
   try {
@@ -146,6 +149,9 @@ router.post("/create", async (req, res) => {
       contactPersonEmail,
       contactNumber,
       webSite,
+      currencyCode,
+      currencyName,
+      currencySymbol,
     });
 
     // save new business
@@ -196,6 +202,9 @@ router.put("/update", auth, async (req, res) => {
     numberOfEmployees,
     webSite,
     businessId,
+    currencyCode,
+    currencyName,
+    currencySymbol,
   } = req.body; // destructuring
 
   try {
@@ -213,6 +222,9 @@ router.put("/update", auth, async (req, res) => {
           contactNumber,
           numberOfEmployees,
           webSite,
+          currencyCode,
+          currencyName,
+          currencySymbol,
         },
       }
     );

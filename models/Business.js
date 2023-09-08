@@ -44,7 +44,15 @@ const BusinessSchema = Schema({
   webSite: {
     type: String,
   },
-  currency: {
+  currencyCode: {
+    type: String,
+    required: true,
+  },
+  currencyName: {
+    type: String,
+    required: true,
+  },
+  currencySymbol: {
     type: String,
     required: true,
   },
