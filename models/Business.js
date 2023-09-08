@@ -44,6 +44,10 @@ const BusinessSchema = Schema({
   webSite: {
     type: String,
   },
+  currency: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = Business = mongoose.model("business", BusinessSchema);

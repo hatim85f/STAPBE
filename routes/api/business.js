@@ -8,6 +8,7 @@ const router = express.Router();
 // getting all businesses for the user
 // collection: businessUsers has userId and businessId
 // if he is the owner of the business
+// get the business currency from collect BusinessCurrency with businessId
 
 router.get("/:userId", auth, async (req, res) => {
   const userId = req.params.userId;

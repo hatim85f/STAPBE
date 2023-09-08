@@ -44,7 +44,7 @@ router.post("/currency", auth, async (req, res) => {
           currencySymbol: currencySymbol,
           currencyCode: currencyCode,
         });
-        await newBusinessCurrency.insertMany(newBusinessCurrency);
+        await BusinessCurrency.insertMany(newBusinessCurrency);
       }
     }
 
