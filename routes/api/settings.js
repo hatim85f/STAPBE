@@ -96,7 +96,7 @@ router.put("/password", auth, async (req, res) => {
 // deactivated user account
 // @access Private
 router.put("/deactivate", auth, async (req, res) => {
-  const { userId } = req.body;
+  const { userId, status } = req.body;
 
   try {
     const user = await User.findOne({ _id: userId });
@@ -109,7 +109,7 @@ router.put("/deactivate", auth, async (req, res) => {
 
     // deactivate user by changing the isActivated to false
 
-    user.isActivated = false;
+    user.isActivated = status;
     await user.save();
 
     return res.status(200).send({
