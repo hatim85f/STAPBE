@@ -60,6 +60,7 @@ router.get("/:userId", auth, async (req, res) => {
           emailVerified: 1,
           business: 1,
           numberOfBusinesses: { $size: "$business" },
+          isActivated: 1,
         },
       },
     ]);
