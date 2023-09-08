@@ -11,7 +11,7 @@ const bcrypt = require("bcryptjs");
 // @Post api/settings
 // @desc update business currency
 // @access Private
-router.post("/", auth, async (req, res) => {
+router.post("/currency", auth, async (req, res) => {
   const { userId, currencyDetails } = req.body;
 
   const { currencyCode, currencySymbol, currencyName } = currencyDetails;
@@ -57,7 +57,7 @@ router.post("/", auth, async (req, res) => {
 // @Put api/settings
 // @desc update user password
 // @access Private
-router.put("/", auth, async (req, res) => {
+router.put("/password", auth, async (req, res) => {
   const { userId, oldPassword, newPassword } = req.body;
 
   try {
@@ -112,12 +112,9 @@ router.put("/deactivate", auth, async (req, res) => {
     user.isActivated = false;
     await user.save();
 
-    return res
-      .status(200)
-      .send({
-        message:
-          "We are sorry to see you leaving, user deactivated successfully",
-      });
+    return res.status(200).send({
+      message: "We are sorry to see you leaving, user deactivated successfully",
+    });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
