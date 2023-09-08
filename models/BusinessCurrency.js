@@ -17,6 +17,14 @@ const CurrencySchema = Schema({
     type: String,
     required: true,
   },
+  currencySymbol: {
+    type: String,
+    required: true,
+  },
+  currencyCode: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = Currency = mongoose.model("currency", CurrencySchema);

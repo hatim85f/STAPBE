@@ -154,4 +154,17 @@ router.post("/confirmEmail", auth, async (req, res) => {
   }
 });
 
+// creating a verification code for phone number
+// @route   POST api/profile/verifyPhone
+// @desc    Test route
+// @access  Private
+router.post("/verifyPhone", auth, async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
 module.exports = router;
