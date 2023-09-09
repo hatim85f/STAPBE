@@ -112,8 +112,13 @@ router.put("/deactivate", auth, async (req, res) => {
     user.isActivated = status;
     await user.save();
 
+    const message =
+      status === true
+        ? "Welcome to STAP™, You will find great things inside"
+        : "We are sorry to see you leaving, user deactivated successfully";
+
     return res.status(200).send({
-      message: "We are sorry to see you leaving, user deactivated successfully",
+      message: message,
     });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });

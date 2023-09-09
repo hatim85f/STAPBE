@@ -54,6 +54,18 @@ const ProductSchema = Schema({
   productType: {
     type: String,
   },
+  currencyCode: {
+    type: String,
+    required: true,
+  },
+  currencyName: {
+    type: String,
+    required: true,
+  },
+  currencySymbol: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = Product = mongoose.model("product", ProductSchema);

@@ -2,6 +2,7 @@ const express = require("express");
 const auth = require("../../middleware/auth");
 const Products = require("../../models/Products");
 const { default: mongoose } = require("mongoose");
+const Business = require("../../models/Business");
 const router = express.Router();
 
 // @route   GET api/products
@@ -54,6 +55,8 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
+    const business = await Business.findOne({ _id: businessId });
+
     const newProduct = new Products({
       businessId,
       productName,
@@ -67,6 +70,9 @@ router.post("/", auth, async (req, res) => {
       maximumDiscount,
       category,
       productType,
+      currenctCode: business.currencyCode,
+      currencyName: business.currencyName,
+      currencySymbol: business.currencySymbol,
     });
 
     await Products.insertMany(newProduct);
