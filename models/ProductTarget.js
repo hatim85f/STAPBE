@@ -17,16 +17,31 @@ const ProductTargetSchema = new Schema({
     type: Number,
     required: true,
   },
+  productPrice: {
+    type: Number,
+    required: true,
+  },
   targetValue: {
     type: Number,
     required: true,
   },
-  startPeriod: {
+  targetType: {
     type: String,
+    enum: ["Monthly", "Quarterly", "Yearly"],
+  },
+  phasing: {
+    type: Boolean,
+  },
+  phasingPercentage: {
+    type: Array,
+  },
+  startPeriod: {
+    type: Date,
+    default: Date.now,
     required: true,
   },
   endPeriod: {
-    type: String,
+    type: Date,
     required: true,
   },
   addedIn: {

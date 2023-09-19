@@ -27,4 +27,6 @@ const CurrencySchema = Schema({
   },
 });
 
+// you should save exchange rates on the database
+
 module.exports = Currency = mongoose.model("currency", CurrencySchema);

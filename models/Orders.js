@@ -17,14 +17,22 @@ const OrderSchema = new Schema({
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  businessId: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-  },
   status: {
     type: String,
     enum: ["Pending", "In Progress", "Completed", "Cancelled"],
     default: "Pending",
+  },
+  disocunt: {
+    type: Number,
+    default: 0,
+  },
+  discountType: {
+    type: String,
+    enum: ["Percentage", "Fixed"],
+    default: "Percentage",
+  },
+  totalValue: {
+    type: Number,
   },
   timeStamp: {
     type: Date,
