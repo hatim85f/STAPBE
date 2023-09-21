@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const sgMail = require("@sendgrid/mail");
 const moment = require("moment");
+const config = require("config");
 
 const mailApi =
   process.env.NODE_ENV === "production"
@@ -18,9 +19,9 @@ router.post("/send", async (req, res) => {
     sgMail.setApiKey(mailApi);
     const msg = {
       to: "info@stap-crm.com",
-      from: email,
+      from: "info@stap-crm.com",
       subject: "New Demo Request for STAP CRM",
-      templateId: "d-637292d2e956458184205afe13dc362", // Your dynamic template ID
+      templateId: "d-637292d2e956458184205afe13dc3629", // Your dynamic template ID
       dynamicTemplateData: {
         user_name: name,
         business_type: businessType,
@@ -47,11 +48,14 @@ router.post("/send", async (req, res) => {
       },
     };
     await sgMail.send(msg2);
-    res.status(200).json({ message: "Password reset code sent successfully" });
+    res
+      .status(200)
+      .json({ message: "Your Request has been sent Successfully" });
   } catch (error) {
+    console.log(error.message, error.response.body);
     return res.status(500).send({
       error: "Error",
-      message: error.message,
+      message: "Something Went Wrong, Please try again later",
     });
   }
 });
