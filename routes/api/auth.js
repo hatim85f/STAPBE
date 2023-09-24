@@ -224,6 +224,23 @@ router.post("/biometric", auth, async (req, res) => {
       });
     }
 
+    if (user.biometricEnabled) {
+      await User.updateMany(
+        { _id: userId },
+        {
+          $set: {
+            biometricEnabled: false,
+          },
+        }
+      );
+
+      await Biometrics.deleteOne({ userId });
+
+      return res
+        .status(200)
+        .send({ message: "Biometric Login Disabled Successfully" });
+    }
+
     // Generate a unique identifier for biometric reference
     const uniqueIdentifier = `${user._id}-${Date.now()}-${Math.random()}`;
 
@@ -255,6 +272,10 @@ router.post("/biometric", auth, async (req, res) => {
     });
   }
 });
+
+// router.post('/login_biometric' , async (req ,res) => {
+
+// })
 
 // verify user code to reset password.
 router.post("/code", async (req, res) => {
