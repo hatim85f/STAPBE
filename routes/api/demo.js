@@ -55,7 +55,8 @@ router.post("/send", async (req, res) => {
     console.log(error.message, error.response.body);
     return res.status(500).send({
       error: "Error",
-      message: "Something Went Wrong, Please try again later",
+      message:
+        "Something Went Wrong, Please try again later or contact us directly on provided details",
     });
   }
 });

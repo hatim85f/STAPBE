@@ -61,6 +61,7 @@ router.get("/:userId", auth, async (req, res) => {
           business: 1,
           numberOfBusinesses: { $size: "$business" },
           isActivated: 1,
+          biometricEnabled: 1,
         },
       },
     ]);
