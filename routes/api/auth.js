@@ -76,7 +76,7 @@ router.post(
 
       const payload = {
         user: {
-          id: user.id,
+          id: user._id,
         },
       };
 
@@ -130,7 +130,7 @@ router.post("/register", async (req, res) => {
 
     const payload = {
       user: {
-        id: newUser.id,
+        id: newUser._id,
       },
     };
 
@@ -273,9 +273,40 @@ router.post("/biometric", auth, async (req, res) => {
   }
 });
 
-// router.post('/login_biometric' , async (req ,res) => {
+router.post("/login_biometric", async (req, res) => {
+  const { userId } = req.body;
 
-// })
+  try {
+    const user = await User.findOne({ _id: userId });
+
+    if (!user) {
+      return res
+        .status(500)
+        .send({
+          error: "Invalid User",
+          message: "Inavalid user details, please create account first",
+        });
+    }
+
+    const payload = {
+      user: {
+        id: user._id,
+      },
+    };
+
+    jwt.sign(payload, setcretToken, (error, token) => {
+      if (error) throw error;
+      res.json({ token, user });
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .send({
+        error: "Error",
+        message: "Something Went Wrong, please try again later",
+      });
+  }
+});
 
 // verify user code to reset password.
 router.post("/code", async (req, res) => {
