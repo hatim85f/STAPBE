@@ -10,6 +10,7 @@ const crypto = require("crypto");
 const sgMail = require("@sendgrid/mail");
 const ResetPassword = require("../../models/ResetPassword");
 const moment = require("moment/moment");
+const Biometrics = require("../../models/Biometrics");
 
 const mailApi =
   process.env.NODE_ENV === "production"
@@ -236,13 +237,13 @@ router.post("/biometric", auth, async (req, res) => {
     await user.save();
 
     // Create a new Biometric record with the user's ID and biometric reference
-    const biometricData = new Biometric({
+    const biometricData = new Biometrics({
       userId: user._id,
       biometricReference,
     });
 
     // Save the biometric data record
-    await biometricData.insertMany(biometricData);
+    await Biometrics.insertMany(biometricData);
 
     return res.status(200).send({
       message: "Biometric login enabled successfully.",
@@ -250,7 +251,7 @@ router.post("/biometric", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: "Something went wrong, please try again",
+      message: error.message,
     });
   }
 });
