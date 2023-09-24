@@ -209,6 +209,52 @@ router.post("/reset", async (req, res) => {
   }
 });
 
+// enable biometric login
+router.post("/biometric", auth, async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const user = await User.findOne({ _id: userId });
+
+    if (!user) {
+      return res.status(404).send({
+        error: "User not found",
+        message: "The specified user does not exist.",
+      });
+    }
+
+    // Generate a unique identifier for biometric reference
+    const uniqueIdentifier = `${user._id}-${Date.now()}-${Math.random()}`;
+
+    // Hash the unique identifier using bcrypt
+    const biometricReference = await bcrypt.hash(uniqueIdentifier, 10);
+
+    // Update the user's "biometricEnabled" field to true
+    user.biometricEnabled = true;
+
+    // Save the updated user document
+    await user.save();
+
+    // Create a new Biometric record with the user's ID and biometric reference
+    const biometricData = new Biometric({
+      userId: user._id,
+      biometricReference,
+    });
+
+    // Save the biometric data record
+    await biometricData.insertMany(biometricData);
+
+    return res.status(200).send({
+      message: "Biometric login enabled successfully.",
+    });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error",
+      message: "Something went wrong, please try again",
+    });
+  }
+});
+
 // verify user code to reset password.
 router.post("/code", async (req, res) => {
   const { userEmail, resetCode } = req.body;
