@@ -10,7 +10,7 @@ const BiometricSchema = Schema({
     ref: "user",
     unique: true,
   },
-  biometricData: {
+  biometricReference: {
     type: String,
   },
 });
