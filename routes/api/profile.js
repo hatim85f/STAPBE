@@ -90,21 +90,21 @@ router.post("/verifyEmail", auth, async (req, res) => {
     const verifyingCode = Math.floor(1000 + Math.random() * 9000).toString();
 
     // // send email to user
-    sgMail.setApiKey(mailApi);
+    // sgMail.setApiKey(mailApi);
 
-    // Send the email with SendGrid
-    const msg = {
-      to: userEmail,
-      from: "info@stap-crm.com",
-      templateId: "d-d2cf2a8fa1e04b76b50b4fa43e46ba9a", // Your dynamic template ID
-      dynamicTemplateData: {
-        user_name: user.userName, // Replace with your user's name field
-        reset_code: verifyingCode,
-        code_requested: moment(new Date()).format("DD/MM/YYYY hh:mm a"),
-      },
-    };
+    // // Send the email with SendGrid
+    // const msg = {
+    //   to: userEmail,
+    //   from: "info@stap-crm.com",
+    //   templateId: "d-d2cf2a8fa1e04b76b50b4fa43e46ba9a", // Your dynamic template ID
+    //   dynamicTemplateData: {
+    //     user_name: user.userName, // Replace with your user's name field
+    //     reset_code: verifyingCode,
+    //     code_requested: moment(new Date()).format("DD/MM/YYYY hh:mm a"),
+    //   },
+    // };
 
-    await sgMail.send(msg);
+    // await sgMail.send(msg);
 
     const verification = new VerifyEmail({
       userId: userId,
