@@ -7,7 +7,7 @@ const verifyEmail = Schema({
     ref: "user",
   },
   verifyCode: String,
-  verifyCodeExpiration: Date,
+  verifyCodeExpiration: String,
 });
 
 module.exports = verify = mongoose.model("verify", verifyEmail);

@@ -279,13 +279,18 @@ router.post("/login_biometric", async (req, res) => {
   try {
     const user = await User.findOne({ _id: userId });
 
+    if (!user.biometricEnabled) {
+      return res.status(500).send({
+        error: "Error",
+        message: "Please enable biometrics login from settings first",
+      });
+    }
+
     if (!user) {
-      return res
-        .status(500)
-        .send({
-          error: "Invalid User",
-          message: "Inavalid user details, please create account first",
-        });
+      return res.status(500).send({
+        error: "Invalid User",
+        message: "Inavalid user details, please create account first",
+      });
     }
 
     const payload = {
@@ -299,12 +304,10 @@ router.post("/login_biometric", async (req, res) => {
       res.json({ token, user });
     });
   } catch (error) {
-    return res
-      .status(500)
-      .send({
-        error: "Error",
-        message: "Something Went Wrong, please try again later",
-      });
+    return res.status(500).send({
+      error: "Error",
+      message: "Something Went Wrong, please try again later",
+    });
   }
 });
 
