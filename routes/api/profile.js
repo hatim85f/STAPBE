@@ -169,4 +169,10 @@ router.post("/verifyPhone", auth, async (req, res) => {
   }
 });
 
+// get if user email is verified
+
+router.get("/:userId", auth, async (req, res) => {
+  const { userId } = req.params;
+});
+
 module.exports = router;

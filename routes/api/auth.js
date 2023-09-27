@@ -306,7 +306,8 @@ router.post("/login_biometric", async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: "Something Went Wrong, please try again later",
+      message:
+        "Something Went Wrong, please try again later, make sure you enabled biometric login in app settings",
     });
   }
 });
