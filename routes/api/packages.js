@@ -72,6 +72,20 @@ router.post("/", [auth, isAdmin], async (req, res) => {
       });
     }
 
+    const { businesses, teamMembers, admins } = limits;
+
+    const adminNumber = admins > 100 ? 5 : admins;
+    const businessNumber = businesses > 100 ? 5 : businesses;
+    const teamNumber = teamMembers > 100 ? 14 : teamMembers;
+
+    const businessCost = businessNumber * limits.valuePerBusiness;
+    const teamCost = teamNumber * prices.teamMember;
+    const adminCost = adminNumber * prices.admin;
+    const businessOwnerCost = prices.businessOwner;
+    const totalMonthlyCost =
+      businessCost + teamCost + adminCost + businessOwnerCost;
+    const totalYearlyCost = totalMonthlyCost * 12;
+
     const newPackage = new Package({
       name,
       subTitle,
@@ -80,10 +94,12 @@ router.post("/", [auth, isAdmin], async (req, res) => {
       limits,
       features,
       prices,
+      totalMonthlyPrice: totalMonthlyCost + price.monthly,
+      totalYearlyPrice: totalYearlyCost + price.yearly,
       isAvailable,
     });
 
-    await newPackage.save();
+    await Package.insertMany(newPackage);
 
     return res.status(200).json({ newPackage });
   } catch (error) {
@@ -116,6 +132,29 @@ router.put("/:id", [auth, isAdmin], async (req, res) => {
     return res.status(200).json({
       message: `Package ${package.name} updated successfully`,
       package,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Error", message: error.message });
+  }
+});
+
+router.put("/:id", [auth, isAdmin], async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await Package.updateMany(
+      { _id: id },
+      {
+        $set: {
+          stripeProductId: req.body.stripeProductId,
+          stripeMonthlyPriceId: req.body.stripeMonthlyPriceId,
+          stripeYearlyPriceId: req.body.stripeYearlyPriceId,
+        },
+      }
+    );
+
+    return res.status(200).json({
+      message: `Package updated successfully`,
     });
   } catch (error) {
     return res.status(500).json({ error: "Error", message: error.message });

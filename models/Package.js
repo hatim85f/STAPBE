@@ -80,9 +80,26 @@ const PackageSchema = Schema({
       required: true,
     },
   },
+  totalMonthlyPrice: {
+    type: Number,
+    required: true,
+  },
+  totalYearlyPrice: {
+    type: Number,
+    required: true,
+  },
   isAvailable: {
     type: Boolean,
     required: true,
+  },
+  stripeProductId: {
+    type: String,
+  },
+  stripeMonthlyPriceId: {
+    type: String,
+  },
+  stripeYearlyPriceId: {
+    type: String,
   },
 });
 

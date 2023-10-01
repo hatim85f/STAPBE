@@ -5,11 +5,6 @@ const Schema = mongoose.Schema;
 // should contains user id, value, packageName, startDate, endDate
 
 const MembershipSchema = new Schema({
-  business: {
-    type: mongoose.Types.ObjectId,
-    ref: "business",
-    required: true,
-  },
   user: {
     type: mongoose.Types.ObjectId,
     ref: "user",
