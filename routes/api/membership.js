@@ -131,7 +131,12 @@ router.post("/", auth, async (req, res) => {
 
     await MemberShip.insertMany(newMembership);
 
-    res.status(200).json({ message: "Membership created successfully" });
+    res
+      .status(200)
+      .json({
+        message: "Membership created successfully",
+        membership: newMembership,
+      });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
