@@ -122,9 +122,9 @@ router.post("/", auth, async (req, res) => {
           : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       autoRenew: autoRenew,
       isActive: true,
-      amount: payment,
-      paymentDate: new Date(),
-      paymentMethod: "card",
+      payments: [
+        { amount: payment, paymentDate: new Date(), paymentMethod: "card" },
+      ],
       savePaymentMethod: savePaymentMethod,
       lastFourDigits: lastFourDigits,
     });
