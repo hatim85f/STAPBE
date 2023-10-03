@@ -13,8 +13,12 @@ const stripeSecretKey =
     ? process.env.STRIPE_SECRET_KEY
     : config.get("STRIPE_SECRET_KEY");
 
-const stripe = require("stripe")(stripeSecretKey);
+const stripPublishableKey =
+  process.env.NODE_ENV === "production"
+    ? process.env.STRIPE_PUBLISHABLE_KEY
+    : config.get("STRIPE_PUBLISHABLE_KEY");
 
+const stripe = require("stripe")(stripeSecretKey);
 // ... (Other code remains the same)
 
 // @route   POST api/membership
@@ -23,7 +27,7 @@ const stripe = require("stripe")(stripeSecretKey);
 // Handle payment first using Stripe Elements and then create membership
 router.post("/", auth, async (req, res) => {
   const {
-    email,
+    userId,
     packageId,
     type,
     payment,
@@ -38,10 +42,39 @@ router.post("/", auth, async (req, res) => {
     const package = await Package.findOne({ _id: packageId });
 
     // Find the user based on email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ _id: userId });
     if (!user) {
       return res.status(400).json({
         error: "User not found, please create an account first to subscribe",
+      });
+    }
+
+    return res.status(200).json({ user, package, email });
+    // Validate card information using Stripe
+    const cardValidation = await stripe.paymentMethods.create({
+      type: "card",
+      card: {
+        number: cardNumber,
+        exp_month: expiryMonth,
+        exp_year: expiryYear,
+        cvc: cvc,
+      },
+    });
+
+    // create token for payment
+    const token = await stripe.paymentMethods.create({
+      type: "card",
+      card: {
+        number: cardNumber,
+        exp_month: expiryMonth,
+        exp_year: expiryYear,
+        cvc: cvc,
+      },
+    });
+
+    if (!cardValidation || cardValidation.error) {
+      return res.status(400).json({
+        error: "Card validation failed. Please check your card details.",
       });
     }
 
@@ -131,12 +164,10 @@ router.post("/", auth, async (req, res) => {
 
     await MemberShip.insertMany(newMembership);
 
-    res
-      .status(200)
-      .json({
-        message: "Membership created successfully",
-        membership: newMembership,
-      });
+    res.status(200).json({
+      message: "Membership created successfully",
+      membership: newMembership,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
