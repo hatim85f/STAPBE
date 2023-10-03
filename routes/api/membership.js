@@ -13,10 +13,10 @@ const stripeSecretKey =
     ? process.env.STRIPE_SECRET_KEY
     : config.get("STRIPE_SECRET_KEY");
 
-const stripPublishableKey =
-  process.env.NODE_ENV === "production"
-    ? process.env.STRIPE_PUBLISHABLE_KEY
-    : config.get("STRIPE_PUBLISHABLE_KEY");
+// const stripPublishableKey =
+//   process.env.NODE_ENV === "production"
+//     ? process.env.STRIPE_PUBLISHABLE_KEY
+//     : config.get("STRIPE_PUBLISHABLE_KEY");
 
 const stripe = require("stripe")(stripeSecretKey);
 
@@ -55,36 +55,36 @@ router.post("/", auth, async (req, res) => {
     }
 
     // Validate card information using Stripe
-    const cardValidation = await stripe.paymentMethods.create({
-      type: "card",
-      card: {
-        number: cardNumber,
-        exp_month: expiryMonth,
-        exp_year: expiryYear,
-        cvc: cvc,
-      },
-    });
+    // const cardValidation = await stripe.paymentMethods.create({
+    //   type: "card",
+    //   card: {
+    //     number: cardNumber,
+    //     exp_month: expiryMonth,
+    //     exp_year: expiryYear,
+    //     cvc: cvc,
+    //   },
+    // });
 
     // create token for payment
-    const token = await stripe.paymentMethods.create({
-      type: "card",
-      card: {
-        number: cardNumber,
-        exp_month: expiryMonth,
-        exp_year: expiryYear,
-        cvc: cvc,
-      },
-    });
+    // const token = await stripe.paymentMethods.create({
+    //   type: "card",
+    //   card: {
+    //     number: cardNumber,
+    //     exp_month: expiryMonth,
+    //     exp_year: expiryYear,
+    //     cvc: cvc,
+    //   },
+    // });
 
-    if (!cardValidation || cardValidation.error) {
-      return res.status(400).json({
-        error: "Card validation failed. Please check your card details.",
-      });
-    }
+    // if (!cardValidation || cardValidation.error) {
+    //   return res.status(400).json({
+    //     error: "Card validation failed. Please check your card details.",
+    //   });
+    // }
 
     // Create a customer in Stripe (you can use an existing customer if you have one)
     const customer = await stripe.customers.create({
-      email: email,
+      email: user.email,
       name: user.userName,
       source: token, // Attach the token from Stripe Elements
     });
@@ -173,7 +173,7 @@ router.post("/", auth, async (req, res) => {
       membership: newMembership,
     });
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     return res.status(500).json({
       error: "Error",
       message: "Something went wrong, please try again",
