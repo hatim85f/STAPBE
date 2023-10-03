@@ -19,6 +19,7 @@ const stripPublishableKey =
     : config.get("STRIPE_PUBLISHABLE_KEY");
 
 const stripe = require("stripe")(stripeSecretKey);
+
 // ... (Other code remains the same)
 
 // @route   POST api/membership
@@ -35,6 +36,10 @@ router.post("/", auth, async (req, res) => {
     lastFourDigits,
     savePaymentMethod,
     token, // Token from Stripe Elements
+    cardNumber,
+    expiryMonth,
+    expiryYear,
+    cvc,
   } = req.body;
 
   try {
