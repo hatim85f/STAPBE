@@ -49,7 +49,6 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    return res.status(200).json({ user, package, email });
     // Validate card information using Stripe
     const cardValidation = await stripe.paymentMethods.create({
       type: "card",
