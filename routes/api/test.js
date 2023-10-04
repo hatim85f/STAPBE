@@ -55,7 +55,7 @@ router.post("/create-payment-intent", async (req, res) => {
       currency: currency,
       payment_method_types: [paymentMethodType],
     });
-    return res.status(200).send(paymentIntent.client_secret);
+    return res.status(200).send({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     console.log(error.message);
     return res.status(500).send({ error: "Error", message: error.message });
