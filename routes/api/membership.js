@@ -20,6 +20,23 @@ const stripeSecretKey =
 
 const stripe = require("stripe")(stripeSecretKey);
 
+// create a payment intent and getting client secret
+router.post("/create-payment-intent", async (req, res) => {
+  const { amount, currency, paymentMethodType } = req.body;
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100,
+      currency: currency,
+      payment_method_types: [paymentMethodType],
+    });
+    return res.status(200).send({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
 // ... (Other code remains the same)
 
 // @route   POST api/membership
@@ -35,11 +52,7 @@ router.post("/", auth, async (req, res) => {
     autoRenew,
     lastFourDigits,
     savePaymentMethod,
-    token, // Token from Stripe Elements
-    cardNumber,
-    expiryMonth,
-    expiryYear,
-    cvc,
+    token, // Token from Stripe Elementsear,
   } = req.body;
 
   try {
@@ -54,34 +67,6 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    // Validate card information using Stripe
-    // const cardValidation = await stripe.paymentMethods.create({
-    //   type: "card",
-    //   card: {
-    //     number: cardNumber,
-    //     exp_month: expiryMonth,
-    //     exp_year: expiryYear,
-    //     cvc: cvc,
-    //   },
-    // });
-
-    // create token for payment
-    // const token = await stripe.paymentMethods.create({
-    //   type: "card",
-    //   card: {
-    //     number: cardNumber,
-    //     exp_month: expiryMonth,
-    //     exp_year: expiryYear,
-    //     cvc: cvc,
-    //   },
-    // });
-
-    // if (!cardValidation || cardValidation.error) {
-    //   return res.status(400).json({
-    //     error: "Card validation failed. Please check your card details.",
-    //   });
-    // }
-
     // Create a customer in Stripe (you can use an existing customer if you have one)
     const customer = await stripe.customers.create({
       email: user.email,
@@ -89,8 +74,32 @@ router.post("/", auth, async (req, res) => {
       source: token, // Attach the token from Stripe Elements
     });
 
+    const existingSubscription = await Subscription.findOne({
+      customer: userId,
+      package: packageId,
+      isActive: true,
+    });
+
+    if (existingSubscription) {
+      return res.status(400).json({
+        error: "User already has an active subscription for this package",
+      });
+    }
+
+    // Check if a payment for the same package has already been made
+    const existingPayment = await Payment.findOne({
+      user: userId,
+      package: packageId,
+    });
+
+    if (existingPayment) {
+      return res.status(400).json({
+        error: "Payment for this package has already been processed",
+      });
+    }
+
     // Create a payment intent
-    const paymentIntent = await stripe.paymentIntents.create({
+    await stripe.paymentIntents.create({
       amount: Math.round(payment * 100), // Convert to cents
       currency: "usd", // Change to your desired currency code
       customer: customer.id,
