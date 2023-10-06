@@ -90,7 +90,8 @@ router.post("/", auth, async (req, res) => {
 
     if (existingSubscription) {
       return res.status(400).json({
-        error: "User already has an active subscription for this package",
+        error: "Error",
+        message: "You already have an active subscription",
       });
     }
 
@@ -102,7 +103,8 @@ router.post("/", auth, async (req, res) => {
 
     if (existingPayment) {
       return res.status(400).json({
-        error: "Payment for this package has already been processed",
+        error: "Error",
+        message: "You have already made a payment for this package",
       });
     }
 
@@ -112,32 +114,34 @@ router.post("/", auth, async (req, res) => {
         : package.stripeYearlyPriceId;
 
     // Create a subscriction in Stripe
-    const subscription = await stripe.subscriptions.create({
-      customer:
-        oldCustomer.data.length > 0 ? oldCustomer.data[0].id : customer.id,
-      items: [
-        {
-          price: priceId,
-        },
-      ],
-    });
+    let subscriptionId;
+    if (autoRenew) {
+      const subscription = await stripe.subscriptions.create({
+        customer:
+          oldCustomer.data.length > 0 ? oldCustomer.data[0].id : customer.id,
+        items: [
+          {
+            price: priceId,
+          },
+        ],
+      });
 
-    const subscriptionId = subscription.id;
+      subscriptionId = subscription.id;
 
-    // Create a new subscription in the database
-    const newSubscription = new Subscription({
-      customer: user._id,
-      package: package._id,
-      subscriptionId: subscriptionId,
-      billingPeriod: type,
-      price: payment,
-      nextBillingDate: nextBillingDate,
-      paymentMethod: "card",
-      isActive: true,
-    });
+      // Create a new subscription in the database
+      const newSubscription = new Subscription({
+        customer: user._id,
+        package: package._id,
+        subscriptionId: subscriptionId,
+        billingPeriod: type,
+        price: payment,
+        nextBillingDate: nextBillingDate,
+        paymentMethod: "card",
+        isActive: true,
+      });
 
-    await Subscription.insertMany(newSubscription);
-
+      await Subscription.insertMany(newSubscription);
+    }
     // Create new membership
     const newMembership = new MemberShip({
       user: user._id,
