@@ -69,7 +69,7 @@ router.post("/", auth, async (req, res) => {
     }
 
     // Find the customer in Stripe
-    const customer = await stripe.customers.list({ email: user.email });
+    let customer = await stripe.customers.list({ email: user.email });
 
     // If there is no existing customer, create a new one
     if (customer.data.length === 0) {
