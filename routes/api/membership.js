@@ -53,6 +53,7 @@ router.post("/", auth, async (req, res) => {
     lastFourDigits,
     savePaymentMethod,
     token, // Token from Stripe Elementsear,
+    nextBillingDate,
   } = req.body;
 
   try {
@@ -67,12 +68,17 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    // Create a customer in Stripe (you can use an existing customer if you have one)
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: user.userName,
-      source: token, // Attach the token from Stripe Elements
-    });
+    // Find the customer in Stripe
+    const customer = await stripe.customers.list({ email: user.email });
+
+    // If there is no existing customer, create a new one
+    if (customer.data.length === 0) {
+      customer = await stripe.customers.create({
+        email: user.email,
+        name: user.userName,
+        source: token, // Attach the token from Stripe Elements
+      });
+    }
 
     const existingSubscription = await Subscription.findOne({
       customer: userId,
@@ -98,69 +104,42 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    // Create a payment intent
-    await stripe.paymentIntents.create({
-      amount: Math.round(payment * 100), // Convert to cents
-      currency: "usd", // Change to your desired currency code
-      customer: customer.id,
-      description: `Payment for package ${package.name}`,
-    });
-
     const priceId =
       type === "Monthly"
         ? package.stripeMonthlyPriceId
         : package.stripeYearlyPriceId;
 
-    // return res.status(200).json({
-    //   clientSecret: paymentIntent.client_secret,
-    //   priceId: priceId,
-    //   paymentIntentId: paymentIntent.id,
-    // });
-
-    if (autoRenew) {
-      // Create a subscriction in Stripe
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [
-          {
-            price: priceId,
-          },
-        ],
-      });
-
-      // Save the subscription ID to your database so you can retrieve it later
-      const subscriptionId = subscription.id;
-
-      // Create a new subscription in your database (e.g., in MongoDB)
-      const newSubscription = new Subscription({
-        customer: user._id,
-        package: package._id,
-        subscriptionId: subscriptionId,
-        billingPeriod: type,
-        price: payment,
-        nextBillingDate: new Date(),
-        paymentMethod: "card",
-        isActive: true,
-      });
-
-      await Subscription.insertMany(newSubscription);
-    }
-
-    // Create a new payment in database (e.g., in MongoDB)
-    const newPayment = new Payment({
-      user: user._id,
-      subscription: null,
-      amount: payment,
-      paymentMethod: "card",
+    // Create a subscriction in Stripe
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [
+        {
+          price: priceId,
+        },
+      ],
     });
 
-    // Save the payment to database
-    await Payment.insertMany(newPayment);
+    const subscriptionId = subscription.id;
+
+    // Create a new subscription in the database
+    const newSubscription = new Subscription({
+      customer: user._id,
+      package: package._id,
+      subscriptionId: subscriptionId,
+      billingPeriod: type,
+      price: payment,
+      nextBillingDate: nextBillingDate,
+      paymentMethod: "card",
+      isActive: true,
+    });
+
+    await Subscription.insertMany(newSubscription);
 
     // Create new membership
     const newMembership = new MemberShip({
       user: user._id,
       package: package._id,
+      subscriptionId: subscriptionId,
       startDate: new Date(),
       endDate:
         type === "Monthly"
