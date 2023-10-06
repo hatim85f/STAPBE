@@ -25,7 +25,7 @@ const SubscriptionSchema = new Schema({
     required: true,
   },
   nextBillingDate: {
-    type: Date, // Date of the next billing cycle
+    type: String, // Date of the next billing cycle
     required: true,
   },
   paymentMethod: {
