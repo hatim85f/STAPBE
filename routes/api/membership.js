@@ -69,10 +69,12 @@ router.post("/", auth, async (req, res) => {
     }
 
     // Find the customer in Stripe
-    let customer = await stripe.customers.list({ email: user.email });
+    const oldCustomer = await stripe.customers.list({ email: user.email });
+
+    let customer;
 
     // If there is no existing customer, create a new one
-    if (customer.data.length === 0) {
+    if (oldCustomer.data.length === 0) {
       customer = await stripe.customers.create({
         email: user.email,
         name: user.userName,
@@ -111,7 +113,8 @@ router.post("/", auth, async (req, res) => {
 
     // Create a subscriction in Stripe
     const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
+      customer:
+        oldCustomer.data.length > 0 ? oldCustomer.data[0].id : customer.id,
       items: [
         {
           price: priceId,
@@ -155,6 +158,16 @@ router.post("/", auth, async (req, res) => {
     });
 
     await MemberShip.insertMany(newMembership);
+
+    const newPayment = new Payment({
+      user: user._id,
+      package: package._id,
+      amount: payment,
+      paymentDate: new Date(),
+      paymentMethod: "card",
+    });
+
+    await Payment.insertMany(newPayment);
 
     res.status(200).json({
       message: "Membership created successfully",

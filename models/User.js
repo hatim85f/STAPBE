@@ -20,7 +20,6 @@ const UserSchema = Schema({
   },
   joiningDate: {
     type: Date,
-    default: Date.now,
   },
   userType: {
     type: String,
