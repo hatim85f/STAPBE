@@ -134,9 +134,10 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    const newDate = moment(nextBillingDate, "DD/MM/YYYY");
+    const dateInLocalTimezone = moment(nextBillingDate, "DD/MM/YYYY");
 
-    const dateUTC = newDate.utc();
+    // Convert the local date to a Unix timestamp
+    const unixTimestamp = dateInLocalTimezone.unix();
 
     // Create a subscriction in Stripe
     let subscriptionId;
@@ -151,7 +152,7 @@ router.post("/", auth, async (req, res) => {
                 : package.stripeYearlyPriceId,
           },
         ],
-        billing_cycle_anchor: dateUTC,
+        billing_cycle_anchor: unixTimestamp,
       });
 
       subscriptionId = subscription.id;

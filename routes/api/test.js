@@ -71,12 +71,12 @@ router.post("/create-payment-intent", async (req, res) => {
 router.post("/date", async (req, res) => {
   try {
     const { date } = req.body;
+    const dateInLocalTimezone = moment(date, "DD/MM/YYYY");
 
-    const newDate = moment(date, "DD/MM/YYYY");
+    // Convert the local date to a Unix timestamp
+    const unixTimestamp = dateInLocalTimezone.unix();
 
-    const dateUTC = newDate.utc();
-
-    return res.status(200).send(dateUTC);
+    return res.status(200).send({ unixTimestamp });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
