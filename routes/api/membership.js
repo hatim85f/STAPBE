@@ -30,12 +30,10 @@ router.post("/create-payment-intent", async (req, res) => {
       currency: currency,
       payment_method_types: [paymentMethodType],
     });
-    return res
-      .status(200)
-      .send({
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id,
-      });
+    return res.status(200).send({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    });
   } catch (error) {
     console.log(error.message);
     return res.status(500).send({ error: "Error", message: error.message });
@@ -84,13 +82,17 @@ router.post("/", auth, async (req, res) => {
         email: user.email,
         name: user.userName,
         source: token, // Attach the token from Stripe Elements
-        default_source: token,
+        invoice_settings: {
+          default_payment_method: token,
+        },
       });
     } else {
       // If there is an existing customer, attach the new payment method
       await stripe.customers.update(oldCustomer.data[0].id, {
         source: token,
-        default_source: token,
+        invoice_settings: {
+          default_payment_method: token,
+        },
       });
 
       customer = oldCustomer.data[0];
