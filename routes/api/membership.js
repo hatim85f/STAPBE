@@ -28,8 +28,11 @@ router.post("/create-payment-intent", async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100,
       currency: currency,
-      payment_method_types: [paymentMethodType],
+      // payment_method_types: [paymentMethodType],
+      automatic_payment_methods: { enabled: true },
+      setup_future_usage: "on_session",
     });
+
     return res.status(200).send({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
@@ -97,8 +100,14 @@ router.post("/", auth, async (req, res) => {
         },
       });
 
+      await stripe.paymentMethods.attach(token, {
+        customer: oldCustomer[0].id,
+      });
+
       customer = oldCustomer.data[0];
     }
+
+    return res.status(200).json({ customer: customer });
 
     const existingSubscription = await Subscription.findOne({
       customer: userId,

@@ -54,7 +54,11 @@ router.post("/create-payment-intent", async (req, res) => {
       amount: amount * 100,
       currency: currency,
       payment_method_types: [paymentMethodType],
+      // automatic_payment_methods: { enabled: true },
+      setup_future_usage: "on_session",
     });
+
+    return res.status(200).send(paymentIntent);
     return res.status(200).send({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     console.log(error.message);
@@ -85,5 +89,18 @@ router.post(
     consolelog("event.data.object.id", event.data.object.id);
   }
 );
+
+router.post("/pm", async (req, res) => {
+  try {
+    const paymentMethod = await stripe.paymentMethods.attach(
+      "pm_1NyffWFVXCexVcTOl4sowfvL",
+      { customer: "cus_OlsGTqNH4Hmk8f" }
+    );
+
+    return res.status(200).send({ paymentMethod: paymentMethod });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
 
 module.exports = router;
