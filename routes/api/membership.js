@@ -81,7 +81,10 @@ router.post("/", auth, async (req, res) => {
       customer = await stripe.customers.create({
         email: user.email,
         name: user.userName,
-        source: token, // Attach the token from Stripe Elements
+      });
+      await stripe.paymentMethods.attach(token, { customer: customer.id });
+
+      await stripe.customers.update(customer.id, {
         invoice_settings: {
           default_payment_method: token,
         },
@@ -89,7 +92,6 @@ router.post("/", auth, async (req, res) => {
     } else {
       // If there is an existing customer, attach the new payment method
       await stripe.customers.update(oldCustomer.data[0].id, {
-        source: token,
         invoice_settings: {
           default_payment_method: token,
         },
