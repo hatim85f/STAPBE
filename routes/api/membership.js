@@ -133,6 +133,10 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
+    const newDate = moment(nextBillingDate, "DD/MM/YYYY");
+
+    const dateUTC = newDate.utc();
+
     // Create a subscriction in Stripe
     let subscriptionId;
     if (autoRenew) {
@@ -146,7 +150,7 @@ router.post("/", auth, async (req, res) => {
                 : package.stripeYearlyPriceId,
           },
         ],
-        billing_cycle_anchor: nextBillingDate,
+        billing_cycle_anchor: dateUTC,
       });
 
       subscriptionId = subscription.id;
