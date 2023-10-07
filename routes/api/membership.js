@@ -146,7 +146,6 @@ router.post("/", auth, async (req, res) => {
                 : package.stripeYearlyPriceId,
           },
         ],
-        payment_behavior: "none",
         billing_cycle_anchor: nextBillingDate,
       });
 
