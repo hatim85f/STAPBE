@@ -80,6 +80,13 @@ router.post("/", auth, async (req, res) => {
         name: user.userName,
         source: token, // Attach the token from Stripe Elements
       });
+    } else {
+      // If there is an existing customer, attach the new payment method
+      await stripe.customers.update(oldCustomer.data[0].id, {
+        source: token,
+      });
+
+      customer = oldCustomer.data[0];
     }
 
     const existingSubscription = await Subscription.findOne({
@@ -108,20 +115,17 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    const priceId =
-      type === "Monthly"
-        ? package.stripeMonthlyPriceId
-        : package.stripeYearlyPriceId;
-
     // Create a subscriction in Stripe
     let subscriptionId;
     if (autoRenew) {
       const subscription = await stripe.subscriptions.create({
-        customer:
-          oldCustomer.data.length > 0 ? oldCustomer.data[0].id : customer.id,
+        customer: customer.id,
         items: [
           {
-            price: priceId,
+            price:
+              type === "Monthly"
+                ? package.stripeMonthlyPriceId
+                : package.stripeYearlyPriceId,
           },
         ],
       });
