@@ -28,8 +28,8 @@ router.post("/create-payment-intent", async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100,
       currency: currency,
-      // payment_method_types: [paymentMethodType],
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: [paymentMethodType],
+      // automatic_payment_methods: { enabled: true },
       setup_future_usage: "on_session",
     });
 
@@ -106,8 +106,6 @@ router.post("/", auth, async (req, res) => {
 
       customer = oldCustomer.data[0];
     }
-
-    return res.status(200).json({ customer: customer });
 
     const existingSubscription = await Subscription.findOne({
       customer: userId,
