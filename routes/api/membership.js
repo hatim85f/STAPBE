@@ -136,19 +136,19 @@ router.post("/", auth, async (req, res) => {
     // Create a subscriction in Stripe
     let subscriptionId;
     if (autoRenew) {
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [
-          {
-            price:
-              type === "Monthly"
-                ? package.stripeMonthlyPriceId
-                : package.stripeYearlyPriceId,
-          },
-        ],
-      });
+      // const subscription = await stripe.subscriptions.create({
+      //   customer: customer.id,
+      //   items: [
+      //     {
+      //       price:
+      //         type === "Monthly"
+      //           ? package.stripeMonthlyPriceId
+      //           : package.stripeYearlyPriceId,
+      //     },
+      //   ],
+      // });
 
-      subscriptionId = subscription.id;
+      // subscriptionId = subscription.id;
 
       // Create a new subscription in the database
       const newSubscription = new Subscription({
