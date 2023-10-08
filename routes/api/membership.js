@@ -98,7 +98,7 @@ router.post("/", auth, async (req, res) => {
       // If there is an existing customer, attach the new payment method
 
       const defaultPaymentMethod =
-        oldCustomer.invoice_settings.default_payment_method;
+        oldCustomer.data[0].invoice_settings.default_payment_method;
 
       if (defaultPaymentMethod !== token) {
         await stripe.paymentMethods.detach(defaultPaymentMethod);
