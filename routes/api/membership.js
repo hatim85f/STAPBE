@@ -30,6 +30,7 @@ router.post("/create-payment-intent", async (req, res) => {
       amount: amount * 100,
       currency: currency,
       payment_method_types: [paymentMethodType],
+      setup_future_usage: "off_session",
       // automatic_payment_methods: { enabled: true },
       // setup_future_usage: "on_session",
     });
