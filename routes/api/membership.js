@@ -101,7 +101,16 @@ router.post("/", auth, async (req, res) => {
       const defaultPaymentMethod =
         oldCustomer.data[0].invoice_settings.default_payment_method;
 
-      if (defaultPaymentMethod !== token) {
+      if (!defaultPaymentMethod) {
+        await stripe.paymentMethods.attach(token, {
+          customer: oldCustomer.data[0].id,
+        });
+        await stripe.customers.update(oldCustomer.data[0].id, {
+          invoice_settings: {
+            default_payment_method: token,
+          },
+        });
+      } else if (defaultPaymentMethod !== token) {
         await stripe.paymentMethods.detach(defaultPaymentMethod);
         await stripe.paymentMethods.attach(token, {
           customer: oldCustomer.data[0].id,
