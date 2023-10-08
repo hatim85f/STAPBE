@@ -31,7 +31,7 @@ router.post("/create-payment-intent", async (req, res) => {
       currency: currency,
       payment_method_types: [paymentMethodType],
       // automatic_payment_methods: { enabled: true },
-      setup_future_usage: "on_session",
+      // setup_future_usage: "on_session",
     });
 
     return res.status(200).send({
