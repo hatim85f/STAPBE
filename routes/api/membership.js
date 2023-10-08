@@ -23,16 +23,47 @@ const stripe = require("stripe")(stripeSecretKey);
 
 // create a payment intent and getting client secret
 router.post("/create-payment-intent", async (req, res) => {
-  const { amount, currency, paymentMethodType } = req.body;
+  const { amount, currency, paymentMethodType, userId, packageId } = req.body;
 
   try {
+    // Find the user based on userId and exclude the password field
+    const user = await User.findOne({ _id: userId }).select("-password");
+
+    // Retrieve the customer's Stripe information using their email
+    const stripeCustomer = await stripe.customers.list({ email: user.email });
+
+    // Check if the customer has any subscriptions
+    if (stripeCustomer.data.length === 0) {
+      return res.status(200).send({ packagesSubscribed: [] });
+    }
+
+    // Retrieve the customer's subscriptions
+    const subscriptions = await stripe.subscriptions.list({
+      customer: stripeCustomer.data[0].id,
+    });
+
+    // Check if there is a subscription for the specified packageId
+    for (const subscription of subscriptions.data) {
+      const package = await Package.findOne({
+        stripeProductId: subscription.items.data[0].price.product,
+      });
+      if (package && package._id.toString() === packageId) {
+        // Subscription for the same package found
+        const endDate = subscription.current_period_end;
+        return res.status(200).send({
+          message: `You already have a subscription for the selected package, which will end on ${new Date(
+            endDate * 1000
+          ).toDateString()}`,
+        });
+      }
+    }
+
+    // If no subscription for the specified packageId is found, create the paymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100,
       currency: currency,
       payment_method_types: [paymentMethodType],
       setup_future_usage: "off_session",
-      // automatic_payment_methods: { enabled: true },
-      // setup_future_usage: "on_session",
     });
 
     return res.status(200).send({

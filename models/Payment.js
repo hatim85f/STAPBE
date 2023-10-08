@@ -23,6 +23,12 @@ const PaymentSchema = new Schema({
     type: Date, // Date and time when the payment was made
     default: Date.now, // Automatically set to the current date and time
   },
+  last4: {
+    type: String,
+  },
+  paymentCardExpiry: {
+    type: Date,
+  },
   // Additional payment-related fields can be added here as needed
 });
 

@@ -33,6 +33,49 @@ router.get("/", auth, async (req, res) => {
   res.status(200).send("API Running");
 });
 
+router.get("/:userId/:packageId", auth, async (req, res) => {
+  const { userId, packageId } = req.params;
+
+  try {
+    // Find the user based on userId and exclude the password field
+    const user = await User.findOne({ _id: userId }).select("-password");
+
+    // Retrieve the customer's Stripe information using their email
+    const stripeCustomer = await stripe.customers.list({ email: user.email });
+
+    // Check if the customer has any subscriptions
+    if (stripeCustomer.data.length === 0) {
+      return res.status(200).send({ packagesSubscribed: [] });
+    }
+
+    // Retrieve the customer's subscriptions
+    const subscriptions = await stripe.subscriptions.list({
+      customer: stripeCustomer.data[0].id,
+    });
+
+    const packagesSubscribed = [];
+
+    // Loop through each subscription and retrieve the related package information
+    for (const subscription of subscriptions.data) {
+      const package = await Package.findOne({
+        stripeProductId: subscription.items.data[0].price.product,
+      });
+      if (package && package._id.toString() === packageId) {
+        // Subscription for the same package found
+        const endDate = subscription.current_period_end;
+        return res.status(200).send({
+          message: `You already have a subscription for the selected package, which will end on ${new Date(
+            endDate * 1000
+          ).toDateString()}`,
+        });
+      }
+    }
+    return res.status(200).send({ packagesSubscribed });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
 router.get("/publishable-key", async (req, res) => {
   res.status(200).send({ publishKey: stripePublishableKey });
 });
