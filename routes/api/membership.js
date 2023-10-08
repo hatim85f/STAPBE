@@ -173,8 +173,10 @@ router.post("/", auth, async (req, res) => {
                 : package.stripeYearlyPriceId,
           },
         ],
-        billing_cycle_anchor: unixTimestamp,
+        current_period_start: unixTimestamp,
         default_payment_method: setupIntent.payment_method,
+        collection_method: "charge_automatically",
+        days_until_due: type === "Monthly" ? 30 : 365,
       });
 
       subscriptionId = subscription.id;
