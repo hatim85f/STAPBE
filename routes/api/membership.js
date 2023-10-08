@@ -174,7 +174,6 @@ router.post("/", auth, async (req, res) => {
           },
         ],
         billing_cycle_anchor: unixTimestamp,
-        payment_behavior: "default_incomplete",
         default_payment_method: setupIntent.payment_method,
       });
 
