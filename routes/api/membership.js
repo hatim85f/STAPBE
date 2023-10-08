@@ -32,6 +32,15 @@ router.post("/create-payment-intent", async (req, res) => {
     // Retrieve the customer's Stripe information using their email
     const stripeCustomer = await stripe.customers.list({ email: user.email });
 
+    // check if current customer, if not create new customer
+    if (stripeCustomer.data.length === 0) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.userName,
+      });
+      stripeCustomer.data.push(customer);
+    }
+
     // Check if the customer has any subscriptions
     if (stripeCustomer.data.length === 0) {
       return res.status(200).send({ packagesSubscribed: [] });
@@ -58,6 +67,12 @@ router.post("/create-payment-intent", async (req, res) => {
       }
     }
 
+    // create ephemeral key for the customer for app
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: stripeCustomer.data[0].id },
+      { apiVersion: "2020-08-27" }
+    );
+
     // If no subscription for the specified packageId is found, create the paymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100,
@@ -68,6 +83,8 @@ router.post("/create-payment-intent", async (req, res) => {
 
     return res.status(200).send({
       clientSecret: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: stripeCustomer.data[0].id,
       paymentIntentId: paymentIntent.id,
     });
   } catch (error) {
