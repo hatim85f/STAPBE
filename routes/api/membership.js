@@ -86,6 +86,7 @@ router.post("/", auth, async (req, res) => {
         email: user.email,
         name: user.userName,
       });
+
       await stripe.paymentMethods.attach(token, { customer: customer.id });
 
       await stripe.customers.update(customer.id, {
@@ -96,14 +97,20 @@ router.post("/", auth, async (req, res) => {
     } else {
       // If there is an existing customer, attach the new payment method
 
-      await stripe.paymentMethods.attach(token, {
-        customer: oldCustomer.data[0].id,
-      });
-      await stripe.customers.update(oldCustomer.data[0].id, {
-        invoice_settings: {
-          default_payment_method: token,
-        },
-      });
+      const defaultPaymentMethod =
+        oldCustomer.invoice_settings.default_payment_method;
+
+      if (defaultPaymentMethod !== token) {
+        await stripe.paymentMethods.detach(defaultPaymentMethod);
+        await stripe.paymentMethods.attach(token, {
+          customer: oldCustomer.data[0].id,
+        });
+        await stripe.customers.update(oldCustomer.data[0].id, {
+          invoice_settings: {
+            default_payment_method: token,
+          },
+        });
+      }
 
       customer = oldCustomer.data[0];
     }
@@ -142,6 +149,10 @@ router.post("/", auth, async (req, res) => {
     // Create a subscriction in Stripe
     let subscriptionId;
     if (autoRenew) {
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customer.id, // Use the Stripe customer ID if available
+        payment_method: token,
+      });
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
         items: [
@@ -153,6 +164,8 @@ router.post("/", auth, async (req, res) => {
           },
         ],
         billing_cycle_anchor: unixTimestamp,
+        payment_behavior: "default_incomplete",
+        default_payment_method: setupIntent.payment_method,
       });
 
       subscriptionId = subscription.id;
