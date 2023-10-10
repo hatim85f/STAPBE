@@ -77,7 +77,7 @@ router.post("/create-payment-intent", async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100,
       currency: currency,
-      payment_method_types: ["card", "apple_pay", "google_pay"],
+      payment_method_types: ["card"],
       setup_future_usage: "off_session",
       customer: stripeCustomer.id,
     });
