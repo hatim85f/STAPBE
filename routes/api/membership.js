@@ -84,7 +84,7 @@ router.post("/create-payment-intent", async (req, res) => {
       currency: currency,
       payment_method_types: ["card"],
       setup_future_usage: "off_session",
-      customer: customer.id,
+      customer: stripeCustomer.id,
     });
 
     return res.status(200).send({
