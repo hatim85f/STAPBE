@@ -73,13 +73,19 @@ router.post("/create-payment-intent", async (req, res) => {
       { apiVersion: "2020-08-27" }
     );
 
+    // setup intent for future payments
+    const setupIntent = await stripe.setupIntents.create({
+      customer: stripeCustomer.data[0].id, // Use the Stripe customer ID if available
+      payment_method_types: ["card"],
+    });
+
     // If no subscription for the specified packageId is found, create the paymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100,
       currency: currency,
       payment_method_types: ["card"],
       setup_future_usage: "off_session",
-      customer: stripeCustomer.id,
+      customer: stripeCustomer.data[0].id,
     });
 
     return res.status(200).send({
@@ -87,6 +93,7 @@ router.post("/create-payment-intent", async (req, res) => {
       ephemeralKey: ephemeralKey.secret,
       customer: stripeCustomer.data[0].id,
       paymentIntentId: paymentIntent.id,
+      setupIntent: setupIntent.client_secret,
     });
   } catch (error) {
     console.log(error.message);
