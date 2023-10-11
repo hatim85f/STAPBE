@@ -16,10 +16,10 @@ const UserSchema = Schema({
     default: "https://i.imgur.com/2WZtV3H.png",
   },
   DOB: {
-    type: Date,
+    type: String,
   },
   joiningDate: {
-    type: Date,
+    type: String,
   },
   userType: {
     type: String,

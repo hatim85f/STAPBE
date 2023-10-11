@@ -102,6 +102,8 @@ router.post("/register", async (req, res) => {
     designation,
     userType,
     profilePicture,
+    DOB,
+    joiningDate,
   } = req.body;
 
   try {
@@ -124,6 +126,8 @@ router.post("/register", async (req, res) => {
       phone,
       password,
       designation,
+      joiningDate,
+      DOB,
       profilePicture,
       isActivated: true,
     });
