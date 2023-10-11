@@ -60,6 +60,26 @@ router.post("/create-payment-intent", async (req, res) => {
     // Retrieve the customer's Stripe information using their email
     const stripeCustomer = await stripe.customers.list({ email: user.email });
 
+    // if stripeCustomer get the payment method id and attach to customer
+    if (stripeCustomer.data.length > 0) {
+      const paymentMethod = await stripe.paymentMethods.list({
+        customer: stripeCustomer.data[0].id,
+        type: "card",
+      });
+
+      if (paymentMethod.data.length > 0) {
+        await stripe.paymentMethods.attach(paymentMethod.data[0].id, {
+          customer: stripeCustomer.data[0].id,
+        });
+
+        await stripe.customers.update(stripeCustomer.data[0].id, {
+          invoice_settings: {
+            default_payment_method: paymentMethod.data[0].id,
+          },
+        });
+      }
+    }
+
     // check if current customer, if not create new customer
     if (stripeCustomer.data.length === 0) {
       const customer = await stripe.customers.create({
