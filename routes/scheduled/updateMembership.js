@@ -65,7 +65,7 @@ const updateMemberships = async () => {
 // Schedule the task to run every 24 hours (at midnight)
 const rule = new schedule.RecurrenceRule();
 rule.hour = 3; // 0-23 (midnight)
-rule.minute = 5; // 0-59
+rule.minute = 30; // 0-59
 
 const job = schedule.scheduleJob(rule, async () => {
   console.log("Scheduled task started...");
