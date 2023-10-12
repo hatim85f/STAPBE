@@ -372,6 +372,7 @@ router.post("/", auth, async (req, res) => {
 
     const newPayment = new Payment({
       user: user._id,
+      stripeSubscriptionId: subscriptionId,
       subscription: ourSubscriptionId,
       membership: newMembership._id,
       package: package._id,
@@ -468,6 +469,7 @@ router.post("/create-subscription", auth, async (req, res) => {
         customer: user._id,
         package: package._id,
         subscriptionId: subscription.id,
+        stripeSubscriptionId: subscriptionId,
         billingPeriod: type,
         price: payment,
         nextBillingDate: nextBillingDate,
@@ -547,5 +549,14 @@ router.post("/create-subscription", auth, async (req, res) => {
     return res.status().send({ error: "error", message: error.message });
   }
 });
+
+// user node-scheduler to check if subscription is active or not
+// grap all the subscriptions for all users from stripe and check if subscription is active or not
+// get the subscriptions from database as well and comapare them to check if they are active or not
+// then update the backend if there is any chages
+
+// @route   GET api/membership
+// @desc    Get all memberships
+// @access  Private
 
 module.exports = router;

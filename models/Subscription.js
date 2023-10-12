@@ -16,6 +16,10 @@ const SubscriptionSchema = new Schema({
     type: String, // Stripe subscription ID
     required: true,
   },
+  stripeSubscriptionId: {
+    type: String, // Stripe subscription ID
+    required: true,
+  },
   billingPeriod: {
     type: String, // "Monthly" or "Yearly" (or any other billing period you support)
     required: true,
