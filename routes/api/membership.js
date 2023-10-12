@@ -7,6 +7,7 @@ const Package = require("../../models/Package");
 const Subscription = require("../../models/Subscription");
 const Payment = require("../../models/Payment");
 const router = express.Router();
+const sgMail = require("@sendgrid/mail");
 const moment = require("moment");
 
 const stripeSecretKey =
@@ -14,10 +15,10 @@ const stripeSecretKey =
     ? process.env.STRIPE_SECRET_KEY
     : config.get("STRIPE_SECRET_KEY");
 
-// const stripPublishableKey =
-//   process.env.NODE_ENV === "production"
-//     ? process.env.STRIPE_PUBLISHABLE_KEY
-//     : config.get("STRIPE_PUBLISHABLE_KEY");
+const mailApi =
+  process.env.NODE_ENV === "production"
+    ? process.env.Mail_API_Key
+    : config.get("Mail_API_Key");
 
 const stripe = require("stripe")(stripeSecretKey);
 
@@ -300,10 +301,8 @@ router.post("/", auth, async (req, res) => {
 
     const dateInLocalTimezone = moment(nextBillingDate, "DD/MM/YYYY");
 
-    // Convert the local date to a Unix timestamp
-    const unixTimestamp = dateInLocalTimezone.unix();
-
     // Create a subscriction in Stripe
+    let ourSubscriptionId = null;
     let subscriptionId;
     if (autoRenew) {
       const setupIntent = await stripe.setupIntents.create({
@@ -340,12 +339,19 @@ router.post("/", auth, async (req, res) => {
       });
 
       await Subscription.insertMany(newSubscription);
+
+      const newSubscriptionId = await Subscription.findOne({
+        customer: user._id,
+        package: package._id,
+        subscriptionId: subscription.id,
+      });
+
+      ourSubscriptionId = newSubscriptionId._id;
     }
     // Create new membership
     const newMembership = new MemberShip({
       user: user._id,
       package: package._id,
-      subscriptionId: subscriptionId,
       startDate: new Date(),
       endDate:
         type === "Monthly"
@@ -358,12 +364,16 @@ router.post("/", auth, async (req, res) => {
       ],
       savePaymentMethod: savePaymentMethod,
       lastFourDigits: lastFourDigits,
+      isSubscription: autoRenew,
+      subscriptionId: ourSubscriptionId,
     });
 
     await MemberShip.insertMany(newMembership);
 
     const newPayment = new Payment({
       user: user._id,
+      subscription: ourSubscriptionId,
+      membership: newMembership._id,
       package: package._id,
       amount: payment,
       paymentDate: new Date(),
@@ -371,6 +381,27 @@ router.post("/", auth, async (req, res) => {
     });
 
     await Payment.insertMany(newPayment);
+
+    sgMail.setApiKey(mailApi);
+
+    // Send the email with SendGrid
+    const msg = {
+      to: user.email,
+      from: "info@stap-crm.com",
+      templateId: "d-1c4b351bf0c34c66910d2bae9e3b5db1", // Your dynamic template ID
+      dynamicTemplateData: {
+        userName: user.userName,
+        package_name: package.name,
+        businesses_number: package.limits.businesses,
+        payment: payment,
+        type: type,
+        start_date: moment(new Date()).format("DD/MM/YYYY"),
+        end_date: nextBillingDate,
+        next_billing_date: nextBillingDate,
+      },
+    };
+
+    await sgMail.send(msg);
 
     res.status(200).json({
       message: "Membership created successfully",
@@ -384,6 +415,11 @@ router.post("/", auth, async (req, res) => {
     });
   }
 });
+
+// create subscription and add details to database mobile only
+// as per paymentsheet we did create payment intent previously and now we are confirming subscription in case of autroRenew === true
+// the function is taking stripe customer last4 digits and add to database
+// adding the subscription details to database and stripe
 
 router.post("/create-subscription", auth, async (req, res) => {
   const {
@@ -408,6 +444,7 @@ router.post("/create-subscription", auth, async (req, res) => {
       type: "card",
     });
 
+    let ourSubscriptionId = null;
     let subscriptionId;
     if (autoRenew) {
       const subscription = await stripe.subscriptions.create({
@@ -439,12 +476,21 @@ router.post("/create-subscription", auth, async (req, res) => {
       });
 
       await Subscription.insertMany(newSubscription);
+
+      // get the new created subscription ID
+
+      const newSubscriptionId = await Subscription.findOne({
+        customer: user._id,
+        package: package._id,
+        subscriptionId: subscription.id,
+      });
+
+      ourSubscriptionId = newSubscriptionId._id;
     }
 
     const newMembership = new MemberShip({
       user: user._id,
       package: package._id,
-      subscriptionId: subscriptionId,
       startDate: new Date(),
       endDate:
         type === "Monthly"
@@ -457,12 +503,16 @@ router.post("/create-subscription", auth, async (req, res) => {
       ],
       savePaymentMethod: savePaymentMethod,
       lastFourDigits: paymentMethod.data[0].card.last4,
+      isSubscription: autoRenew,
+      subscriptionId: ourSubscriptionId,
     });
 
     await MemberShip.insertMany(newMembership);
 
     const newPayment = new Payment({
       user: user._id,
+      subscription: ourSubscriptionId,
+      membership: newMembership._id,
       package: package._id,
       amount: payment,
       paymentDate: new Date(),
@@ -470,6 +520,27 @@ router.post("/create-subscription", auth, async (req, res) => {
     });
 
     await Payment.insertMany(newPayment);
+
+    sgMail.setApiKey(mailApi);
+
+    // Send the email with SendGrid
+    const msg = {
+      to: user.email,
+      from: "info@stap-crm.com",
+      templateId: "d-1c4b351bf0c34c66910d2bae9e3b5db1", // Your dynamic template ID
+      dynamicTemplateData: {
+        userName: user.userName,
+        package_name: package.name,
+        businesses_number: package.limits.businesses,
+        payment: payment,
+        type: type,
+        start_date: moment(new Date()).format("DD/MM/YYYY"),
+        end_date: nextBillingDate,
+        next_billing_date: nextBillingDate,
+      },
+    };
+
+    await sgMail.send(msg);
 
     return res.status(200).send({ message: "Membership Created Successfully" });
   } catch (error) {

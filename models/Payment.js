@@ -4,12 +4,20 @@ const Schema = mongoose.Schema;
 const PaymentSchema = new Schema({
   user: {
     type: mongoose.Types.ObjectId,
-    ref: "user", // Reference to the User model for linking to a specific user
+    ref: "user",
     required: true,
   },
   subscription: {
     type: mongoose.Types.ObjectId,
-    ref: "subscription", // Reference to the Subscription model if payments are associated with subscriptions
+    ref: "subscription",
+  },
+  membership: {
+    type: mongoose.Types.ObjectId,
+    ref: "membership",
+  },
+  package: {
+    type: mongoose.Types.ObjectId,
+    ref: "package",
   },
   amount: {
     type: Number, // The payment amount in your currency (e.g., USD)

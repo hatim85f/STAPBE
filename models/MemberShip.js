@@ -27,6 +27,14 @@ const MembershipSchema = new Schema({
     type: Boolean,
     default: true,
   },
+  isSubscription: {
+    type: Boolean,
+    default: false,
+  },
+  subscriptionId: {
+    type: mongoose.Types.ObjectId,
+    ref: "subscription",
+  },
   // Payment-related fields
   payments: [
     {
