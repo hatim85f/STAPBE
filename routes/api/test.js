@@ -53,6 +53,16 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+router.put("/", async (req, res) => {
+  try {
+    const memberships = await Membership.find().exec();
+
+    return res.status(200).send({ memberships: memberships });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
 // packageId,
 // type,
 // payment,

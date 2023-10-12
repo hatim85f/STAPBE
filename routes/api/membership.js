@@ -299,8 +299,6 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    const dateInLocalTimezone = moment(nextBillingDate, "DD/MM/YYYY");
-
     // Create a subscriction in Stripe
     let ourSubscriptionId = null;
     let subscriptionId;
@@ -330,7 +328,7 @@ router.post("/", auth, async (req, res) => {
       const newSubscription = new Subscription({
         customer: user._id,
         package: package._id,
-        subscriptionId: subscriptionId,
+        subscriptionId: subscriptionId, // stripe subscription id
         billingPeriod: type,
         price: payment,
         nextBillingDate: nextBillingDate,
@@ -365,14 +363,13 @@ router.post("/", auth, async (req, res) => {
       savePaymentMethod: savePaymentMethod,
       lastFourDigits: lastFourDigits,
       isSubscription: autoRenew,
-      subscriptionId: ourSubscriptionId,
+      subscriptionId: ourSubscriptionId, // our subscription id from database
     });
 
     await MemberShip.insertMany(newMembership);
 
     const newPayment = new Payment({
       user: user._id,
-      stripeSubscriptionId: subscriptionId,
       subscription: ourSubscriptionId,
       membership: newMembership._id,
       package: package._id,
@@ -468,8 +465,7 @@ router.post("/create-subscription", auth, async (req, res) => {
       const newSubscription = new Subscription({
         customer: user._id,
         package: package._id,
-        subscriptionId: subscription.id,
-        stripeSubscriptionId: subscriptionId,
+        subscriptionId: subscription.id, // stripe subscription id
         billingPeriod: type,
         price: payment,
         nextBillingDate: nextBillingDate,
@@ -506,14 +502,14 @@ router.post("/create-subscription", auth, async (req, res) => {
       savePaymentMethod: savePaymentMethod,
       lastFourDigits: paymentMethod.data[0].card.last4,
       isSubscription: autoRenew,
-      subscriptionId: ourSubscriptionId,
+      subscriptionId: ourSubscriptionId, // our subscription id from database
     });
 
     await MemberShip.insertMany(newMembership);
 
     const newPayment = new Payment({
       user: user._id,
-      subscription: ourSubscriptionId,
+      subscription: ourSubscriptionId, // our subscription id from database
       membership: newMembership._id,
       package: package._id,
       amount: payment,
@@ -554,9 +550,5 @@ router.post("/create-subscription", auth, async (req, res) => {
 // grap all the subscriptions for all users from stripe and check if subscription is active or not
 // get the subscriptions from database as well and comapare them to check if they are active or not
 // then update the backend if there is any chages
-
-// @route   GET api/membership
-// @desc    Get all memberships
-// @access  Private
 
 module.exports = router;
