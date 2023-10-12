@@ -1,6 +1,7 @@
 const schedule = require("node-schedule");
 const MemberShip = require("../../models/MemberShip");
 const Subscription = require("../../models/Subscription");
+const Checks = require("../../models/Checks");
 const stripeSecretKey =
   process.env.NODE_ENV === "production"
     ? process.env.STRIPE_SECRET_KEY
@@ -64,7 +65,7 @@ const updateMemberships = async () => {
 // Schedule the task to run every 24 hours (at midnight)
 const rule = new schedule.RecurrenceRule();
 rule.hour = 3; // 0-23 (midnight)
-rule.minute = 0; // 0-59
+rule.minute = 5; // 0-59
 
 const job = schedule.scheduleJob(rule, async () => {
   console.log("Scheduled task started...");
@@ -89,6 +90,7 @@ const job = schedule.scheduleJob(rule, async () => {
 
     // Log or send the summary report as needed
     console.log("Scheduled task completed. Summary Report:", summaryReport);
+    await Checks.insertMany(summaryReport);
   } catch (error) {
     console.error("Error updating memberships:", error);
 
@@ -108,5 +110,7 @@ const job = schedule.scheduleJob(rule, async () => {
       "Scheduled task completed with errors. Summary Report:",
       summaryReport
     );
+
+    await Checks.insertMany(summaryReport);
   }
 });

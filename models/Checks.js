@@ -25,7 +25,7 @@ const ChecksSchema = Schema({
     type: Number,
     required: true,
   },
-  haveUpadated: {
+  haveUpadates: {
     type: Boolean,
     required: true,
   },
