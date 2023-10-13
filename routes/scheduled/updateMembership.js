@@ -114,3 +114,5 @@ const job = schedule.scheduleJob(rule, async () => {
     await Checks.insertMany(summaryReport);
   }
 });
+
+job.invoke();
