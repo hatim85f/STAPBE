@@ -9,6 +9,7 @@ const Payment = require("../../models/Payment");
 const router = express.Router();
 const sgMail = require("@sendgrid/mail");
 const moment = require("moment");
+const Eligibility = require("../../models/Eligibility");
 
 const stripeSecretKey =
   process.env.NODE_ENV === "production"
@@ -379,6 +380,17 @@ router.post("/", auth, async (req, res) => {
     });
 
     await Payment.insertMany(newPayment);
+
+    const newEligibility = new Eligibility({
+      userId: userId,
+      businesses: package.limits.businesses,
+      teamMembers: package.limits.teamMembers,
+      admins: package.limits.admins,
+      products: package.limits.products,
+      clients: package.limits.clients,
+    });
+
+    await Eligibility.insertMany(newEligibility);
 
     sgMail.setApiKey(mailApi);
 

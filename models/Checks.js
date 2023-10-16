@@ -22,10 +22,10 @@ const ChecksSchema = Schema({
     required: true,
   },
   timeTaken: {
-    type: Number,
+    type: String,
     required: true,
   },
-  haveUpadates: {
+  haveUpdates: {
     type: Boolean,
     required: true,
   },

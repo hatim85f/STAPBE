@@ -1,10 +1,74 @@
 const express = require("express");
 const connectDB = require("./config/db");
 var cors = require("cors");
+const {
+  updateMemberships,
+  createSummaryReport,
+} = require("./routes/scheduled/updateMembership");
+const { scheduleJob, RecurrenceRule } = require("node-schedule");
+const Checks = require("./models/Checks");
 
 const app = express();
 
 connectDB();
+
+const rule = new RecurrenceRule();
+rule.hour = 0; // Set to the current hour
+rule.minute = 0; // Set to the current minute
+
+const job = scheduleJob(rule, async () => {
+  console.log("Scheduled task started...");
+  const startTime = new Date();
+
+  // Initialize the count
+  let numberOfUpdates = 0;
+
+  // Perform the task
+  try {
+    numberOfUpdates = await updateMemberships(); // Get the actual number of updates
+    const endTime = new Date();
+    const timeTaken = (endTime - startTime) / 1000 + " sec"; // Calculate time taken
+    const jobDone = numberOfUpdates > 0; // Use boolean value
+
+    // Create a summary report
+    const summaryReport = createSummaryReport(
+      "Success",
+      timeTaken,
+      jobDone,
+      numberOfUpdates
+    );
+    summaryReport.endTime = endTime;
+
+    // Log or send the summary report as needed
+    console.log("Scheduled task completed. Summary Report:", summaryReport);
+    await Checks.insertMany(summaryReport);
+  } catch (error) {
+    console.error("Error updating memberships:", error);
+
+    // Handle errors and set numberOfUpdates accordingly
+    numberOfUpdates = -1;
+
+    // Create a summary report for a failed task
+    const endTime = new Date();
+    const timeTaken = (endTime - startTime) / 1000 + " sec"; // Calculate time taken
+    const summaryReport = createSummaryReport(
+      "Failed due to an error",
+      timeTaken,
+      false,
+      numberOfUpdates
+    );
+    summaryReport.endTime = endTime;
+
+    // Log or send the summary report for the failed task
+    console.log(
+      "Scheduled task completed with errors. Summary Report:",
+      summaryReport
+    );
+
+    await Checks.insertMany(summaryReport);
+  }
+});
+
 app.use(express.json());
 app.use(cors());
 
@@ -27,4 +91,6 @@ app.use("/api/test", require("./routes/api/test"));
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`STAP Server started on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`STAP Server started on port ${PORT}`);
+});

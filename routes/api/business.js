@@ -3,6 +3,8 @@ const Business = require("../../models/Business");
 const BusinessUsers = require("../../models/BusinessUsers");
 const { mongoose } = require("mongoose");
 const auth = require("../../middleware/auth");
+const MemberShip = require("../../models/MemberShip");
+const Package = require("../../models/Package");
 const router = express.Router();
 
 // getting all businesses for the user
@@ -96,7 +98,7 @@ router.get("/employee", auth, async (req, res) => {
 });
 
 // posting new business to create
-router.post("/create", async (req, res) => {
+router.post("/create", auth, async (req, res) => {
   const {
     businessLogo,
     businessName,
@@ -114,6 +116,28 @@ router.post("/create", async (req, res) => {
   } = req.body; // destructuring
 
   try {
+    // check if the user has an active membership allows him to create a business
+
+    const userMembership = await MemberShip.findOne({
+      user: userId,
+      isActive: true,
+    });
+
+    if (!userMembership) {
+      return res.status(500).json({
+        error: "Something Went Wron",
+        message:
+          "You don't have an active membership, please got to packges, and select your package",
+      });
+    }
+
+    // check if user has a membership, how many businesses he should have
+    // check UserBusinesses collection for userId to get number of businesses created under his ID
+
+    const userPackage = await Package.findOne({ _id: userMembership.package });
+
+    return res.status(200).json({ userPackage });
+
     // check if all fields are filled
     if (
       !businessLogo ||
