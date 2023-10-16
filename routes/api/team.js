@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const sgMail = require("@sendgrid/mail");
 const Business = require("../../models/Business");
 const { default: mongoose } = require("mongoose");
+const Eligibility = require("../../models/Eligibility");
 
 const mailApi =
   process.env.NODE_ENV === "production"
@@ -31,6 +32,7 @@ const setcretToken =
 // access   Private needs login token
 router.post("/", auth, async (req, res) => {
   const {
+    userId,
     email,
     password,
     userName,
@@ -46,6 +48,19 @@ router.post("/", auth, async (req, res) => {
   } = req.body;
 
   try {
+    // check if the user eligible to add new team member
+
+    const userEligibilty = await Eligibility.findOne({ userId });
+    const teamMembers = userEligibilty.teamMembers;
+
+    if (teamMembers === 0) {
+      return res.status(400).json({
+        error: "Error",
+        message:
+          "You are not eligible to add new team member, Kindly check your package details. You can upgrade your package from the packages page",
+      });
+    }
+
     const user = await User.findOne({ email });
 
     if (user) {
@@ -88,6 +103,8 @@ router.post("/", auth, async (req, res) => {
     const business = await Business.findOne({ _id: businessId });
 
     const businessName = business.businessName;
+
+    await Eligibility.updateOne({ userId }, { $inc: { teamMembers: -1 } });
 
     sgMail.setApiKey(mailApi);
 

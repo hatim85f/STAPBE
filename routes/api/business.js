@@ -5,6 +5,7 @@ const { mongoose } = require("mongoose");
 const auth = require("../../middleware/auth");
 const MemberShip = require("../../models/MemberShip");
 const Package = require("../../models/Package");
+const Eligibility = require("../../models/Eligibility");
 const router = express.Router();
 
 // getting all businesses for the user
@@ -125,18 +126,23 @@ router.post("/create", auth, async (req, res) => {
 
     if (!userMembership) {
       return res.status(500).json({
-        error: "Something Went Wron",
+        error: "Something Went Wrong",
         message:
           "You don't have an active membership, please got to packges, and select your package",
       });
     }
 
-    // check if user has a membership, how many businesses he should have
-    // check UserBusinesses collection for userId to get number of businesses created under his ID
+    // if user has a membership check if he can create a business
+    const userEligibilty = await Eligibility.findOne({ userId });
+    const businessesEligibilty = userEligibilty.businesses;
 
-    const userPackage = await Package.findOne({ _id: userMembership.package });
-
-    return res.status(200).json({ userPackage });
+    if (businessesEligibilty === 0) {
+      return res.status(500).json({
+        error: "Sorry",
+        message:
+          "You don't have any businesses left, you can upgrade your plan from Pacakges page",
+      });
+    }
 
     // check if all fields are filled
     if (
@@ -204,6 +210,8 @@ router.post("/create", auth, async (req, res) => {
 
     // save new business user
     await BusinessUsers.insertMany(newBusinessUser);
+
+    await Eligibility.updateMany({ userId }, { $inc: { businesses: -1 } });
 
     res.status(200).json({ message: "Your New Business created successfully" });
   } catch (error) {
