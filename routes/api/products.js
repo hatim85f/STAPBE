@@ -3,6 +3,9 @@ const auth = require("../../middleware/auth");
 const Products = require("../../models/Products");
 const { default: mongoose } = require("mongoose");
 const Business = require("../../models/Business");
+const Eligibility = require("../../models/Eligibility");
+const User = require("../../models/User");
+const BusinessUsers = require("../../models/BusinessUsers");
 const router = express.Router();
 
 // @route   GET api/products
@@ -26,6 +29,7 @@ router.get("/", auth, async (req, res) => {
 // @access  Private
 router.post("/", auth, async (req, res) => {
   const {
+    userId,
     businessId,
     productName,
     productNickName,
@@ -42,6 +46,18 @@ router.post("/", auth, async (req, res) => {
 
   try {
     // check if product with the same name is already exists under the same business
+
+    // check user eligibility to create new product
+    const userEligibilty = await Eligibility.findOne({ userId });
+    const productsEligibility = userEligibilty.products;
+
+    if (productsEligibility === 0) {
+      return res.status(500).json({
+        error: "Error",
+        message:
+          "You are not eligible to add new product, Kindly check your package details. You can upgrade your package from the packages page",
+      });
+    }
 
     const product = await Products.findOne({
       businessId,
@@ -76,6 +92,9 @@ router.post("/", auth, async (req, res) => {
     });
 
     await Products.insertMany(newProduct);
+
+    await Eligibility.updateOne({ userId }, { $inc: { products: -1 } });
+
     return res.status(200).json({
       newProduct,
       message: `Product ${productNickName} created Successfully`,
@@ -139,8 +158,18 @@ router.put("/", auth, async (req, res) => {
 router.delete("/:id", auth, async (req, res) => {
   const productId = req.params.id;
 
+  // aggregate by taking businessId in product to get the id of the business
+  // then aggregate to get the userId of the businessusers
+  // then update products in eligibility of the user
+
   try {
-    await Products.deleteOne({ _id: productId });
+    const product = await Products.deleteOne({ _id: productId });
+
+    const businessId = product.businessId;
+    const businessUser = await BusinessUsers.findOne({ businessId });
+    const userId = businessUser.userId;
+    await Eligibility.updateOne({ userId }, { $inc: { products: 1 } });
+
     return res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
     return res.status(500).json({ error: "Error", message: error.message });

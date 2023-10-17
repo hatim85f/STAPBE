@@ -10,6 +10,8 @@ const router = express.Router();
 const sgMail = require("@sendgrid/mail");
 const moment = require("moment");
 const Eligibility = require("../../models/Eligibility");
+const { default: mongoose } = require("mongoose");
+const SupportCase = require("../../models/SupportCase");
 
 const stripeSecretKey =
   process.env.NODE_ENV === "production"
@@ -145,6 +147,15 @@ router.post("/create-mobile-payment-intent", async (req, res) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: stripeCustomer.data[0].id,
     });
+
+    // check if the customer has any subscription in stripe return if yes
+    if (subscriptions.data.length > 0) {
+      return res.status(200).send({
+        message: `You already have a subscription for the selected package, which will end on ${new Date(
+          subscriptions.data[0].current_period_end * 1000
+        ).toDateString()}, You need to upgrade or cancel before you can subscribe to a new package`,
+      });
+    }
 
     // Check if there is a subscription for the specified packageId
     for (const subscription of subscriptions.data) {
@@ -383,6 +394,7 @@ router.post("/", auth, async (req, res) => {
 
     const newEligibility = new Eligibility({
       userId: userId,
+      packageId: packageId,
       businesses: package.limits.businesses,
       teamMembers: package.limits.teamMembers,
       admins: package.limits.admins,
@@ -558,9 +570,361 @@ router.post("/create-subscription", auth, async (req, res) => {
   }
 });
 
-// user node-scheduler to check if subscription is active or not
-// grap all the subscriptions for all users from stripe and check if subscription is active or not
-// get the subscriptions from database as well and comapare them to check if they are active or not
-// then update the backend if there is any chages
+// perfrom a cancel stripe subscription route
+// cancel the subscription in stripe and update the subscription in database
+// @route   POST api/membership/cancel-subscription
+// @desc    cancel subscription
+// @access  Private
+
+router.post("/cancel-subscription", auth, async (req, res) => {
+  const { userId, stripeSubscriptionId, pacakgeId, userEmail } = req.body;
+
+  try {
+    await stripe.customers.list({ email: userEmail });
+
+    await stripe.subscriptions.del(stripeSubscriptionId);
+
+    await Subscription.updateMany(
+      { subscriptionId: stripeSubscriptionId },
+      { isActive: false }
+    );
+
+    return res.status(200).send({
+      message: "Subscription Canceled Successfully, and will not be renewed",
+    });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
+// perfrom upgrade subscription route
+// upgrade the subscription in stripe and update the subscription in database
+// @route   POST api/membership/upgrade-subscription
+// @desc    upgrade subscription
+// @access  Private
+
+router.post("/create-upgrade-intent", auth, async (req, res) => {
+  const {
+    userId,
+    stripeSubscriptionId,
+    packageId,
+    userEmail,
+    oldPackageId,
+    type,
+  } = req.body;
+
+  try {
+    const user = await User.findOne({ _id: userId }).select("-password");
+    const stripeCustomer = await stripe.customers.list({ email: user.email });
+    const stripeCustomerId = stripeCustomer.data[0].id;
+
+    const oldPackage = await Package.findOne({ _id: oldPackageId });
+
+    const package = await Package.findOne({ _id: packageId });
+
+    const previousDetails = await Payment.aggregate([
+      {
+        $match: {
+          package: new mongoose.Types.ObjectId(oldPackageId),
+          user: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "subscription",
+          // pipeline: [{ $match: { customer: userId } }],
+          foreignField: "_id",
+          as: "subscription",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          amount: 1,
+          paymentDate: 1,
+          paymentMethod: 1,
+          nextBillingDate: {
+            $arrayElemAt: ["$subscription.nextBillingDate", 0],
+          },
+          membership: 1,
+          user: 1,
+          billingPeriod: { $arrayElemAt: ["$subscription.billingPeriod", 0] },
+        },
+      },
+    ]);
+
+    // calculate number of days consumed from the old package
+    const startDate = new Date(previousDetails[0].paymentDate);
+    const today = new Date();
+
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const daysConsumed = Math.floor((today - startDate) / millisecondsPerDay);
+
+    const numberOfDays =
+      previousDetails[0].billingPeriod === "Monthly" ? 30 : 365;
+    const costPerDay = previousDetails[0].amount / numberOfDays;
+    const costForDaysConsumed = costPerDay * daysConsumed;
+    const totalRefund = previousDetails[0].amount - costForDaysConsumed;
+
+    const newPaymentPrice =
+      type === "Monthly" ? package.monthlyPrice : package.yearlyPrice;
+    const newRequestedPayment = newPaymentPrice - totalRefund;
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: newRequestedPayment * 100,
+      currency: "usd",
+      payment_method_types: ["card"],
+      setup_future_usage: "off_session",
+      customer: stripeCustomerId,
+    });
+
+    return res.status(200).send({
+      clientSecret: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: stripeCustomer.data[0].id,
+      paymentIntentId: paymentIntent.id,
+      totalRefund: totalRefund,
+    });
+
+    await stripe.subscriptions.update(stripeSubscriptionId, {
+      cancel_at_period_end: false,
+      items: [
+        {
+          id: stripeSubscriptionId,
+          price:
+            type === "Monthly"
+              ? package.stripeMonthlyPriceId
+              : package.stripeYearlyPriceId,
+        },
+      ],
+    });
+
+    const newSubscription = await Subscription.updateMany(
+      { subscriptionId: stripeSubscriptionId },
+      { package: packageId }
+    );
+
+    await MemberShip.updateMany(
+      { subscriptionId: newSubscription._id },
+      { package: packageId }
+    );
+
+    await Payment.updateMany(
+      { subscription: stripeSubscriptionId }, // Fix this line
+      { package: packageId }
+    );
+
+    return res.status(200).send({
+      message: "Subscription Upgraded Successfully",
+    });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
+router.post("/upgrade-subscription", auth, async (req, res) => {
+  const {
+    userId,
+    packageId,
+    type,
+    payment,
+    autoRenew,
+    savePaymentMethod,
+    nextBillingDate,
+  } = req.body;
+
+  const user = await User.findOne({ _id: userId }).select("-password");
+
+  try {
+    const newPlan = await Package.findOne({ _id: packageId });
+
+    const previousSubscription = await Subscription.findOne({
+      customer: userId,
+      isActive: true,
+    });
+    const stripeCustomer = await stripe.customers.list({ email: user.email });
+    const paymentMethod = await stripe.paymentMethods.list({
+      customer: stripeCustomer.data[0].id,
+      type: "card",
+    });
+
+    const currentSubscriptionDetails = await stripe.subscriptions.retrieve(
+      previousSubscription.subscriptionId
+    );
+    const previouslyPaid = previousSubscription.price;
+    const previousPlanType = previousSubscription.billingPeriod;
+
+    // calculate number of days consumed from the old package
+    const startDate = moment(currentSubscriptionDetails.created * 1000);
+    const today = moment();
+
+    const daysConsumed = today.diff(startDate, "days");
+
+    const numberOfDays = previousPlanType === "Monthly" ? 30 : 365;
+    const costPerDay = previouslyPaid / numberOfDays;
+    const costForDaysConsumed = costPerDay * daysConsumed;
+
+    const totalRefund = previouslyPaid - costForDaysConsumed;
+
+    let stripeSubscriptionId;
+
+    if (autoRenew) {
+      const stripeSubscription = await stripe.subscriptions.update(
+        previousSubscription.subscriptionId,
+        {
+          cancel_at_period_end: false,
+          items: [
+            {
+              price:
+                type === "Monthly"
+                  ? newPlan.stripeMonthlyPriceId
+                  : newPlan.stripeYearlyPriceId,
+            },
+          ],
+          prorate: true,
+          default_payment_method: paymentMethod.data[0].id,
+          collection_method: "send_invoice",
+          days_until_due: type === "Monthly" ? 30 : 365,
+        }
+      );
+      stripeSubscriptionId = stripeSubscription.id;
+    }
+
+    // update membership details
+    await MemberShip.updateMany(
+      {
+        userId: userId,
+        subscriptionId: previousSubscription._id,
+      },
+      {
+        $set: {
+          package: packageId,
+          startDate: new Date(),
+          endDate:
+            type === "Monthly"
+              ? new Date(new Date().setMonth(new Date().getMonth() + 1))
+              : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+          autoRenew: autoRenew,
+          isActive: true,
+          // push the payment to payments array
+
+          savePaymentMethod: savePaymentMethod,
+          lastFourDigits: paymentMethod.data[0].card.last4,
+          isSubscription: autoRenew,
+        },
+        $push: {
+          payments: {
+            amount: payment,
+            paymentDate: new Date(),
+            paymentMethod: "card",
+          },
+        },
+      }
+    );
+
+    // update subscription details
+    await Subscription.updateMany(
+      {
+        customer: userId,
+        subscriptionId: previousSubscription._id,
+      },
+      {
+        $set: {
+          package: packageId,
+          subscriptionId: stripeSubscriptionId,
+          billingPeriod: type,
+          price:
+            type === "Monthly"
+              ? newPlan.totalMonthlyPrice
+              : newPlan.totalYearlyPrice,
+          nextBillingDate: nextBillingDate,
+          paymentMethod: "card",
+          isActive: true,
+        },
+      }
+    );
+
+    // update Payment details
+    await Payment.updateMany(
+      {
+        subscription: previousSubscription._id,
+        user: userId,
+      },
+      {
+        $set: {
+          package: packageId,
+          amount: payment,
+          paymentDate: new Date(),
+          paymentMethod: "card",
+        },
+      }
+    );
+
+    // update eligibility details
+    const oldPackage = await Package.findOne({
+      _id: previousSubscription.package,
+    });
+    const oldEligibility = await Eligibility.findOne({
+      userId: userId,
+      packageId: oldPackageId,
+    });
+
+    const differences = {
+      businesses: oldPackage.limits.businesses - oldEligibility.businesses,
+      teamMembers: oldPackage.limits.teamMembers - oldEligibility.teamMembers,
+      admins: oldPackage.limits.admins - oldEligibility.admins,
+      products: oldPackage.limits.products - oldEligibility.products,
+      clients: oldPackage.limits.clients - oldEligibility.clients,
+    };
+
+    const newEligibility = {
+      businesses: newPlan.limits.businesses - differences.businesses,
+      teamMembers: newPlan.limits.teamMembers - differences.teamMembers,
+      admins: newPlan.limits.admins - differences.admins,
+      products: newPlan.limits.products - differences.products,
+      clients: newPlan.limits.clients - differences.clients,
+    };
+
+    await Eligibility.updateMany(
+      { userId: userId, packageId: oldPackage._id }, // Assuming you're updating from the old package
+      {
+        $set: {
+          businesses: newEligibility.businesses,
+          teamMembers: newEligibility.teamMembers,
+          admins: newEligibility.admins,
+          products: newEligibility.products,
+          clients: newEligibility.clients,
+          packageId: packageId,
+        },
+      }
+    );
+
+    return res
+      .status(200)
+      .send({
+        message: `You just upgraded your subscription to ${newPlan.name}`,
+      });
+  } catch (error) {
+    const newSupportCase = new SupportCase({
+      userId: userId,
+      userName: user.userName,
+      phone: user.phone,
+      email: user.email,
+      subject: "Error in upgrade subscription",
+      message: error.message,
+      status: "Open",
+    });
+
+    const caseId = newSupportCase._id;
+
+    await SupportCase.insertMany(newSupportCase);
+
+    return res.status(500).send({
+      error: "Error !",
+      message: `Something Went wrong with your payment, please contact our support team at info@stap-crm.com and mention this case id ${caseId}`,
+    });
+  }
+});
 
 module.exports = router;

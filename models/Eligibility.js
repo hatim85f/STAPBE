@@ -5,6 +5,10 @@ const EligibilitySchema = Schema({
   _id: {
     type: mongoose.Types.ObjectId,
   },
+  packageId: {
+    type: mongoose.Types.ObjectId,
+    required: true,
+  },
   userId: {
     type: mongoose.Types.ObjectId,
     required: true,

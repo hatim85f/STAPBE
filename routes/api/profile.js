@@ -7,11 +7,19 @@ const moment = require("moment");
 const sgMail = require("@sendgrid/mail");
 const VerifyEmail = require("../../models/VerifyEmail");
 const config = require("config");
+const Subscription = require("../../models/Subscription");
 
 const mailApi =
   process.env.NODE_ENV === "production"
     ? process.env.Mail_API_Key
     : config.get("Mail_API_Key");
+
+const stripeSecretKey =
+  process.env.NODE_ENV === "production"
+    ? process.env.STRIPE_SECRET_KEY
+    : config.get("STRIPE_SECRET_KEY");
+
+const stripe = require("stripe")(stripeSecretKey);
 
 // @route   GET api/profile
 // @desc    Test route
@@ -47,11 +55,36 @@ router.get("/:userId", auth, async (req, res) => {
           as: "business",
         },
       },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "_id",
+          foreignField: "user",
+          as: "membership",
+        },
+      },
+      {
+        $lookup: {
+          from: "eligibilities",
+          localField: "_id",
+          foreignField: "userId",
+          as: "eligibility",
+        },
+      },
+      {
+        $lookup: {
+          from: "packages",
+          localField: "membership.package",
+          foreignField: "_id",
+          as: "package",
+        },
+      },
 
       {
         $project: {
           _id: 1,
           userName: 1,
+          isBusinessOwner: "user_business.isBusinessOwner",
           profilePicture: 1,
           phone: 1,
           email: 1,
@@ -62,11 +95,41 @@ router.get("/:userId", auth, async (req, res) => {
           numberOfBusinesses: { $size: "$business" },
           isActivated: 1,
           biometricEnabled: 1,
+          membershipStart: { $arrayElemAt: ["$membership.startDate", 0] },
+          membershipEnd: { $arrayElemAt: ["$membership.endDate", 0] },
+          membershipIsActive: { $arrayElemAt: ["$membership.isActive", 0] },
+          eligibleBusinesses: { $arrayElemAt: ["$eligibility.businesses", 0] },
+          eligibleEmployees: { $arrayElemAt: ["$eligibility.teamMembers", 0] },
+          eligibleAdmins: { $arrayElemAt: ["$eligibility.admins", 0] },
+          eligibleProducts: { $arrayElemAt: ["$eligibility.products", 0] },
+          eligibleClients: { $arrayElemAt: ["$eligibility.clients", 0] },
+          packageName: { $arrayElemAt: ["$package.name", 0] },
+          backgroundColor: { $arrayElemAt: ["$package.backgroundColor", 0] },
         },
       },
     ]);
 
-    return res.status(200).json({ userProfile });
+    // get user stripe subscription details using user.email
+
+    const stripeUser = await stripe.customers.list({
+      email: userProfile[0].email,
+    });
+
+    let stripeSubscription = null;
+
+    if (stripeUser.data.length > 0) {
+      stripeSubscription = await stripe.subscriptions.list({
+        customer: stripeUser.data[0].id,
+      });
+    }
+
+    let subscriptionIds = [];
+
+    if (stripeSubscription) {
+      subscriptionIds = stripeSubscription.data.map((sub) => sub.id);
+    }
+
+    return res.status(200).json({ userProfile, subscriptionIds });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
@@ -90,21 +153,21 @@ router.post("/verifyEmail", auth, async (req, res) => {
     const verifyingCode = Math.floor(1000 + Math.random() * 9000).toString();
 
     // // send email to user
-    // sgMail.setApiKey(mailApi);
+    sgMail.setApiKey(mailApi);
 
-    // // Send the email with SendGrid
-    // const msg = {
-    //   to: userEmail,
-    //   from: "info@stap-crm.com",
-    //   templateId: "d-d2cf2a8fa1e04b76b50b4fa43e46ba9a", // Your dynamic template ID
-    //   dynamicTemplateData: {
-    //     user_name: user.userName, // Replace with your user's name field
-    //     reset_code: verifyingCode,
-    //     code_requested: moment(new Date()).format("DD/MM/YYYY hh:mm a"),
-    //   },
-    // };
+    // Send the email with SendGrid
+    const msg = {
+      to: userEmail,
+      from: "info@stap-crm.com",
+      templateId: "d-d2cf2a8fa1e04b76b50b4fa43e46ba9a", // Your dynamic template ID
+      dynamicTemplateData: {
+        user_name: user.userName, // Replace with your user's name field
+        reset_code: verifyingCode,
+        code_requested: moment(new Date()).format("DD/MM/YYYY hh:mm a"),
+      },
+    };
 
-    // await sgMail.send(msg);
+    await sgMail.send(msg);
 
     const verification = new VerifyEmail({
       userId: userId,
