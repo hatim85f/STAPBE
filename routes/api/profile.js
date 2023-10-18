@@ -111,6 +111,7 @@ router.get("/:userId", auth, async (req, res) => {
           eligibleProducts: { $arrayElemAt: ["$eligibility.products", 0] },
           eligibleClients: { $arrayElemAt: ["$eligibility.clients", 0] },
           packageName: { $arrayElemAt: ["$package.name", 0] },
+          packageId: { $arrayElemAt: ["$package._id", 0] },
           backgroundColor: { $arrayElemAt: ["$package.backgroundColor", 0] },
         },
       },
