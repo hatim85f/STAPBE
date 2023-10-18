@@ -543,6 +543,19 @@ router.post("/create-subscription", auth, async (req, res) => {
 
     await Payment.insertMany(newPayment);
 
+    // update eligibility details
+    const newEligibility = new Eligibility({
+      userId: userId,
+      packageId: packageId,
+      businesses: package.limits.businesses,
+      teamMembers: package.limits.teamMembers,
+      admins: package.limits.admins,
+      products: package.limits.products,
+      clients: package.limits.clients,
+    });
+
+    await Eligibility.insertMany(newEligibility);
+
     sgMail.setApiKey(mailApi);
 
     // Send the email with SendGrid
@@ -685,38 +698,6 @@ router.post("/create-upgrade-intent", auth, async (req, res) => {
       customer: stripeCustomer.data[0].id,
       paymentIntentId: paymentIntent.id,
       totalRefund: totalRefund,
-    });
-
-    await stripe.subscriptions.update(stripeSubscriptionId, {
-      cancel_at_period_end: false,
-      items: [
-        {
-          id: stripeSubscriptionId,
-          price:
-            type === "Monthly"
-              ? package.stripeMonthlyPriceId
-              : package.stripeYearlyPriceId,
-        },
-      ],
-    });
-
-    const newSubscription = await Subscription.updateMany(
-      { subscriptionId: stripeSubscriptionId },
-      { package: packageId }
-    );
-
-    await MemberShip.updateMany(
-      { subscriptionId: newSubscription._id },
-      { package: packageId }
-    );
-
-    await Payment.updateMany(
-      { subscription: stripeSubscriptionId }, // Fix this line
-      { package: packageId }
-    );
-
-    return res.status(200).send({
-      message: "Subscription Upgraded Successfully",
     });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
@@ -867,7 +848,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     });
     const oldEligibility = await Eligibility.findOne({
       userId: userId,
-      packageId: oldPackageId,
+      packageId: oldPackage._id,
     });
 
     const differences = {
@@ -900,11 +881,9 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
       }
     );
 
-    return res
-      .status(200)
-      .send({
-        message: `You just upgraded your subscription to ${newPlan.name}`,
-      });
+    return res.status(200).send({
+      message: `You just upgraded your subscription to ${newPlan.name}`,
+    });
   } catch (error) {
     const newSupportCase = new SupportCase({
       userId: userId,
