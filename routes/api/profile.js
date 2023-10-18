@@ -91,7 +91,8 @@ router.get("/:userId", auth, async (req, res) => {
         $project: {
           _id: 1,
           userName: 1,
-          isBusinessOwner: "user_business.isBusinessOwner",
+          isBusinessOwner: { $arrayElemAt: ["$user_business.isOwner", 0] },
+
           profilePicture: 1,
           phone: 1,
           email: 1,
@@ -113,6 +114,7 @@ router.get("/:userId", auth, async (req, res) => {
           packageName: { $arrayElemAt: ["$package.name", 0] },
           packageId: { $arrayElemAt: ["$package._id", 0] },
           backgroundColor: { $arrayElemAt: ["$package.backgroundColor", 0] },
+          eligibilityId: { $arrayElemAt: ["$eligibility._id", 0] },
         },
       },
     ]);
