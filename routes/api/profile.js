@@ -60,6 +60,13 @@ router.get("/:userId", auth, async (req, res) => {
           from: "memberships",
           localField: "_id",
           foreignField: "user",
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+              },
+            },
+          ],
           as: "membership",
         },
       },
