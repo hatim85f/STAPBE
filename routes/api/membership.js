@@ -577,7 +577,7 @@ router.post("/create-subscription", auth, async (req, res) => {
 // @access  Private
 
 router.post("/cancel-subscription", auth, async (req, res) => {
-  const { userId, stripeSubscriptionId, pacakgeId, userEmail } = req.body;
+  const { userId, stripeSubscriptionId, packageId, userEmail } = req.body;
 
   try {
     await stripe.subscriptions.update(stripeSubscriptionId, {
@@ -587,7 +587,7 @@ router.post("/cancel-subscription", auth, async (req, res) => {
     await MemberShip.updateMany(
       {
         user: userId,
-        package: pacakgeId,
+        package: packageId,
       },
       {
         $set: {
@@ -599,12 +599,12 @@ router.post("/cancel-subscription", auth, async (req, res) => {
     await Subscription.updateMany(
       {
         customer: userId,
-        package: pacakgeId,
+        package: packageId,
         isActive: true,
       },
       {
         $set: {
-          isActive: false,
+          isCancelled: true,
         },
       }
     );

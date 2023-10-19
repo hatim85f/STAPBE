@@ -37,6 +37,10 @@ const SubscriptionSchema = new Schema({
     type: Boolean, // Indicates whether the subscription is active
     default: true, // Set to true initially
   },
+  isCancelled: {
+    type: Boolean, // Indicates whether the subscription is cancelled
+    default: false, // Set to false initially
+  },
 });
 
 module.exports = Subscription = mongoose.model(
