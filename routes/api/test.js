@@ -63,6 +63,24 @@ router.put("/", async (req, res) => {
   }
 });
 
+router.delete("/", async (req, res) => {
+  const { userId, subscriptionId } = req.body;
+
+  try {
+    // return res.status(200).send({ subscriptionId });
+    // cancel stripe subscription
+    // await stripe.subscriptions.del(subscriptionId);
+
+    await Subscription.deleteOne({ customer: userId });
+    await MemberShip.deleteOne({ user: userId });
+    await Payment.deleteOne({ user: userId });
+
+    return res.status(200).send({ message: "Subscription cancelled" });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
 // packageId,
 // type,
 // payment,

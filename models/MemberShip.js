@@ -64,6 +64,10 @@ const MembershipSchema = new Schema({
     type: Boolean,
     default: false, // Do not save payment method by default
   },
+  cancelledAttheEndOfBillingCycle: {
+    type: Boolean,
+    default: false, // Do not cancel at the end of billing cycle by default
+  },
 });
 
 module.exports = Membership = mongoose.model("membership", MembershipSchema);

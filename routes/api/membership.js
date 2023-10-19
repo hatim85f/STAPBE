@@ -543,19 +543,6 @@ router.post("/create-subscription", auth, async (req, res) => {
 
     await Payment.insertMany(newPayment);
 
-    // update eligibility details
-    const newEligibility = new Eligibility({
-      userId: userId,
-      packageId: packageId,
-      businesses: package.limits.businesses,
-      teamMembers: package.limits.teamMembers,
-      admins: package.limits.admins,
-      products: package.limits.products,
-      clients: package.limits.clients,
-    });
-
-    await Eligibility.insertMany(newEligibility);
-
     sgMail.setApiKey(mailApi);
 
     // Send the email with SendGrid
@@ -593,15 +580,34 @@ router.post("/cancel-subscription", auth, async (req, res) => {
   const { userId, stripeSubscriptionId, pacakgeId, userEmail } = req.body;
 
   try {
-    await stripe.customers.list({ email: userEmail });
+    await stripe.subscriptions.update(stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    });
 
-    await stripe.subscriptions.del(stripeSubscriptionId);
-
-    await Subscription.updateMany(
-      { subscriptionId: stripeSubscriptionId },
-      { isActive: false }
+    await MemberShip.updateMany(
+      {
+        user: userId,
+        package: pacakgeId,
+      },
+      {
+        $set: {
+          cancelledAttheEndOfBillingCycle: true,
+        },
+      }
     );
 
+    await Subscription.updateMany(
+      {
+        customer: userId,
+        package: pacakgeId,
+        isActive: true,
+      },
+      {
+        $set: {
+          isActive: false,
+        },
+      }
+    );
     return res.status(200).send({
       message: "Subscription Canceled Successfully, and will not be renewed",
     });
@@ -848,7 +854,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     });
     const oldEligibility = await Eligibility.findOne({
       userId: userId,
-      packageId: oldPackage._id,
+      packageId: oldPackageId,
     });
 
     const differences = {
