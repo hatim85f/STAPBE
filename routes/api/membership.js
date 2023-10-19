@@ -687,11 +687,21 @@ router.post("/create-upgrade-intent", auth, async (req, res) => {
     const totalRefund = previousDetails[0].amount - costForDaysConsumed;
 
     const newPaymentPrice =
-      type === "Monthly" ? package.monthlyPrice : package.yearlyPrice;
+      type === "Monthly" ? package.totalMonthlyPrice : package.totalYearlyPrice;
     const newRequestedPayment = newPaymentPrice - totalRefund;
 
+    // create ephemeral key for the customer for app
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: stripeCustomer.data[0].id },
+      { apiVersion: "2020-08-27" }
+    );
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: stripeCustomer.data[0].id,
+    });
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: newRequestedPayment * 100,
+      amount: parseInt(newRequestedPayment).toFixed(0) * 100,
       currency: "usd",
       payment_method_types: ["card"],
       setup_future_usage: "off_session",
@@ -704,6 +714,7 @@ router.post("/create-upgrade-intent", auth, async (req, res) => {
       customer: stripeCustomer.data[0].id,
       paymentIntentId: paymentIntent.id,
       totalRefund: totalRefund,
+      setupIntent: setupIntent.client_secret,
     });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
@@ -854,7 +865,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     });
     const oldEligibility = await Eligibility.findOne({
       userId: userId,
-      packageId: oldPackageId,
+      packageId: oldPackage._id,
     });
 
     const differences = {
