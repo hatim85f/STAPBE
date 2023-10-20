@@ -792,7 +792,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     // update membership details
     await MemberShip.updateMany(
       {
-        userId: userId,
+        User: userId,
         subscriptionId: previousSubscription._id,
       },
       {
@@ -825,7 +825,6 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     await Subscription.updateMany(
       {
         customer: userId,
-        subscriptionId: previousSubscription._id,
       },
       {
         $set: {
