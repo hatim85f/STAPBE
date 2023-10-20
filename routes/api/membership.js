@@ -589,11 +589,13 @@ router.post("/create-subscription", auth, async (req, res) => {
 // @access  Private
 
 router.post("/cancel-subscription", auth, async (req, res) => {
-  const { userId, stripeSubscriptionId, packageId, userEmail } = req.body;
+  const { userId, stripeSubscriptionId, packageId, userEmail, cencelDetails } =
+    req.body;
 
   try {
-    await stripe.subscriptions.update(stripeSubscriptionId, {
-      cancel_at_period_end: true,
+    const cencelled = await stripe.subscriptions.update(stripeSubscriptionId, {
+      cancel_immediately: true,
+      cancellation_details: cancelDetails,
     });
 
     await MemberShip.updateMany(
