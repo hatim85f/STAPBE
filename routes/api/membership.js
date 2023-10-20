@@ -832,7 +832,6 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
                   : newPlan.stripeYearlyPriceId,
             },
           ],
-          prorate: true,
           default_payment_method: paymentMethod.data[0].id,
           collection_method: "send_invoice",
           days_until_due: type === "Monthly" ? 30 : 365,
