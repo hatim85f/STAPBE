@@ -788,7 +788,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
       clients: newPlan.limits.clients - differences.clients,
     };
 
-    const ele = await Eligibility.updateMany(
+    await Eligibility.updateMany(
       { userId: userId, packageId: oldPackage._id }, // Assuming you're updating from the old package
       {
         $set: {
@@ -845,7 +845,6 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     await MemberShip.updateMany(
       {
         user: userId,
-        subscriptionId: previousSubscription._id,
       },
       {
         $set: {
@@ -876,7 +875,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     // update subscription details
     await Subscription.updateMany(
       {
-        _id: previousSubscription._id,
+        customer: userId,
       },
       {
         $set: {
@@ -897,7 +896,6 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     // update Payment details
     await Payment.updateMany(
       {
-        subscription: previousSubscription._id,
         user: userId,
       },
       {
