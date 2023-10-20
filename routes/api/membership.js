@@ -543,6 +543,18 @@ router.post("/create-subscription", auth, async (req, res) => {
 
     await Payment.insertMany(newPayment);
 
+    const newEligibility = new Eligibility({
+      userId: userId,
+      packageId: packageId,
+      businesses: package.limits.businesses,
+      teamMembers: package.limits.teamMembers,
+      admins: package.limits.admins,
+      products: package.limits.products,
+      clients: package.limits.clients,
+    });
+
+    await Eligibility.insertMany(newEligibility);
+
     sgMail.setApiKey(mailApi);
 
     // Send the email with SendGrid
@@ -750,6 +762,46 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     const currentSubscriptionDetails = await stripe.subscriptions.retrieve(
       previousSubscription.subscriptionId
     );
+
+    // update eligibility details
+    const oldPackage = await Package.findOne({
+      _id: previousSubscription.package,
+    });
+    const oldEligibility = await Eligibility.findOne({
+      userId: userId,
+      packageId: oldPackage._id,
+    });
+
+    const differences = {
+      businesses: oldPackage.limits.businesses - oldEligibility.businesses,
+      teamMembers: oldPackage.limits.teamMembers - oldEligibility.teamMembers,
+      admins: oldPackage.limits.admins - oldEligibility.admins,
+      products: oldPackage.limits.products - oldEligibility.products,
+      clients: oldPackage.limits.clients - oldEligibility.clients,
+    };
+
+    const newEligibility = {
+      businesses: newPlan.limits.businesses - differences.businesses,
+      teamMembers: newPlan.limits.teamMembers - differences.teamMembers,
+      admins: newPlan.limits.admins - differences.admins,
+      products: newPlan.limits.products - differences.products,
+      clients: newPlan.limits.clients - differences.clients,
+    };
+
+    const ele = await Eligibility.updateMany(
+      { userId: userId, packageId: oldPackage._id }, // Assuming you're updating from the old package
+      {
+        $set: {
+          businesses: newEligibility.businesses,
+          teamMembers: newEligibility.teamMembers,
+          admins: newEligibility.admins,
+          products: newEligibility.products,
+          clients: newEligibility.clients,
+          packageId: packageId,
+        },
+      }
+    );
+
     const previouslyPaid = previousSubscription.price;
     const previousPlanType = previousSubscription.billingPeriod;
 
@@ -792,7 +844,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     // update membership details
     await MemberShip.updateMany(
       {
-        User: userId,
+        user: userId,
         subscriptionId: previousSubscription._id,
       },
       {
@@ -824,7 +876,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     // update subscription details
     await Subscription.updateMany(
       {
-        customer: userId,
+        _id: previousSubscription._id,
       },
       {
         $set: {
@@ -854,45 +906,6 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
           amount: payment,
           paymentDate: new Date(),
           paymentMethod: "card",
-        },
-      }
-    );
-
-    // update eligibility details
-    const oldPackage = await Package.findOne({
-      _id: previousSubscription.package,
-    });
-    const oldEligibility = await Eligibility.findOne({
-      userId: userId,
-      packageId: oldPackage._id,
-    });
-
-    const differences = {
-      businesses: oldPackage.limits.businesses - oldEligibility.businesses,
-      teamMembers: oldPackage.limits.teamMembers - oldEligibility.teamMembers,
-      admins: oldPackage.limits.admins - oldEligibility.admins,
-      products: oldPackage.limits.products - oldEligibility.products,
-      clients: oldPackage.limits.clients - oldEligibility.clients,
-    };
-
-    const newEligibility = {
-      businesses: newPlan.limits.businesses - differences.businesses,
-      teamMembers: newPlan.limits.teamMembers - differences.teamMembers,
-      admins: newPlan.limits.admins - differences.admins,
-      products: newPlan.limits.products - differences.products,
-      clients: newPlan.limits.clients - differences.clients,
-    };
-
-    await Eligibility.updateMany(
-      { userId: userId, packageId: oldPackage._id }, // Assuming you're updating from the old package
-      {
-        $set: {
-          businesses: newEligibility.businesses,
-          teamMembers: newEligibility.teamMembers,
-          admins: newEligibility.admins,
-          products: newEligibility.products,
-          clients: newEligibility.clients,
-          packageId: packageId,
         },
       }
     );
