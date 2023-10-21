@@ -272,7 +272,24 @@ router.put("/update", auth, async (req, res) => {
 router.delete("/delete", auth, async (req, res) => {
   try {
     const { businessId } = req.body; // destructuring
+
+    const businessOwner = await BusinessUsers.findOne({
+      businessId,
+      isBusinessOwner: true,
+    });
+    const businessOwnerId = businessOwner.userId;
+    const userEligibilty = await Eligibility.findOne({
+      userId: businessOwnerId,
+    });
+
+    await Eligibility.updateOne(
+      { userId: businessOwnerId },
+      { $inc: { businesses: 1 } }
+    );
+
     await Business.deleteOne({ _id: businessId });
+
+    return res.status(200).json({ message: "Business deleted successfully" });
   } catch (error) {
     return res.status(500).json({ error: "Error", message: error.message });
   }
