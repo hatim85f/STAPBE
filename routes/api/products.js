@@ -42,6 +42,7 @@ router.post("/", auth, async (req, res) => {
     maximumDiscount,
     category,
     productType,
+    quantity,
   } = req.body;
 
   try {
@@ -86,10 +87,13 @@ router.post("/", auth, async (req, res) => {
       maximumDiscount,
       category,
       productType,
-      currenctCode: business.currencyCode,
+      currencyCode: business.currencyCode,
       currencyName: business.currencyName,
       currencySymbol: business.currencySymbol,
+      quantity,
     });
+
+    // return res.status(200).send({ newProduct });
 
     await Products.insertMany(newProduct);
 
