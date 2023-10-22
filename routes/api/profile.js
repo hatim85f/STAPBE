@@ -147,7 +147,7 @@ router.get("/:userId", auth, async (req, res) => {
       {
         $project: {
           _id: 0,
-          packageNmae: { $arrayElemAt: ["$package.name", 0] },
+          packageName: { $arrayElemAt: ["$package.name", 0] },
           subscriptionIsActive: { $arrayElemAt: ["$subscription.isActive", 0] },
           paymentDate: 1,
           paymentStatus: 1,
