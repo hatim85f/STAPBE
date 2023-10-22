@@ -153,6 +153,10 @@ router.get("/:userId", auth, async (req, res) => {
           paymentStatus: 1,
           subscriptionId: { $arrayElemAt: ["$subscription._id", 0] },
           amount: 1,
+          nextBillingDate: {
+            $arrayElemAt: ["$subscription.nextBillingDate", 0],
+          },
+          isCancelled: { $arrayElemAt: ["$subscription.isCancelled", 0] },
         },
       },
     ]);
