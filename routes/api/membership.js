@@ -894,20 +894,19 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
       }
     );
 
-    // update Payment details
-    await Payment.updateMany(
-      {
-        user: userId,
-      },
-      {
-        $set: {
-          package: packageId,
-          amount: payment,
-          paymentDate: new Date(),
-          paymentMethod: "card",
-        },
-      }
-    );
+    const userMembership = await MemberShip.findOne({ user: userId });
+
+    const newPayment = new Payment({
+      user: userId,
+      subscription: previousSubscription._id,
+      membership: userMembership._id,
+      package: packageId,
+      amount: totalRefund,
+      paymentDate: new Date(),
+      paymentMethod: "card",
+    });
+
+    await Payment.insertMany(newPayment);
 
     return res.status(200).send({
       message: `You just upgraded your subscription to ${newPlan.name}`,

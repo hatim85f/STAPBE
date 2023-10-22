@@ -86,6 +86,21 @@ router.get("/:userId", auth, async (req, res) => {
           as: "package",
         },
       },
+      {
+        $lookup: {
+          from: "payments",
+          localField: "user",
+          pipeline: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(userId),
+              },
+            },
+          ],
+          foreignField: "userId",
+          as: "payment",
+        },
+      },
 
       {
         $project: {
@@ -115,6 +130,7 @@ router.get("/:userId", auth, async (req, res) => {
           packageId: { $arrayElemAt: ["$package._id", 0] },
           backgroundColor: { $arrayElemAt: ["$package.backgroundColor", 0] },
           eligibilityId: { $arrayElemAt: ["$eligibility._id", 0] },
+          payment: 1,
         },
       },
     ]);
