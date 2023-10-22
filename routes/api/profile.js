@@ -8,6 +8,7 @@ const sgMail = require("@sendgrid/mail");
 const VerifyEmail = require("../../models/VerifyEmail");
 const config = require("config");
 const Subscription = require("../../models/Subscription");
+const Payment = require("../../models/Payment");
 
 const mailApi =
   process.env.NODE_ENV === "production"
@@ -86,21 +87,6 @@ router.get("/:userId", auth, async (req, res) => {
           as: "package",
         },
       },
-      {
-        $lookup: {
-          from: "payments",
-          localField: "user",
-          pipeline: [
-            {
-              $match: {
-                user: new mongoose.Types.ObjectId(userId),
-              },
-            },
-          ],
-          foreignField: "userId",
-          as: "payment",
-        },
-      },
 
       {
         $project: {
@@ -130,7 +116,43 @@ router.get("/:userId", auth, async (req, res) => {
           packageId: { $arrayElemAt: ["$package._id", 0] },
           backgroundColor: { $arrayElemAt: ["$package.backgroundColor", 0] },
           eligibilityId: { $arrayElemAt: ["$eligibility._id", 0] },
-          payment: 1,
+        },
+      },
+    ]);
+
+    // getting payment details
+
+    const userPayment = await Payment.aggregate([
+      {
+        $match: {
+          user: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "packages",
+          localField: "package",
+          foreignField: "_id",
+          as: "package",
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "subscription",
+          foreignField: "_id",
+          as: "subscription",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          packageNmae: { $arrayElemAt: ["$package.name", 0] },
+          subscriptionIsActive: { $arrayElemAt: ["$subscription.isActive", 0] },
+          paymentDate: 1,
+          paymentStatus: 1,
+          subscriptionId: { $arrayElemAt: ["$subscription._id", 0] },
+          amount: 1,
         },
       },
     ]);
@@ -155,7 +177,7 @@ router.get("/:userId", auth, async (req, res) => {
       subscriptionIds = stripeSubscription.data.map((sub) => sub.id);
     }
 
-    return res.status(200).json({ userProfile, subscriptionIds });
+    return res.status(200).json({ userProfile, subscriptionIds, userPayment });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
