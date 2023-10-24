@@ -314,6 +314,33 @@ router.put("/changeProfilePicture/:userId", auth, async (req, res) => {
   }
 });
 
+// change user phone
+// @route   PUT api/profile/changePhone
+// @desc    Test route
+// @access  Private
+router.put("/changePhone/:userId", auth, async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findOne({ _id: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const phone = req.body.phone;
+
+    await User.updateMany({ _id: userId }, { $set: { phone: phone } });
+
+    return res.status(200).json({ message: "Phone updated" });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error !",
+      message: "Something went wrong, Please try again later",
+    });
+  }
+});
+
 // get if user email is verified
 
 router.get("/:userId", auth, async (req, res) => {
