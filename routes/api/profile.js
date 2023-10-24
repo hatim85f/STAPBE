@@ -288,7 +288,7 @@ router.post("/verifyPhone", auth, async (req, res) => {
 // @route   PUT api/profile/changeProfilePicture
 // @desc    Test route
 // @access  Private
-router.put("/:userId", auth, async (req, res) => {
+router.put("/changeProfilePicture/:userId", auth, async (req, res) => {
   const { userId } = req.params;
 
   try {
