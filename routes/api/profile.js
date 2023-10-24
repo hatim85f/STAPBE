@@ -9,6 +9,7 @@ const VerifyEmail = require("../../models/VerifyEmail");
 const config = require("config");
 const Subscription = require("../../models/Subscription");
 const Payment = require("../../models/Payment");
+const bcrypt = require("bcryptjs");
 
 const mailApi =
   process.env.NODE_ENV === "production"
@@ -330,9 +331,54 @@ router.put("/changePhone/:userId", auth, async (req, res) => {
 
     const phone = req.body.phone;
 
+    const dupliactedUser = await User.find({ phone: phone });
+
+    if (dupliactedUser.length > 0) {
+      return res.status(500).json({
+        message:
+          "This phone number is registered with another user. Please make sure that you have submitted the correct details",
+      });
+    }
+
     await User.updateMany({ _id: userId }, { $set: { phone: phone } });
 
     return res.status(200).json({ message: "Phone updated" });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error !",
+      message: "Something went wrong, Please try again later",
+    });
+  }
+});
+
+router.put("/changeEmail/:userId", auth, async (req, res) => {
+  const { userId } = req.params;
+  const { newEmail, password } = req.body;
+
+  try {
+    const dupliactedUser = await User.find({ email: newEmail });
+
+    if (dupliactedUser.length > 0) {
+      return res.status(500).json({
+        message:
+          "This email is registered with another user. Please make sure that you have submitted the correct details",
+      });
+    }
+
+    const user = await User.findOne({ _id: userId });
+
+    // match user password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ message: "Provided Password is incorrect" });
+    }
+
+    await User.updateMany({ _id: userId }, { $set: { email: newEmail } });
+
+    return res.status(200).json({ message: "Email updated" });
   } catch (error) {
     return res.status(500).send({
       error: "Error !",
