@@ -284,6 +284,36 @@ router.post("/verifyPhone", auth, async (req, res) => {
   }
 });
 
+// change user profile picture
+// @route   PUT api/profile/changeProfilePicture
+// @desc    Test route
+// @access  Private
+router.put("/:userId", auth, async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findOne({ _id: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const profilePicture = req.body.profilePicture;
+
+    await User.updateMany(
+      { _id: userId },
+      { $set: { profilePicture: profilePicture } }
+    );
+
+    return res.status(200).json({ message: "Profile picture updated" });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error !",
+      message: "Something went wrong, Please try again later",
+    });
+  }
+});
+
 // get if user email is verified
 
 router.get("/:userId", auth, async (req, res) => {
