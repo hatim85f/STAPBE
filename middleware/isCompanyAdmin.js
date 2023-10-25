@@ -19,14 +19,16 @@ module.exports = async (req, res, next) => {
   if (!isBusinessUser) {
     return res.status(403).json({
       error: "Unauthorized",
-      message: "You are not authorized to perform this action.",
+      message:
+        "You are not authorized to perform this action. please contact your admin.",
     });
   }
 
   if (userType !== "Business Owner" || userType !== "Business Admin") {
     return res.status(403).json({
       error: "Unauthorized",
-      message: "You are not authorized to perform this action.",
+      message:
+        "You are not authorized to perform this action. please contact your admin.",
     });
   }
 

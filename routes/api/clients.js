@@ -111,7 +111,7 @@ router.post("/", auth, async (req, res) => {
 
     await Eligibility.updateMany(
       { userId: businessOwner.userId },
-      { $inc: { clients: 1 } }
+      { $inc: { clients: -1 } }
     );
 
     return res
@@ -196,7 +196,7 @@ router.delete("/:clientId", auth, isCompanyAdmin, async (req, res) => {
     });
     await Eligibility.updateMany(
       { userId: businessOwner.userId },
-      { $inc: { clients: -1 } }
+      { $inc: { clients: 1 } }
     );
 
     return res
