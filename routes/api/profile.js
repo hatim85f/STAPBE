@@ -373,7 +373,10 @@ router.put("/changeEmail/:userId", auth, async (req, res) => {
     if (!isMatch) {
       return res
         .status(400)
-        .json({ message: "Provided Password is incorrect" });
+        .json({
+          message:
+            "Provided Password is incorrect, for your safety we can not change your email without a correct password",
+        });
     }
 
     await User.updateMany({ _id: userId }, { $set: { email: newEmail } });

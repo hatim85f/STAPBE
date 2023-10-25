@@ -38,6 +38,10 @@ const ClientSchema = new Schema({
     type: String,
     default: null, // Optional field for client logo URL
   },
+  personInHandle: {
+    type: mongoose.Types.ObjectId,
+    ref: "user",
+  },
   // Additional fields as needed
 });
 
