@@ -20,7 +20,7 @@ router.get("/:userId", auth, async (req, res) => {
 
     const userType = user.userType;
 
-    if (userType !== "Business Owner") {
+    if (userType === "Business Owner") {
       const business = await BusinessUsers.find({ userId });
 
       // loop through business and get the businessIds
