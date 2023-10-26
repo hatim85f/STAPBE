@@ -61,7 +61,7 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, phone });
 
     if (user) {
       return res.status(400).json({
