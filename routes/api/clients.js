@@ -252,22 +252,16 @@ router.put("/:clientId", auth, isCompanyAdmin, async (req, res) => {
 // @access Private
 router.delete("/:clientId", auth, isCompanyAdmin, async (req, res) => {
   const { clientId } = req.params;
+  const userId = req.header("user-id");
 
   try {
-    const client = await Client.deleteOne({ _id: clientId });
+    const client = await Client.findOne({ _id: clientId });
 
     if (!client) return res.status(500).json({ message: "No client found" });
 
     // update eligibility of the user
 
-    const businessOwner = await BusinessUsers.findOne({
-      businessId: client.businessId,
-      isBusinessOwner: true,
-    });
-    await Eligibility.updateMany(
-      { userId: businessOwner.userId },
-      { $inc: { clients: 1 } }
-    );
+    await Eligibility.updateMany({ userId: userId }, { $inc: { clients: 1 } });
 
     return res
       .status(200)

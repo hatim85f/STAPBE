@@ -3,7 +3,7 @@ const User = require("../models/User");
 
 // Create a middleware function to check if a user is authorized (SuperAdmin or Organizer)
 module.exports = async (req, res, next) => {
-  const userId = req.header("userId");
+  const userId = req.header("user-id");
 
   const user = await User.findOne({ _id: userId });
   const userType = user.userType;
