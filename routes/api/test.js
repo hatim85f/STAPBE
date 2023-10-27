@@ -14,6 +14,7 @@ const moment = require("moment");
 const Subscription = require("../../models/Subscription");
 const MemberShip = require("../../models/MemberShip");
 const Payment = require("../../models/Payment");
+const Client = require("../../models/Client");
 
 const stripeSecretKey =
   process.env.NODE_ENV === "production"
@@ -76,6 +77,29 @@ router.delete("/", async (req, res) => {
     await Payment.deleteOne({ user: userId });
 
     return res.status(200).send({ message: "Subscription cancelled" });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
+router.put("/clients/:personInHandleId", async (req, res) => {
+  const { personInHandleId } = req.params;
+
+  try {
+    const user = await User.findOne({ _id: personInHandleId }).exec();
+    const clients = await Client.updateMany(
+      {
+        personInHandle: personInHandleId,
+      },
+      {
+        $set: {
+          personInHandle: user.userName,
+          personInHandleId: user._id,
+        },
+      }
+    );
+
+    return res.status(200).send({ clients: clients });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
