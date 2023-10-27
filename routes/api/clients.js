@@ -80,7 +80,7 @@ router.post("/", auth, async (req, res) => {
   } = req.body;
 
   try {
-    const cleint = await Client.findOne({ clientName });
+    const cleint = await Client.findOne({ clientName, businessId });
 
     if (cleint)
       return res.status(500).json({
