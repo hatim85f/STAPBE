@@ -63,7 +63,11 @@ router.post("/", auth, async (req, res) => {
 
     const user = await User.findOne({ email, phone });
 
-    if (user) {
+    // check if the password provided is the same as the one in the database
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (user && isMatch) {
       return res.status(400).json({
         error: "Error",
         message: "User with the same email already exists",

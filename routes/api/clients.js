@@ -76,7 +76,7 @@ router.post("/", auth, async (req, res) => {
     contactPersonEmail,
     contactPersonPhone,
     logoURL,
-    personInHandle,
+    personInHandleId,
   } = req.body;
 
   try {
@@ -87,6 +87,8 @@ router.post("/", auth, async (req, res) => {
         message:
           "Client already exists, it might be assigned to someone else in your team. Contact your admin to add him to your list",
       });
+
+    const personInHandle = await User.findOne({ _id: personInHandleId });
 
     const newClient = new Client({
       clientName,
@@ -99,7 +101,8 @@ router.post("/", auth, async (req, res) => {
         phone: contactPersonPhone,
       },
       logoURL,
-      personInHandle,
+      personInHandleId,
+      personInHandle: personInHandle.userName,
     });
 
     await Client.insertMany(newClient);
@@ -139,6 +142,7 @@ router.put("/:clientId", auth, isCompanyAdmin, async (req, res) => {
     contactPersonEmail,
     contactPersonPhone,
     logoURL,
+    personInHandleId,
     personInHandle,
   } = req.body;
 
@@ -161,6 +165,7 @@ router.put("/:clientId", auth, isCompanyAdmin, async (req, res) => {
             phone: contactPersonPhone,
           },
           logoURL,
+          personInHandleId,
           personInHandle,
         },
       }
