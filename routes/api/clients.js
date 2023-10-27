@@ -27,12 +27,77 @@ router.get("/:userId", auth, async (req, res) => {
       const businessIds = business.map((business) => business.businessId);
 
       // loop through businessIds and get the clients
-      const clients = await Client.find({ businessId: businessIds });
+      const clients = await Client.aggregate([
+        {
+          $match: {
+            businessId: { $in: businessIds },
+          },
+        },
+        {
+          $lookup: {
+            from: "businesses",
+            localField: "businessId",
+            foreignField: "_id",
+            as: "business",
+          },
+        },
+        {
+          $unwind: "$business",
+        },
+        {
+          $project: {
+            _id: 1,
+            clientName: 1,
+            businessId: 1,
+            clientType: 1,
+            address: 1,
+            contactPerson: 1,
+            logoURL: 1,
+            personInHandleId: 1,
+            personInHandle: 1,
+            businessName: "$business.businessName",
+            businessLogo: "$business.businessLogo",
+          },
+        },
+      ]);
+
       if (!clients)
         return res.status(404).json({ message: "No clients found" });
       return res.status(200).json({ clients });
     } else {
-      const clients = await Client.find({ personInHandle: userId });
+      const clients = await Client.aggregate([
+        {
+          $match: {
+            personInHandleId: userId,
+          },
+        },
+        {
+          $lookup: {
+            from: "businesses",
+            localField: "businessId",
+            foreignField: "_id",
+            as: "business",
+          },
+        },
+        {
+          $unwind: "$business",
+        },
+        {
+          $project: {
+            _id: 1,
+            clientName: 1,
+            businessId: 1,
+            clientType: 1,
+            address: 1,
+            contactPerson: 1,
+            logoURL: 1,
+            personInHandleId: 1,
+            personInHandle: 1,
+            businessName: "$business.businessName",
+            businessLogo: "$business.businessLogo",
+          },
+        },
+      ]);
 
       if (!clients)
         return res.status(404).json({ message: "No clients found" });
