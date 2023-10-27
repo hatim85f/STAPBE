@@ -265,7 +265,7 @@ router.delete("/:clientId", auth, isCompanyAdmin, async (req, res) => {
 
     return res
       .status(200)
-      .send({ message: `Customer ${clientName} deleted successfully` });
+      .send({ message: `Customer ${client.clientName} deleted successfully` });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
