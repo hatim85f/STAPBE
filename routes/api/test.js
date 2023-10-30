@@ -37,81 +37,19 @@ router.get("/", auth, async (req, res) => {
   res.status(200).send("API Running");
 });
 
-// @ getting customer details from stripe
-// create subscription
-// create setupIntent for future payments
-router.post("/", auth, async (req, res) => {
-  const { userId } = req.body;
+router.get("/:userId", auth, async (req, res) => {
+  const { userId } = req.params;
 
   try {
-    const user = await User.findOne({ _id: userId }).select("-password");
+    const neededBusiness = await BusinessUsers.findOne({ userId: userId });
+    const businessId = neededBusiness.businessId;
 
-    const stripeCustomer = await stripe.customers.list({ email: user.email });
+    const products = await Products.find({ businessId: businessId });
 
-    return res.status(200).send({ stripeCustomer: stripeCustomer });
+    return res.status(200).send({ products, businessId });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
 });
-
-router.put("/", async (req, res) => {
-  try {
-    const memberships = await Membership.find().exec();
-
-    return res.status(200).send({ memberships: memberships });
-  } catch (error) {
-    return res.status(500).send({ error: "Error", message: error.message });
-  }
-});
-
-router.delete("/", async (req, res) => {
-  const { userId, subscriptionId } = req.body;
-
-  try {
-    // return res.status(200).send({ subscriptionId });
-    // cancel stripe subscription
-    // await stripe.subscriptions.del(subscriptionId);
-
-    await Subscription.deleteOne({ customer: userId });
-    await MemberShip.deleteOne({ user: userId });
-    await Payment.deleteOne({ user: userId });
-
-    return res.status(200).send({ message: "Subscription cancelled" });
-  } catch (error) {
-    return res.status(500).send({ error: "Error", message: error.message });
-  }
-});
-
-router.put("/clients/:personInHandleId", async (req, res) => {
-  const { personInHandleId } = req.params;
-
-  try {
-    const user = await User.findOne({ _id: personInHandleId }).exec();
-    const clients = await Client.updateMany(
-      {
-        personInHandle: personInHandleId,
-      },
-      {
-        $set: {
-          personInHandle: user.userName,
-          personInHandleId: user._id,
-        },
-      }
-    );
-
-    return res.status(200).send({ clients: clients });
-  } catch (error) {
-    return res.status(500).send({ error: "Error", message: error.message });
-  }
-});
-
-// packageId,
-// type,
-// payment,
-// autoRenew,
-// "4242",
-// savePayment,
-// paymentId,
-// endDate
 
 module.exports = router;

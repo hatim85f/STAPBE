@@ -88,6 +88,8 @@ app.use("/api/admins", require("./routes/api/admins"));
 app.use("/api/packages", require("./routes/api/packages"));
 app.use("/api/membership", require("./routes/api/membership"));
 app.use("/api/clients", require("./routes/api/clients"));
+app.use("/api/targets", require("./routes/api/target"));
+app.use("/api/phasing", require("./routes/api/phasing"));
 app.use("/api/test", require("./routes/api/test"));
 
 const PORT = process.env.PORT || 5000;
