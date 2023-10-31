@@ -11,13 +11,53 @@ const router = express.Router();
 // @route   GET api/products
 // @desc    Get all products for the business
 // @access  Private
-router.get("/", auth, async (req, res) => {
-  const { businessId } = req.query;
+router.get("/:userId", auth, async (req, res) => {
+  const { userId } = req.params;
 
   try {
-    const products = await Products.find({
-      businessId,
-    });
+    const businessUser = await BusinessUsers.find({ userId });
+
+    const businessIds = businessUser.map((business) => business.businessId);
+
+    const products = await Products.aggregate([
+      {
+        $match: {
+          businessId: { $in: businessIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          businessId: 1,
+          productName: 1,
+          productNickName: 1,
+          costPrice: 1,
+          retailPrice: 1,
+          sellingPrice: 1,
+          description: 1,
+          imageURL: 1,
+          minimumDiscount: 1,
+          maximumDiscount: 1,
+          category: 1,
+          productType: 1,
+          currencyCode: 1,
+          currencyName: 1,
+          currencySymbol: 1,
+          quantity: 1,
+          businessName: { $arrayElemAt: ["$business.businessName", 0] },
+          businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
+        },
+      },
+    ]);
+
     return res.status(200).json({ products });
   } catch (error) {
     return res.status(500).json({ error: "Error", message: error.message });
