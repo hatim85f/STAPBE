@@ -80,7 +80,9 @@ router.get("/:userId/:year", auth, async (req, res) => {
     ]);
 
     if (target.length === 0) {
-      return res.status(400).send({ message: `No target found for ${year}` });
+      return res
+        .status(500)
+        .send({ error: "Error !", message: `No target found for ${year}` });
     }
 
     return res.status(200).send({ target });
