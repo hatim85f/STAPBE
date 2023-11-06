@@ -9,6 +9,8 @@ const Business = require("../../models/Business");
 const Products = require("../../models/Products");
 const moment = require("moment");
 const c = require("config");
+const User = require("../../models/User");
+const BusinessUsers = require("../../models/BusinessUsers");
 
 const months = [
   "January",
@@ -28,10 +30,48 @@ const months = [
 // @route   GET api/target
 // @desc    Get all targets
 // @access  Private
-router.get("/", auth, async (req, res) => {
+// Getting the target for all the business for only business Owner
+router.get("/:userId", auth, async (req, res) => {
   try {
-    const targets = await ProductTarget.find();
-    res.json(targets);
+    const userId = req.params.userId;
+    const businessUser = await BusinessUsers.find({ userId });
+
+    const businessIds = businessUser.map((item) => item.businessId);
+
+    const target = await ProductTarget.aggregate([
+      {
+        $match: {
+          businessId: { $in: businessIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $project: {
+          productId: 1,
+          businessId: 1,
+          target: 1,
+          currencyCode: 1,
+          currencyName: 1,
+          currencySymbol: 1,
+          productName: { $arrayElemAt: ["$product.productName", 0] },
+          productNickName: { $arrayElemAt: ["$product.productNickName", 0] },
+          costPrice: { $arrayElemAt: ["$product.costPrice", 0] },
+          retailPrice: { $arrayElemAt: ["$product.retailPrice", 0] },
+          sellingPrice: { $arrayElemAt: ["$product.sellingPrice", 0] },
+          imageURL: { $arrayElemAt: ["$product.imageURL", 0] },
+          category: { $arrayElemAt: ["$product.category", 0] },
+        },
+      },
+    ]);
+
+    return res.status(200).send(target);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
