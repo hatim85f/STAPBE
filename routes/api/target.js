@@ -31,9 +31,9 @@ const months = [
 // @desc    Get all targets
 // @access  Private
 // Getting the target for all the business for only business Owner
-router.get("/:userId", auth, async (req, res) => {
+router.get("/:userId/:year", auth, async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const { userId, year } = req.params;
     const businessUser = await BusinessUsers.find({ userId });
 
     const businessIds = businessUser.map((item) => item.businessId);
@@ -42,6 +42,14 @@ router.get("/:userId", auth, async (req, res) => {
       {
         $match: {
           businessId: { $in: businessIds },
+        },
+      },
+      {
+        $unwind: "$target",
+      },
+      {
+        $match: {
+          "target.year": parseInt(year),
         },
       },
       {
@@ -70,6 +78,10 @@ router.get("/:userId", auth, async (req, res) => {
         },
       },
     ]);
+
+    if (target.length === 0) {
+      return res.status(400).send({ message: `No target found for ${year}` });
+    }
 
     return res.status(200).send({ target });
   } catch (err) {
