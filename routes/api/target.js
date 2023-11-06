@@ -71,7 +71,7 @@ router.get("/:userId", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).send(target);
+    return res.status(200).send({ target });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
