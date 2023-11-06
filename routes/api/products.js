@@ -156,6 +156,7 @@ router.put("/", auth, async (req, res) => {
     productId,
     productName,
     productNickName,
+    productType,
     costPrice,
     retailPrice,
     sellingPrice,
@@ -164,7 +165,7 @@ router.put("/", auth, async (req, res) => {
     minimumDiscount,
     maximumDiscount,
     category,
-    productType,
+    quantity,
   } = req.body;
 
   try {
@@ -183,6 +184,7 @@ router.put("/", auth, async (req, res) => {
           maximumDiscount,
           category,
           productType,
+          quantity,
         },
       }
     );

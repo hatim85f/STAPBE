@@ -28,7 +28,7 @@ router.get("/:userId", auth, async (req, res) => {
 });
 
 router.post("/", auth, isCompanyAdmin, async (req, res) => {
-  const { businessId, phasingData, year } = req.body;
+  const { businessId, phasingData } = req.body;
 
   try {
     if (!phasingData) {
