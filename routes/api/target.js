@@ -75,6 +75,12 @@ router.get("/:userId/:year", auth, async (req, res) => {
           sellingPrice: { $arrayElemAt: ["$product.sellingPrice", 0] },
           imageURL: { $arrayElemAt: ["$product.imageURL", 0] },
           category: { $arrayElemAt: ["$product.category", 0] },
+          startMonth: {
+            $arrayElemAt: ["$target.yearTarget.month", 0],
+          },
+          endMonth: {
+            $arrayElemAt: ["$target.yearTarget.month", -1],
+          },
         },
       },
     ]);
