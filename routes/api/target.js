@@ -75,12 +75,6 @@ router.get("/:userId/:year", auth, async (req, res) => {
           sellingPrice: { $arrayElemAt: ["$product.sellingPrice", 0] },
           imageURL: { $arrayElemAt: ["$product.imageURL", 0] },
           category: { $arrayElemAt: ["$product.category", 0] },
-          startMonth: {
-            $arrayElemAt: ["$target.yearTarget.month", 0],
-          },
-          endMonth: {
-            $arrayElemAt: ["$target.yearTarget.month", -1],
-          },
         },
       },
     ]);
@@ -91,7 +85,25 @@ router.get("/:userId/:year", auth, async (req, res) => {
         .send({ error: "Error !", message: `No target found for ${year}` });
     }
 
-    return res.status(200).send({ target });
+    const modifiedTarget = target.map((item) => {
+      const sortedYearTarget = item.target.yearTarget.sort((a, b) =>
+        months.indexOf(a.month) > months.indexOf(b.month) ? 1 : -1
+      );
+      const startMonth = sortedYearTarget[0].month;
+      const endMonth = sortedYearTarget[sortedYearTarget.length - 1].month;
+
+      return {
+        ...item,
+        target: {
+          ...item.target,
+          yearTarget: sortedYearTarget,
+        },
+        startMonth,
+        endMonth,
+      };
+    });
+
+    return res.status(200).send({ target: modifiedTarget });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
