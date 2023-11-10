@@ -64,6 +64,7 @@ router.get("/:userId", auth, async (req, res) => {
         $addFields: {
           "teamMembers.businessName": "$business.businessName",
           "teamMembers.businessLogo": "$business.businessLogo",
+          "teamMembers.businessId": "$business._id",
         },
       },
       {
