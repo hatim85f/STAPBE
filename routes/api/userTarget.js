@@ -27,19 +27,43 @@ router.post("/", auth, async (req, res) => {
 
   try {
     for (let data of userTargetData) {
-      const newUserTarget = new UserTarget({
+      const isUserTarget = await UserTarget.findOne({
         userId: data._id,
         businessId: data.businessId,
-        productsTargets: {
-          year: year,
-          target: {
-            productId: data.productId,
-            targetUnits: data.targetUnits,
-            targetValue: data.targetValue,
-          },
-        },
+        "productsTargets.year": year,
+        "productsTargets.target.productId": data.productId,
       });
-      await UserTarget.insertMany(newUserTarget);
+
+      if (isUserTarget) {
+        await UserTarget.updateOne(
+          {
+            userId: data._id,
+            businessId: data.businessId,
+            "productsTargets.year": year,
+            "productsTargets.target.productId": data.productId,
+          },
+          {
+            $set: {
+              "productsTargets.$.target.targetUnits": data.targetUnits,
+              "productsTargets.$.target.targetValue": data.targetValue,
+            },
+          }
+        );
+      } else {
+        const newUserTarget = new UserTarget({
+          userId: data._id,
+          businessId: data.businessId,
+          productsTargets: {
+            year: year,
+            target: {
+              productId: data.productId,
+              targetUnits: data.targetUnits,
+              targetValue: data.targetValue,
+            },
+          },
+        });
+        await UserTarget.insertMany(newUserTarget);
+      }
     }
 
     return res.status(200).send({ message: "User Target Added Successfully" });
