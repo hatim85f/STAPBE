@@ -22,7 +22,7 @@ router.get("/", auth, async (req, res) => {
 
 // @route   POST api/userTarget
 // @desc    Add new userTarget
-// @access  Private
+// @access  Private only admin or business owner
 router.post("/", auth, isCompanyAdmin, async (req, res) => {
   const { userTargetData, year } = req.body;
 
@@ -75,3 +75,5 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     });
   }
 });
+
+module.exports = router;
