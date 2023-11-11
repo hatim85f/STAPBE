@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../../middleware/auth");
 const User = require("../../models/User");
 const UserTarget = require("../../models/UserTarget");
+const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 
 // @route   GET api/userTarget
 // @desc    Get all userTargets
@@ -22,7 +23,7 @@ router.get("/", auth, async (req, res) => {
 // @route   POST api/userTarget
 // @desc    Add new userTarget
 // @access  Private
-router.post("/", auth, async (req, res) => {
+router.post("/", auth, isCompanyAdmin, async (req, res) => {
   const { userTargetData, year } = req.body;
 
   try {
