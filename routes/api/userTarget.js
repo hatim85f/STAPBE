@@ -10,10 +10,7 @@ const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 // @access  Private
 router.get("/", auth, async (req, res) => {
   try {
-    const userTargets = await UserTarget.find({ user: req.user.id }).sort({
-      date: -1,
-    });
-    res.json(userTargets);
+    return res.status(200).send({ message: "Route is working" });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
