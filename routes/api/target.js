@@ -70,7 +70,9 @@ router.get("/:userId/:year", auth, async (req, res) => {
           currencySymbol: 1,
           productName: { $arrayElemAt: ["$product.productName", 0] },
           productNickName: { $arrayElemAt: ["$product.productNickName", 0] },
-          costPrice: { $arrayElemAt: ["$product.costPrice", 0] },
+          costPrice: {
+            $arrayElemAt: ["$target.yearTarget.productPrice", 0],
+          },
           retailPrice: { $arrayElemAt: ["$product.retailPrice", 0] },
           sellingPrice: { $arrayElemAt: ["$product.sellingPrice", 0] },
           imageURL: { $arrayElemAt: ["$product.imageURL", 0] },
