@@ -111,6 +111,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         // User doesn't have any targets, create a new document
         const newUserTarget = new UserTarget({
           userId: data._id,
+          businessId: data.businessId,
           productsTargets: [
             {
               year: year,
@@ -138,7 +139,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: error.message,
+      message: "Something went wrong, please try again later",
     });
   }
 });
