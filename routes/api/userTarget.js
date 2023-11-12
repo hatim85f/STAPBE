@@ -23,48 +23,118 @@ router.get("/", auth, async (req, res) => {
 router.post("/", auth, isCompanyAdmin, async (req, res) => {
   const { userTargetData, year } = req.body;
 
+  let message = [];
+  let tailMessage;
+
   try {
     for (let data of userTargetData) {
-      const isUserTarget = await UserTarget.findOne({
-        userId: data._id,
-        businessId: data.businessId,
-        "productsTargets.year": year,
-        "productsTargets.target.productId": data.productId,
-      });
+      const isUserTarget = await UserTarget.findOne({ userId: data._id });
 
       if (isUserTarget) {
-        await UserTarget.updateOne(
-          {
-            userId: data._id,
-            businessId: data.businessId,
-            "productsTargets.year": year,
-            "productsTargets.target.productId": data.productId,
-          },
-          {
-            $set: {
-              "productsTargets.$.target.targetUnits": data.targetUnits,
-              "productsTargets.$.target.targetValue": data.targetValue,
-            },
-          }
+        const sameYearIndex = isUserTarget.productsTargets.findIndex(
+          (target) => target.year === year
         );
+
+        if (sameYearIndex !== -1) {
+          const sameYearTarget =
+            isUserTarget.productsTargets[sameYearIndex].target;
+
+          const sameProductIndex = sameYearTarget.findIndex(
+            (prod) => prod.productId.toString() === data.productId
+          );
+
+          if (sameProductIndex !== -1) {
+            // Product exists for the specified year, update the target
+            await UserTarget.updateOne(
+              {
+                userId: data._id,
+                "productsTargets.year": year,
+              },
+              {
+                $set: {
+                  "productsTargets.$[yearFilter].target.$[productFilter].targetUnits":
+                    data.targetUnits,
+                  "productsTargets.$[yearFilter].target.$[productFilter].targetValue":
+                    data.targetValue,
+                },
+              },
+              {
+                arrayFilters: [
+                  { "yearFilter.year": year },
+                  { "productFilter.productId": data.productId },
+                ],
+              }
+            );
+            message.push(`${data.userName}`);
+            tailMessage = "updated Successfully";
+          } else {
+            await UserTarget.updateOne(
+              { userId: data._id, "productsTargets.year": year },
+              {
+                $push: {
+                  "productsTargets.$.target": {
+                    productId: data.productId,
+                    targetUnits: data.targetUnits,
+                    targetValue: data.targetValue,
+                  },
+                },
+              }
+            );
+            message.push(`${data.userName}`);
+            tailMessage = "added Successfully";
+          }
+        } else {
+          // Year doesn't exist, add a new object with the target
+          await UserTarget.updateMany(
+            {
+              userId: data._id,
+            },
+            {
+              $push: {
+                productsTargets: {
+                  year: year,
+                  target: [
+                    {
+                      productId: data.productId,
+                      targetUnits: data.targetUnits,
+                      targetValue: data.targetValue,
+                    },
+                  ],
+                },
+              },
+            }
+          );
+          message.push(`${data.userName}`);
+          tailMessage = `for ${year} added sucessfully`;
+        }
       } else {
+        // User doesn't have any targets, create a new document
         const newUserTarget = new UserTarget({
           userId: data._id,
-          businessId: data.businessId,
-          productsTargets: {
-            year: year,
-            target: {
-              productId: data.productId,
-              targetUnits: data.targetUnits,
-              targetValue: data.targetValue,
+          productsTargets: [
+            {
+              year: year,
+              target: [
+                {
+                  productId: data.productId,
+                  targetUnits: data.targetUnits,
+                  targetValue: data.targetValue,
+                },
+              ],
             },
-          },
+          ],
         });
+
         await UserTarget.insertMany(newUserTarget);
+
+        message.push(`${data.userName}`);
+        tailMessage = `for ${year} has been created successfully`;
       }
     }
 
-    return res.status(200).send({ message: "User Target Added Successfully" });
+    return res.status(200).send({
+      message: `Target for ${message.join(", ")} ${tailMessage}`,
+    });
   } catch (error) {
     return res.status(500).send({
       error: "Error",

@@ -20,21 +20,23 @@ const UserTargetSchema = new Schema({
         type: Number,
         required: true,
       },
-      target: {
-        productId: {
-          type: mongoose.Types.ObjectId,
-          required: true,
-          ref: "product",
+      target: [
+        {
+          productId: {
+            type: mongoose.Types.ObjectId,
+            required: true,
+            ref: "product",
+          },
+          targetUnits: {
+            type: Number,
+            required: true,
+          },
+          targetValue: {
+            type: Number,
+            required: true,
+          },
         },
-        targetUnits: {
-          type: Number,
-          required: true,
-        },
-        targetValue: {
-          type: Number,
-          required: true,
-        },
-      },
+      ],
     },
   ],
 });
