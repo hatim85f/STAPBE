@@ -138,7 +138,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: "Something Went wrong, please try again later",
+      message: error.message,
     });
   }
 });
