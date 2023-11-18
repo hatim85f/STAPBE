@@ -193,7 +193,7 @@ const addNewTarget = async (
             ]
         ),
         phasing: phasing,
-        phasingData: null,
+        phasingData: phasingData,
         targetPhases: `${parseFloat(
           phasingPercentage.find((obj) => obj[targetMonth] !== undefined)[
             targetMonth
