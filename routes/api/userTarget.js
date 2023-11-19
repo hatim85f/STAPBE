@@ -3,8 +3,10 @@ const router = express.Router();
 const auth = require("../../middleware/auth");
 const User = require("../../models/User");
 const UserTarget = require("../../models/UserTarget");
+const ProductTarget = require("../../models/ProductTarget");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 const { default: mongoose } = require("mongoose");
+const Product = require("../../models/Products");
 
 // @route   GET api/userTarget
 // @desc    Get all userTargets
@@ -27,117 +29,81 @@ router.get("/:userId/:year", auth, async (req, res) => {
           "productsTargets.year": parseInt(year),
         },
       },
-      {
-        $lookup: {
-          from: "producttargets",
-          localField: "productsTargets.target.productId",
-          foreignField: "productId",
-          as: "product_target_details",
-        },
-      },
-      {
-        $unwind: "$product_target_details",
-      },
-      {
-        $unwind: "$product_target_details.target",
-      },
-      {
-        $match: {
-          "product_target_details.target.year": parseInt(year),
-        },
-      },
-      {
-        $lookup: {
-          from: "products",
-          localField: "product_target_details.productId",
-          foreignField: "_id",
-          as: "product_details",
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          userId: 1,
-          businessId: 1,
-          productNickName: {
-            $arrayElemAt: ["$product_details.productNickName", 0],
-          },
-          costPrice: {
-            $arrayElemAt: [
-              "$product_target_details.target.yearTarget.productPrice",
-              0,
-            ],
-          },
-          retailPrice: { $arrayElemAt: ["$product_details.retailPrice", 0] },
-          currencyName: "$product_target_details.currencyName",
-          currencyCode: "$product_target_details.currencyCode",
-          currencySymbol: "$product_target_details.currencySymbol",
-          monthName: "$product_target_details.target.yearTarget.month",
-          // targetUnits: {
-          //   $multiply: [
-          //     "$productsTargets.target.targetUnits",
-          //     "$product_target_details.target.yearTarget.targetUnits",
-          //   ],
-          // },
-          // targetValue: {
-          //   $multiply: [
-          //     "$productsTargets.target.targetValue",
-          //     "$product_target_details.target.yearTarget.targetValue",
-          //   ],
-          // },
-          // monthPhasing:
-          //   "$product_target_details.target.yearTarget.targetPhases",
-        },
-      },
-      // {
-      //   $group: {
-      //     _id: {
-      //       _id: "$_id",
-      //       userId: "$userId",
-      //       businessId: "$businessId",
-      //       productNickName: "$productNickName",
-      //       costPrice: "$costPrice",
-      //       retailPrice: "$retailPrice",
-      //       currencyName: "$currencyName",
-      //       currencyCode: "$currencyCode",
-      //       currencySymbol: "$currencySymbol",
-      //     },
-      //     productsTarget: {
-      //       $push: {
-      //         monthName: "$monthName",
-      //         target: {
-      //           monthName: "$monthName",
-      //           targetUnits: "$targetUnits",
-      //           targetValue: "$targetValue",
-      //           monthPhasing: "$monthPhasing",
-      //         },
-      //       },
-      //     },
-      //   },
-      // },
-      // {
-      //   $group: {
-      //     _id: {
-      //       userId: "$_id.userId",
-      //       businessId: "$_id.businessId",
-      //     },
-      //     userTarget: {
-      //       $push: {
-      //         _id: "$_id._id",
-      //         userId: "$_id.userId",
-      //         businessId: "$_id.businessId",
-      //         productsTarget: "$productsTarget",
-      //       },
-      //     },
-      //   },
-      // },
     ]);
 
-    if (!userTarget) {
+    if (!userTarget || userTarget.length === 0) {
       return res.status(404).send({ error: "No target found" });
     }
 
-    return res.status(200).send({ userTarget });
+    let currencyCode;
+    let currencySymbol;
+    let currencyName;
+
+    let testTarget = [];
+
+    const userTargetData = {
+      userId,
+      year,
+      businessId: userTarget[0].businessId,
+      currencyName,
+      currencyCode,
+      currencySymbol,
+      productsTarget: [],
+    };
+
+    for (let data of userTarget) {
+      const productsTarget = data.productsTargets.target;
+
+      for (let details of productsTarget) {
+        const product = await Product.findOne({ _id: details.productId });
+
+        currencyCode = product.currencyCode;
+        currencySymbol = product.currencySymbol;
+        currencyName = product.currencyName;
+
+        const productTarget = await ProductTarget.findOne({
+          productId: product._id,
+        });
+
+        const neededTarget = productTarget.target.find(
+          (x) => x.year === parseInt(year)
+        );
+
+        let target = [];
+
+        // return;
+
+        for (let targets of neededTarget.yearTarget) {
+          target.push({
+            monthName: targets.month,
+            targetUnits:
+              (details.targetUnits * parseInt(targets.targetPhases)) / 100,
+
+            targetValue:
+              (details.targetValue * parseInt(targets.targetPhases)) / 100,
+            monthPhasing: targets.targetPhases,
+          });
+        }
+
+        userTargetData.productsTarget.push({
+          productId: product._id,
+          productNickName: product.productNickName,
+          costPrice: neededTarget.yearTarget[0].productPrice,
+          retailPrice: product.retailPrice,
+          totalUnits: +target
+            .map((a) => a.targetUnits)
+            .reduce((a, b) => a + b, 0)
+            .toFixed(0),
+          totalValie: +target
+            .map((a) => a.targetValue)
+            .reduce((a, b) => a + b, 0)
+            .toFixed(2),
+          target: target,
+        });
+      }
+    }
+
+    return res.status(200).send({ userTarget: userTargetData });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");

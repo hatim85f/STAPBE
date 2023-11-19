@@ -15,6 +15,7 @@ const Subscription = require("../../models/Subscription");
 const MemberShip = require("../../models/MemberShip");
 const Payment = require("../../models/Payment");
 const Client = require("../../models/Client");
+const UserTarget = require("../../models/UserTarget");
 
 const stripeSecretKey =
   process.env.NODE_ENV === "production"
@@ -37,18 +38,165 @@ router.get("/", auth, async (req, res) => {
   res.status(200).send("API Running");
 });
 
-router.get("/:userId", auth, async (req, res) => {
-  const { userId } = req.params;
+router.get("/:userId/:year", auth, async (req, res) => {
+  const { userId, year } = req.params;
 
   try {
-    const neededBusiness = await BusinessUsers.findOne({ userId: userId });
-    const businessId = neededBusiness.businessId;
+    const userTarget = await UserTarget.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $unwind: "$productsTargets",
+      },
+      {
+        $match: {
+          "productsTargets.year": parseInt(year),
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "productsTargets.target.productId",
+          foreignField: "_id",
+          as: "product_details",
+        },
+      },
+      {
+        $unwind: "$product_details",
+      },
+      {
+        $lookup: {
+          from: "producttargets",
+          localField: "product_details._id",
+          foreignField: "productId",
+          as: "product_target_details",
+        },
+      },
+      {
+        $unwind: "$product_target_details",
+      },
+      {
+        $unwind: "$product_target_details.target.yearTarget",
+      },
+      {
+        $match: {
+          "product_target_details.target.year": parseInt(year),
+        },
+      },
+      {
+        $group: {
+          _id: {
+            userId: "$userId",
+            businessId: "$businessId",
+            productId: "$product_details._id",
+          },
+          currencyName: { $first: "$product_details.currencyName" },
+          currencyCode: { $first: "$product_details.currencyCode" },
+          currencySymbol: { $first: "$product_details.currencySymbol" },
+          productsTarget: {
+            $push: {
+              productNickName: "$product_details.productNickName",
+              costPrice: {
+                $cond: {
+                  if: {
+                    $isArray: [
+                      "$product_target_details.target.yearTarget.productPrice",
+                    ],
+                  },
+                  then: {
+                    $ifNull: [
+                      {
+                        $arrayElemAt: [
+                          "$product_target_details.target.yearTarget.productPrice",
+                          0,
+                        ],
+                      },
+                      0,
+                    ],
+                  },
+                  else: 0,
+                },
+              },
+              retailPrice: "$product_details.retailPrice",
+              target: {
+                $map: {
+                  input: "$product_target_details.target.yearTarget.month",
+                  as: "month",
+                  in: {
+                    monthName: "$$month",
+                    targetUnits: {
+                      $cond: {
+                        if: {
+                          $isArray: ["$productsTargets.target.targetUnits"],
+                        },
+                        then: {
+                          $multiply: [
+                            {
+                              $arrayElemAt: [
+                                "$productsTargets.target.targetUnits",
+                                0,
+                              ],
+                            },
+                            "$product_target_details.target.yearTarget.targetPhases",
+                            0.01,
+                          ],
+                        },
+                        else: 0,
+                      },
+                    },
+                    targetValue: {
+                      $cond: {
+                        if: {
+                          $isArray: ["$productsTargets.target.targetValue"],
+                        },
+                        then: {
+                          $multiply: [
+                            {
+                              $arrayElemAt: [
+                                "$productsTargets.target.targetValue",
+                                0,
+                              ],
+                            },
+                            "$product_target_details.target.yearTarget.targetPhases",
+                            0.01,
+                          ],
+                        },
+                        else: 0,
+                      },
+                    },
+                    monthPhasing:
+                      "$product_target_details.target.yearTarget.targetPhases",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: "$_id.userId",
+          businessId: "$_id.businessId",
+          currencyName: 1,
+          currencyCode: 1,
+          currencySymbol: 1,
+          productsTarget: 1,
+        },
+      },
+    ]);
 
-    const products = await Products.find({ businessId: businessId });
+    if (!userTarget || userTarget.length === 0) {
+      return res.status(404).send({ error: "No target found" });
+    }
 
-    return res.status(200).send({ products, businessId });
-  } catch (error) {
-    return res.status(500).send({ error: "Error", message: error.message });
+    return res.status(200).send({ userTarget });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
   }
 });
 
