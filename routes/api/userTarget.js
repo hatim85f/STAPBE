@@ -10,7 +10,6 @@ const Product = require("../../models/Products");
 const BusinessUsers = require("../../models/BusinessUsers");
 
 const getTarget = async (userId, year, res) => {
-  let errorMessage;
   const userTarget = await UserTarget.aggregate([
     {
       $match: {
@@ -52,9 +51,9 @@ const getTarget = async (userId, year, res) => {
     for (let details of productsTarget) {
       const product = await Product.findOne({ _id: details.productId });
 
-      currencyCode = product.currencyCode;
-      currencySymbol = product.currencySymbol;
-      currencyName = product.currencyName;
+      userTargetData.currencyCode = product.currencyCode;
+      userTargetData.currencySymbol = product.currencySymbol;
+      userTargetData.currencyName = product.currencyName;
 
       const productTarget = await ProductTarget.findOne({
         productId: product._id,
@@ -93,7 +92,7 @@ const getTarget = async (userId, year, res) => {
           .map((a) => a.targetUnits)
           .reduce((a, b) => a + b, 0)
           .toFixed(0),
-        totalValie: +target
+        totalValue: +target
           .map((a) => a.targetValue)
           .reduce((a, b) => a + b, 0)
           .toFixed(2),
