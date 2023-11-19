@@ -7,6 +7,103 @@ const ProductTarget = require("../../models/ProductTarget");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 const { default: mongoose } = require("mongoose");
 const Product = require("../../models/Products");
+const BusinessUsers = require("../../models/BusinessUsers");
+
+const getTarget = async (userId, year, res) => {
+  let errorMessage;
+  const userTarget = await UserTarget.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $unwind: "$productsTargets",
+    },
+    {
+      $match: {
+        "productsTargets.year": parseInt(year),
+      },
+    },
+  ]);
+
+  if (!userTarget || userTarget.length === 0) {
+    errorMessage = "No target found for the specified year";
+    return;
+  }
+
+  let currencyCode;
+  let currencySymbol;
+  let currencyName;
+
+  const userTargetData = {
+    userId,
+    year,
+    businessId: userTarget[0].businessId,
+    currencyName,
+    currencyCode,
+    currencySymbol,
+    productsTarget: [],
+  };
+
+  for (let data of userTarget) {
+    const productsTarget = data.productsTargets.target;
+
+    for (let details of productsTarget) {
+      const product = await Product.findOne({ _id: details.productId });
+
+      currencyCode = product.currencyCode;
+      currencySymbol = product.currencySymbol;
+      currencyName = product.currencyName;
+
+      const productTarget = await ProductTarget.findOne({
+        productId: product._id,
+      });
+
+      const neededTarget = productTarget.target.find(
+        (x) => x.year === parseInt(year)
+      );
+
+      let target = [];
+
+      // return;
+
+      for (let targets of neededTarget.yearTarget) {
+        target.push({
+          monthName: targets.month,
+          targetUnits:
+            (details.targetUnits * parseInt(targets.targetPhases)) / 100,
+
+          targetValue:
+            (details.targetValue * parseInt(targets.targetPhases)) / 100,
+          monthPhasing: targets.targetPhases,
+        });
+      }
+
+      userTargetData.productsTarget.push({
+        productId: product._id,
+        productNickName: product.productNickName,
+        costPrice: neededTarget.yearTarget[0].productPrice,
+        retailPrice: product.retailPrice,
+        startPeriod: neededTarget.yearTarget[0].startPeriod,
+        endPeriod: neededTarget.yearTarget[0].endPeriod,
+        addedIn: neededTarget.yearTarget[0].addedIn,
+        updatedIn: neededTarget.yearTarget[0].updatedIn,
+        totalUnits: +target
+          .map((a) => a.targetUnits)
+          .reduce((a, b) => a + b, 0)
+          .toFixed(0),
+        totalValie: +target
+          .map((a) => a.targetValue)
+          .reduce((a, b) => a + b, 0)
+          .toFixed(2),
+        target: target,
+      });
+    }
+  }
+
+  return userTargetData;
+};
 
 // @route   GET api/userTarget
 // @desc    Get all userTargets
@@ -15,98 +112,101 @@ router.get("/:userId/:year", auth, async (req, res) => {
   const { userId, year } = req.params;
 
   try {
-    const userTarget = await UserTarget.aggregate([
+    const userTargetData = await getTarget(userId, year, res);
+
+    if (!userTargetData) {
+      return res.status(400).send({
+        error: "Error",
+        message: "No target found for the specified year",
+      });
+    }
+
+    return res.status(200).send({ userTargetData });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
+  const { userId, year } = req.params;
+
+  try {
+    const userTeam = await BusinessUsers.aggregate([
       {
         $match: {
           userId: new mongoose.Types.ObjectId(userId),
+          isBusinessOwner: true,
         },
       },
       {
-        $unwind: "$productsTargets",
+        $lookup: {
+          from: "businessusers",
+          localField: "businessId",
+          foreignField: "businessId",
+          as: "businessUsers",
+        },
+      },
+      {
+        $unwind: "$businessUsers",
       },
       {
         $match: {
-          "productsTargets.year": parseInt(year),
+          "businessUsers.isBusinessOwner": false,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "businessUsers.userId",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+      {
+        $unwind: "$users",
+      },
+
+      {
+        $project: {
+          _id: "$users._id",
+          userName: "$users.userName",
+          businessId: "$businessId",
+          profilePicture: "$users.profilePicture",
+          userType: "$users.userType",
         },
       },
     ]);
 
-    if (!userTarget || userTarget.length === 0) {
-      return res.status(404).send({ error: "No target found" });
+    let usersTarget = [];
+
+    for (let data of userTeam) {
+      const userTargetData = await getTarget(data._id, year, res);
+
+      // if (!userTargetData) {
+      //   return res.status(400).send({
+      //     error: "Error",
+      //     message: "No target found for the specified year",
+      //   });
+      // }
+
+      usersTarget.push({
+        _id: data._id,
+        userName: data.userName,
+        businessId: data.businessId,
+        profilePicture: data.profilePicture,
+        userType: data.userType,
+
+        target: userTargetData,
+      });
     }
 
-    let currencyCode;
-    let currencySymbol;
-    let currencyName;
-
-    let testTarget = [];
-
-    const userTargetData = {
-      userId,
-      year,
-      businessId: userTarget[0].businessId,
-      currencyName,
-      currencyCode,
-      currencySymbol,
-      productsTarget: [],
-    };
-
-    for (let data of userTarget) {
-      const productsTarget = data.productsTargets.target;
-
-      for (let details of productsTarget) {
-        const product = await Product.findOne({ _id: details.productId });
-
-        currencyCode = product.currencyCode;
-        currencySymbol = product.currencySymbol;
-        currencyName = product.currencyName;
-
-        const productTarget = await ProductTarget.findOne({
-          productId: product._id,
-        });
-
-        const neededTarget = productTarget.target.find(
-          (x) => x.year === parseInt(year)
-        );
-
-        let target = [];
-
-        // return;
-
-        for (let targets of neededTarget.yearTarget) {
-          target.push({
-            monthName: targets.month,
-            targetUnits:
-              (details.targetUnits * parseInt(targets.targetPhases)) / 100,
-
-            targetValue:
-              (details.targetValue * parseInt(targets.targetPhases)) / 100,
-            monthPhasing: targets.targetPhases,
-          });
-        }
-
-        userTargetData.productsTarget.push({
-          productId: product._id,
-          productNickName: product.productNickName,
-          costPrice: neededTarget.yearTarget[0].productPrice,
-          retailPrice: product.retailPrice,
-          totalUnits: +target
-            .map((a) => a.targetUnits)
-            .reduce((a, b) => a + b, 0)
-            .toFixed(0),
-          totalValie: +target
-            .map((a) => a.targetValue)
-            .reduce((a, b) => a + b, 0)
-            .toFixed(2),
-          target: target,
-        });
-      }
-    }
-
-    return res.status(200).send({ userTarget: userTargetData });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
+    return res.status(200).send({ usersTarget });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error",
+      message: error.message,
+    });
   }
 });
 
