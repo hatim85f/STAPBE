@@ -8,6 +8,7 @@ const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 const { default: mongoose } = require("mongoose");
 const Product = require("../../models/Products");
 const BusinessUsers = require("../../models/BusinessUsers");
+const SupportCase = require("../../models/SupportCase");
 
 const getTarget = async (userId, year, res) => {
   const userTarget = await UserTarget.aggregate([
@@ -122,8 +123,23 @@ router.get("/:userId/:year", auth, async (req, res) => {
 
     return res.status(200).send({ userTargetData });
   } catch (err) {
+    const user = await User.findOne({ _id: userId });
+
+    const newSupportCase = new SupportCase({
+      userId,
+      userName: user.userName,
+      email: user.email,
+      phone: user.phone,
+      subject: "Error in getting user target",
+      message: err.message,
+    });
+
+    await SupportCase.insertMany(newSupportCase);
     console.error(err.message);
-    res.status(500).send("Server Error");
+    res.status(500).send({
+      error: "Error",
+      message: "Something went wrong, please try again later",
+    });
   }
 });
 
@@ -202,6 +218,101 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
 
     return res.status(200).send({ usersTarget });
   } catch (error) {
+    const user = await User.findOne({ _id: userId });
+
+    const newSupportCase = new SupportCase({
+      userId,
+      userName: user.userName,
+      email: user.email,
+      phone: user.phone,
+      subject: "Error in getting team target",
+      message: error.message,
+    });
+
+    await SupportCase.insertMany(newSupportCase);
+    return res.status(500).send({
+      error: "Error",
+      message: "Something went wrong, please try again later",
+    });
+  }
+});
+
+// get business target values and details of business
+// priveate route
+router.get("/business-target/:userId/:year", auth, async (req, res) => {
+  const { userId, year } = req.params;
+
+  try {
+    // Get business details for the user
+    const userBusiness = await BusinessUsers.find({
+      userId: userId,
+      isBusinessOwner: true,
+    });
+
+    // Extract businessIds from userBusiness
+    const businessesIds = userBusiness.map((business) => business.businessId);
+
+    // Aggregate business targets for the specified year
+    const businessTargets = await ProductTarget.aggregate([
+      {
+        $match: {
+          businessId: { $in: businessesIds },
+          "target.year": parseInt(year),
+        },
+      },
+      {
+        $unwind: "$target",
+      },
+      {
+        $match: {
+          "target.year": parseInt(year),
+        },
+      },
+      {
+        $group: {
+          _id: "$businessId",
+          targetValue: { $sum: "$target.totalValue" },
+        },
+      },
+    ]);
+
+    // Get business details for the aggregated businessIds
+    const businessDetails = await Business.find({
+      _id: { $in: businessesIds },
+    });
+
+    // Combine business details with aggregated target values
+    const finalBusinessTarget = businessDetails.map((business) => {
+      const targetValue = businessTargets.find(
+        (target) => target._id.toString() === business._id.toString()
+      );
+
+      return {
+        _id: business._id,
+        businessName: business.businessName,
+        businessLogo: business.businessLogo,
+        currencyCode: business.currencyCode,
+        currencySymbol: business.currencySymbol,
+        currencyName: business.currencyName,
+        targetValue: targetValue ? targetValue.targetValue : 0,
+      };
+    });
+
+    return res.status(200).send({ finalBusinessTarget });
+  } catch (error) {
+    // Handle errors and log them
+    const user = await User.findOne({ _id: userId });
+    const newSupportCase = new SupportCase({
+      userId,
+      userName: user.userName,
+      email: user.email,
+      phone: user.phone,
+      subject: `Error in getting business target details for userId ${userId}`,
+      message: error.message,
+    });
+
+    await SupportCase.insertMany(newSupportCase);
+
     return res.status(500).send({
       error: "Error",
       message: error.message,
