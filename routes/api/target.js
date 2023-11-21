@@ -245,6 +245,7 @@ const updatePreviousTarget = async (
   currencySymbol,
   productNickName,
   actualMonths,
+  replace,
   res
 ) => {
   let productTarget = [];
@@ -336,9 +337,30 @@ const updatePreviousTarget = async (
     businessId: businessId,
   });
 
+  const oldTarget = await ProductTarget.findOne({
+    productId: productId,
+    businessId: businessId,
+  });
+  const produtOldTarget = oldTarget.target;
+
+  return res.status(200).send({ produtOldTarget });
+
   const target = previousTarget.target;
 
-  const newTarget = target.concat(filteredSeparatedTarget);
+  let newTarget;
+
+  if (replace) {
+    const targetIndex = target.findIndex(
+      (item) => item.year === startDate.getFullYear()
+    );
+
+    target[targetIndex] = filteredSeparatedTarget[0];
+
+    newTarget = target;
+  } else {
+    newTarget = target.concat(filteredSeparatedTarget);
+  }
+
   let modifiedTarget = [];
 
   for (let data of newTarget) {
@@ -500,13 +522,45 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           currencySymbol,
           product.productNickName,
           difference,
+          false,
           res
         );
       } else {
-        return res.status(400).send({
-          error: "Error",
-          message: `Target for ${product.productNickName} already exists for the selected period. If you want, you can edit the target from the Editing Section.`,
-        });
+        const monthsTarget = target
+          .find((item) => item.year === startDate.getFullYear())
+          .yearTarget.map((item) => item.month);
+
+        const actualMonths = [];
+
+        for (let i = 0; i <= numberOfMonths - 1; i++) {
+          const month = moment(startDate).add(i, "months").format("MMMM");
+          if (monthsTarget.includes(month)) {
+            actualMonths.push({
+              year: parseInt(moment(startDate).add(i, "months").format("YYYY")),
+              month: month,
+            });
+          }
+        }
+
+        await updatePreviousTarget(
+          productId,
+          businessId,
+          phasing,
+          startDate,
+          endDate,
+          numberOfMonths,
+          targetUnits,
+          targetValue,
+          phasingData,
+          productPrice,
+          currencyCode,
+          currencyName,
+          currencySymbol,
+          product.productNickName,
+          actualMonths,
+          true,
+          res
+        );
       }
     } else {
       // Use the existing addNewTarget function to add a new target
