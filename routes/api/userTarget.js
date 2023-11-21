@@ -366,8 +366,10 @@ router.get(
             currencySymbol: {
               $arrayElemAt: ["$productDetails.currencySymbol", 0],
             },
-            productImage: { $arrayElemAt: ["$productDetails.ImageURL", 0] },
+            productImage: { $arrayElemAt: ["$productDetails.imageURL", 0] },
             currencyName: { $arrayElemAt: ["$productDetails.currencyName", 0] },
+            quantity: { $arrayElemAt: ["$productDetails.quantity", 0] },
+            category: { $arrayElemAt: ["$productDetails.category", 0] },
           },
         },
       ]);
