@@ -320,6 +320,68 @@ router.get("/business-target/:userId/:year", auth, async (req, res) => {
   }
 });
 
+// get business target values and details of business
+// priveate route
+router.get(
+  "/single-business-target/:businessId/:year",
+  auth,
+  async (req, res) => {
+    const { businessId, year } = req.params;
+
+    try {
+      const businessTarget = await ProductTarget.aggregate([
+        {
+          $match: {
+            businessId: new mongoose.Types.ObjectId(businessId),
+          },
+        },
+        {
+          $unwind: "$target",
+        },
+        {
+          $match: {
+            "target.year": parseInt(year),
+          },
+        },
+        {
+          $lookup: {
+            from: "products",
+            localField: "productId",
+            foreignField: "_id",
+            as: "productDetails",
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            productId: 1,
+            businessId: 1,
+            target: 1,
+            productNickName: {
+              $arrayElemAt: ["$productDetails.productNickName", 0],
+            },
+            costPrice: { $arrayElemAt: ["$productDetails.costPrice", 0] },
+            retailPrice: { $arrayElemAt: ["$productDetails.retailPrice", 0] },
+            currencyCode: { $arrayElemAt: ["$productDetails.currencyCode", 0] },
+            currencySymbol: {
+              $arrayElemAt: ["$productDetails.currencySymbol", 0],
+            },
+            productImage: { $arrayElemAt: ["$productDetails.ImageURL", 0] },
+            currencyName: { $arrayElemAt: ["$productDetails.currencyName", 0] },
+          },
+        },
+      ]);
+
+      return res.status(200).json({ businessTarget });
+    } catch (error) {
+      return res.status(500).send({
+        error: "Error",
+        message: error.message,
+      });
+    }
+  }
+);
+
 // @route   POST api/userTarget
 // @desc    Add new userTarget
 // @access  Private only admin or business owner
