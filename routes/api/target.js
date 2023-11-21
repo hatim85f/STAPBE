@@ -337,14 +337,6 @@ const updatePreviousTarget = async (
     businessId: businessId,
   });
 
-  const oldTarget = await ProductTarget.findOne({
-    productId: productId,
-    businessId: businessId,
-  });
-  const produtOldTarget = oldTarget.target;
-
-  return res.status(200).send({ produtOldTarget });
-
   const target = previousTarget.target;
 
   let newTarget;
