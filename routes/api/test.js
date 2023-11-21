@@ -53,4 +53,92 @@ router.get("/:businessId/:year", auth, async (req, res) => {
   }
 });
 
+router.get("/userTarget/:userId/:year", auth, async (req, res) => {
+  const { userId, year } = req.params;
+
+  try {
+    const userTarget = await UserTarget.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $unwind: "$productsTargets",
+      },
+      {
+        $match: {
+          "productsTargets.year": parseInt(year),
+        },
+      },
+      {
+        $project: {
+          value: "$productsTargets.target.targetValue",
+        },
+      },
+    ]);
+
+    const repValue = userTarget[0]?.value.reduce((a, b) => a + b, 0);
+
+    const business = await BusinessUsers.findOne({ userId });
+
+    const productsTarget = await ProductTarget.aggregate([
+      {
+        $match: {
+          businessId: new mongoose.Types.ObjectId(business.businessId),
+        },
+      },
+      {
+        $unwind: "$target",
+      },
+      {
+        $match: {
+          "target.year": parseInt(year),
+        },
+      },
+      {
+        $project: {
+          value: "$target.totalValue",
+        },
+      },
+    ]);
+
+    const businessValue = productsTarget
+      .map((a) => a.value)
+      .reduce((a, b) => a + b, 0);
+
+    const targetForRep = businessValue * 0.28;
+    const difference = targetForRep - repValue;
+
+    const percent = (repValue / businessValue) * 100;
+
+    return res.status(200).json({
+      repValue,
+      businessValue,
+      // targetForRep,
+      difference,
+      percent,
+      // businessId: business.businessId,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+router.delete("/:businessId", auth, async (req, res) => {
+  const { businessId } = req.params;
+
+  try {
+    await UserTarget.deleteMany({
+      businessId: new mongoose.Types.ObjectId(businessId),
+    });
+
+    return res
+      .status(200)
+      .json({ message: "User targets deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

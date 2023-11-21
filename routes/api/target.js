@@ -11,6 +11,8 @@ const moment = require("moment");
 const c = require("config");
 const User = require("../../models/User");
 const BusinessUsers = require("../../models/BusinessUsers");
+const SupportCase = require("../../models/SupportCase");
+const { default: mongoose } = require("mongoose");
 
 const months = [
   "January",
@@ -407,7 +409,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         .send({ error: "Error", message: "Start Period is required" });
     }
 
-    // check if the same product has a target added
+    // Check if the same product has a target added
     const previousTarget = await ProductTarget.findOne({
       productId: productId,
       businessId: businessId,
@@ -433,8 +435,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         break;
     }
 
-    // getting number of months
-
+    // Calculate the number of months
     const numberOfMonths =
       (endDate.getFullYear() - startDate.getFullYear()) * 12 +
       (endDate.getMonth() - startDate.getMonth()) +
@@ -443,6 +444,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     if (previousTarget) {
       const target = previousTarget.target;
       const oldTarget = [];
+
       for (const items of target) {
         for (const item of items.yearTarget) {
           oldTarget.push({
@@ -453,6 +455,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       }
 
       const newTarget = [];
+
       for (let i = 0; i <= numberOfMonths - 1; i++) {
         newTarget.push({
           year: parseInt(moment(startDate).add(i, "months").format("YYYY")),
@@ -460,7 +463,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         });
       }
 
-      // find the difference between the two arrays
+      // Find the difference between the two arrays
       const difference = newTarget.filter(
         (x) => !oldTarget.some((y) => y.year === x.year && y.month === x.month)
       );
@@ -480,6 +483,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           ).format("YYYY-MM-DD")
         );
 
+        // Use the existing updatePreviousTarget function to update the target
         await updatePreviousTarget(
           productId,
           businessId,
@@ -501,11 +505,12 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       } else {
         return res.status(400).send({
           error: "Error",
-          message: `Target for ${product.productNickName} already exist for the selected period, if you want you edit the target from Editing Section `,
+          message: `Target for ${product.productNickName} already exists for the selected period. If you want, you can edit the target from the Editing Section.`,
         });
       }
     } else {
-      addNewTarget(
+      // Use the existing addNewTarget function to add a new target
+      await addNewTarget(
         productId,
         businessId,
         phasing,
@@ -524,9 +529,62 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         res
       );
     }
+
+    return; // The response is handled within the addNewTarget or updatePreviousTarget functions
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
 });
+
+// router.put("/:id/:year", auth, async (req, res) => {
+//   const { id, year } = req.params;
+
+//   const { userId, phasingId, phasing, startDate, endDate } = req.body;
+
+//   const user = await User.findOne({ _id: userId });
+
+//   try {
+//     const productTarget = await ProductTarget.findOne({ _id: id });
+//     const target = productTarget.target;
+
+//     const yearNeeded = target.find((item) => item.year === parseInt(year));
+
+//     await updatePreviousTarget(
+//       id,
+//       productTarget.businessId,
+//       phasing,
+//       startDate,
+//       endDate,
+//       numberOfMonths,
+//       targetUnits,
+//       targetValue,
+//       phasingData,
+//       productPrice,
+//       currencyCode,
+//       currencyName,
+//       currencySymbol,
+//       productNickName,
+//       actualMonths,
+//       res
+//     )
+
+//     return res.status(200).json({ yearNeeded });
+//   } catch (error) {
+//     const newSupportCase = new SupportCase({
+//       userId: userId,
+//       userName: user.name,
+//       email: user.email,
+//       phone: user.phone,
+//       subject: "Error in Target Editing",
+//       message: error.message,
+//     });
+//     await SupportCase.insertMany(newSupportCase);
+
+//     return res.status(500).send({
+//       error: "Error",
+//       message: `Something went wrong, and a support case has been opened under support ID ${newSupportCase._id}`,
+//     });
+//   }
+// });
 
 module.exports = router;
