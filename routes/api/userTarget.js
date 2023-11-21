@@ -352,24 +352,50 @@ router.get(
           },
         },
         {
+          $lookup: {
+            from: "businesses",
+            localField: "businessId",
+            foreignField: "_id",
+            as: "businessDetails",
+          },
+        },
+        {
           $project: {
-            _id: 1,
-            productId: 1,
-            businessId: 1,
-            target: 1,
-            productNickName: {
-              $arrayElemAt: ["$productDetails.productNickName", 0],
+            _id: 0,
+            businessName: {
+              $arrayElemAt: ["$businessDetails.businessName", 0],
             },
-            costPrice: { $arrayElemAt: ["$productDetails.costPrice", 0] },
-            retailPrice: { $arrayElemAt: ["$productDetails.retailPrice", 0] },
-            currencyCode: { $arrayElemAt: ["$productDetails.currencyCode", 0] },
+            businessLogo: {
+              $arrayElemAt: ["$businessDetails.businessLogo", 0],
+            },
+            currencyCode: {
+              $arrayElemAt: ["$businessDetails.currencyCode", 0],
+            },
             currencySymbol: {
-              $arrayElemAt: ["$productDetails.currencySymbol", 0],
+              $arrayElemAt: ["$businessDetails.currencySymbol", 0],
             },
-            productImage: { $arrayElemAt: ["$productDetails.imageURL", 0] },
-            currencyName: { $arrayElemAt: ["$productDetails.currencyName", 0] },
-            quantity: { $arrayElemAt: ["$productDetails.quantity", 0] },
-            category: { $arrayElemAt: ["$productDetails.category", 0] },
+            currencyName: {
+              $arrayElemAt: ["$businessDetails.currencyName", 0],
+            },
+            target: [
+              {
+                productId: { $arrayElemAt: ["$productDetails._id", 0] },
+                businessId: { $arrayElemAt: ["$businessDetails._id", 0] },
+                productNickName: {
+                  $arrayElemAt: ["$productDetails.productNickName", 0],
+                },
+                costPrice: { $arrayElemAt: ["$productDetails.costPrice", 0] },
+                retailPrice: {
+                  $arrayElemAt: ["$productDetails.retailPrice", 0],
+                },
+
+                productImage: { $arrayElemAt: ["$productDetails.imageURL", 0] },
+
+                quantity: { $arrayElemAt: ["$productDetails.quantity", 0] },
+                category: { $arrayElemAt: ["$productDetails.category", 0] },
+                productTarget: "$target",
+              },
+            ],
           },
         },
       ]);
