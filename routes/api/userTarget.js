@@ -9,6 +9,7 @@ const { default: mongoose } = require("mongoose");
 const Product = require("../../models/Products");
 const BusinessUsers = require("../../models/BusinessUsers");
 const SupportCase = require("../../models/SupportCase");
+const Business = require("../../models/Business");
 
 const getTarget = async (userId, year, res) => {
   const userTarget = await UserTarget.aggregate([
@@ -351,57 +352,40 @@ router.get(
             as: "productDetails",
           },
         },
-        {
-          $lookup: {
-            from: "businesses",
-            localField: "businessId",
-            foreignField: "_id",
-            as: "businessDetails",
-          },
-        },
+
         {
           $project: {
-            _id: 0,
-            businessName: {
-              $arrayElemAt: ["$businessDetails.businessName", 0],
+            _id: 1,
+            productId: 1,
+            businessId: 1,
+            productNickName: {
+              $arrayElemAt: ["$productDetails.productNickName", 0],
             },
-            businessLogo: {
-              $arrayElemAt: ["$businessDetails.businessLogo", 0],
-            },
-            currencyCode: {
-              $arrayElemAt: ["$businessDetails.currencyCode", 0],
-            },
-            currencySymbol: {
-              $arrayElemAt: ["$businessDetails.currencySymbol", 0],
-            },
-            currencyName: {
-              $arrayElemAt: ["$businessDetails.currencyName", 0],
-            },
-
-            target: [
-              {
-                productId: { $arrayElemAt: ["$productDetails._id", 0] },
-                businessId: { $arrayElemAt: ["$businessDetails._id", 0] },
-                productNickName: {
-                  $arrayElemAt: ["$productDetails.productNickName", 0],
-                },
-                costPrice: { $arrayElemAt: ["$productDetails.costPrice", 0] },
-                retailPrice: {
-                  $arrayElemAt: ["$productDetails.retailPrice", 0],
-                },
-
-                productImage: { $arrayElemAt: ["$productDetails.imageURL", 0] },
-
-                quantity: { $arrayElemAt: ["$productDetails.quantity", 0] },
-                category: { $arrayElemAt: ["$productDetails.category", 0] },
-                productTarget: "$target",
-              },
-            ],
+            costPrice: { $arrayElemAt: ["$productDetails.costPrice", 0] },
+            retailPrice: { $arrayElemAt: ["$productDetails.retailPrice", 0] },
+            productImage: { $arrayElemAt: ["$productDetails.imageURL", 0] },
+            currencyName: { $arrayElemAt: ["$productDetails.currencyName", 0] },
+            quantity: { $arrayElemAt: ["$productDetails.quantity", 0] },
+            category: { $arrayElemAt: ["$productDetails.category", 0] },
+            target: 1,
           },
         },
       ]);
 
-      return res.status(200).json({ businessTarget });
+      const businessData = await Business.findOne({
+        _id: businessId,
+      });
+
+      const finalBusinessDetails = {
+        businessName: businessData.businessName,
+        businessLogo: businessData.businessLogo,
+        currencyCode: businessData.currencyCode,
+        currencySymbol: businessData.currencySymbol,
+        currencyName: businessData.currencyName,
+        businessTarget,
+      };
+
+      return res.status(200).json({ businessTarget: finalBusinessDetails });
     } catch (error) {
       return res.status(500).send({
         error: "Error",
