@@ -13,6 +13,7 @@ const User = require("../../models/User");
 const BusinessUsers = require("../../models/BusinessUsers");
 const SupportCase = require("../../models/SupportCase");
 const { default: mongoose } = require("mongoose");
+const UserTarget = require("../../models/UserTarget");
 
 const months = [
   "January",
@@ -582,55 +583,85 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
   }
 });
 
-// router.put("/:id/:year", auth, async (req, res) => {
-//   const { id, year } = req.params;
+router.delete("/:id/:year", isCompanyAdmin, auth, async (req, res) => {
+  const { id, year } = req.params;
 
-//   const { userId, phasingId, phasing, startDate, endDate } = req.body;
+  try {
+    const productTarget = await ProductTarget.findOne({ productId: id });
+    const target = productTarget.target;
 
-//   const user = await User.findOne({ _id: userId });
+    const targetIndex = target.findIndex(
+      (item) => item.year === parseInt(year)
+    );
 
-//   try {
-//     const productTarget = await ProductTarget.findOne({ _id: id });
-//     const target = productTarget.target;
+    if (targetIndex === -1) {
+      return res.status(400).send({
+        error: "Error",
+        message: "Target not found for selected Year",
+      });
+    }
 
-//     const yearNeeded = target.find((item) => item.year === parseInt(year));
+    target.splice(targetIndex, 1);
 
-//     await updatePreviousTarget(
-//       id,
-//       productTarget.businessId,
-//       phasing,
-//       startDate,
-//       endDate,
-//       numberOfMonths,
-//       targetUnits,
-//       targetValue,
-//       phasingData,
-//       productPrice,
-//       currencyCode,
-//       currencyName,
-//       currencySymbol,
-//       productNickName,
-//       actualMonths,
-//       res
-//     )
+    await ProductTarget.updateOne(
+      { productId: id },
+      {
+        $set: {
+          target: target,
+        },
+      }
+    );
 
-//     return res.status(200).json({ yearNeeded });
-//   } catch (error) {
-//     const newSupportCase = new SupportCase({
-//       userId: userId,
-//       userName: user.name,
-//       email: user.email,
-//       phone: user.phone,
-//       subject: "Error in Target Editing",
-//       message: error.message,
-//     });
-//     await SupportCase.insertMany(newSupportCase);
+    const usersTargets = await UserTarget.find({
+      "productsTargets.year": parseInt(year),
+      "productsTargets.target.productId": id,
+    });
 
-//     return res.status(500).send({
-//       error: "Error",
-//       message: `Something went wrong, and a support case has been opened under support ID ${newSupportCase._id}`,
-//     });
-//   }
-// });
+    for (let data of usersTargets) {
+      const productsTargets = data.productsTargets;
+      const yearIndex = productsTargets.findIndex(
+        (item) => item.year === parseInt(year)
+      );
+
+      if (yearIndex === -1) {
+        return res.status(400).send({
+          error: "Error",
+          message: "Target not found for selected Year",
+        });
+      }
+
+      const target = productsTargets[yearIndex].target;
+
+      const targetIndex = target.findIndex(
+        (item) => item.productId.toString() === id
+      );
+
+      if (targetIndex === -1) {
+        return res.status(400).send({
+          error: "Error",
+          message: "Target not found for selected Product",
+        });
+      }
+
+      target.splice(targetIndex, 1);
+      await UserTarget.updateOne(
+        { _id: data._id },
+        {
+          $set: {
+            productsTargets: productsTargets,
+          },
+        }
+      );
+    }
+
+    const product = await Products.findOne({ _id: id });
+
+    return res.status(200).send({
+      message: `Targe for ${product.productNickName} for ${year} deleted successfully, and the target for the users has been updated`,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
 
 module.exports = router;
