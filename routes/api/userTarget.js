@@ -199,12 +199,12 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
     for (let data of userTeam) {
       const userTargetData = await getTarget(data._id, year, res);
 
-      if (!userTargetData) {
-        return res.status(400).send({
-          error: "Error",
-          message: "No target found for the specified year",
-        });
-      }
+      // if (!userTargetData) {
+      //   return res.status(400).send({
+      //     error: "Error",
+      //     message: "No target found for the specified year",
+      //   });
+      // }
 
       usersTarget.push({
         _id: data._id,
