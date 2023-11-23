@@ -624,7 +624,11 @@ router.delete("/:id/:year", isCompanyAdmin, auth, async (req, res) => {
       );
 
       if (yearIndex === -1) {
-        return;
+        return res.status(400).send({
+          error: "Error",
+          message:
+            "Target not found for selected Year for one or all of team Members",
+        });
       }
 
       const target = productsTargets[yearIndex].target;
@@ -634,7 +638,11 @@ router.delete("/:id/:year", isCompanyAdmin, auth, async (req, res) => {
       );
 
       if (targetIndex === -1) {
-        return;
+        return res.status(400).send({
+          error: "Error",
+          message:
+            "Target not found for selected Product for one or all of team Members",
+        });
       }
 
       target.splice(targetIndex, 1);

@@ -199,6 +199,11 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
     for (let data of userTeam) {
       const userTargetData = await getTarget(data._id, year, res);
 
+      const targetValue = userTargetData.productsTarget
+        .map((a) => a.totalValue)
+        .reduce((a, b) => a + b, 0)
+        .toFixed(2);
+
       // if (!userTargetData) {
       //   return res.status(400).send({
       //     error: "Error",
@@ -212,7 +217,7 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
         businessId: data.businessId,
         profilePicture: data.profilePicture,
         userType: data.userType,
-
+        targetValue,
         target: userTargetData,
       });
     }
