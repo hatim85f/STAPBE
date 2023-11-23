@@ -218,7 +218,7 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
         businessId: data.businessId,
         profilePicture: data.profilePicture,
         userType: data.userType,
-        totalValue: userTargetData.totalValue,
+
         target: userTargetData,
       });
     }
