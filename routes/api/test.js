@@ -141,4 +141,108 @@ router.delete("/:businessId", auth, async (req, res) => {
   }
 });
 
+router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
+  const { userId, year } = req.params;
+
+  try {
+    const userTarget = await UserTarget.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $unwind: "$productsTargets",
+      },
+      {
+        $match: {
+          "productsTargets.year": parseInt(year),
+        },
+      },
+    ]);
+
+    let currencyCode;
+    let currencySymbol;
+    let currencyName;
+
+    const userTargetData = {
+      userId,
+      year,
+      businessId: userTarget[0].businessId,
+      currencyName,
+      currencyCode,
+      currencySymbol,
+      totalValue: 0,
+      productsTarget: [],
+    };
+
+    for (let data of userTarget) {
+      const productsTarget = data.productsTargets.target;
+
+      const totalTargetValue = productsTarget
+        .map((a) => a.targetValue)
+        .reduce((a, b) => a + b, 0);
+
+      for (let details of productsTarget) {
+        const product = await Products.findOne({ _id: details.productId });
+
+        userTargetData.currencyCode = product.currencyCode;
+        userTargetData.currencySymbol = product.currencySymbol;
+        userTargetData.currencyName = product.currencyName;
+        userTargetData.totalValue = totalTargetValue;
+
+        const productTarget = await ProductTarget.findOne({
+          productId: product._id,
+        });
+
+        const neededTarget = productTarget.target.find(
+          (x) => x.year === parseInt(year)
+        );
+
+        let target = [];
+
+        // return;
+
+        for (let targets of neededTarget.yearTarget) {
+          target.push({
+            monthName: targets.month,
+            targetUnits:
+              (details.targetUnits * parseInt(targets.targetPhases)) / 100,
+
+            targetValue:
+              (details.targetValue * parseInt(targets.targetPhases)) / 100,
+            monthPhasing: targets.targetPhases,
+          });
+        }
+
+        userTargetData.productsTarget.push({
+          productId: product._id,
+          productNickName: product.productNickName,
+          costPrice: neededTarget.yearTarget[0].productPrice,
+          retailPrice: product.retailPrice,
+          startPeriod: neededTarget.yearTarget[0].startPeriod,
+          endPeriod: neededTarget.yearTarget[0].endPeriod,
+          addedIn: neededTarget.yearTarget[0].addedIn,
+          updatedIn: neededTarget.yearTarget[0].updatedIn,
+          totalUnits: +target
+            .map((a) => a.targetUnits)
+            .reduce((a, b) => a + b, 0)
+            .toFixed(0),
+          totalValue: +target
+            .map((a) => a.targetValue)
+            .reduce((a, b) => a + b, 0)
+            .toFixed(2),
+          target: target,
+        });
+      }
+    }
+
+    return res.status(200).json(userTargetData);
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ error: "Error in server", message: error.message });
+  }
+});
+
 module.exports = router;

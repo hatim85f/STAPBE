@@ -44,11 +44,16 @@ const getTarget = async (userId, year, res) => {
     currencyName,
     currencyCode,
     currencySymbol,
+    totalValue: 0,
     productsTarget: [],
   };
 
   for (let data of userTarget) {
     const productsTarget = data.productsTargets.target;
+
+    const totalTargetValue = productsTarget
+      .map((a) => a.targetValue)
+      .reduce((a, b) => a + b, 0);
 
     for (let details of productsTarget) {
       const product = await Product.findOne({ _id: details.productId });
@@ -56,6 +61,7 @@ const getTarget = async (userId, year, res) => {
       userTargetData.currencyCode = product.currencyCode;
       userTargetData.currencySymbol = product.currencySymbol;
       userTargetData.currencyName = product.currencyName;
+      userTargetData.totalValue = totalTargetValue;
 
       const productTarget = await ProductTarget.findOne({
         productId: product._id,
