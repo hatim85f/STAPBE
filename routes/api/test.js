@@ -18,226 +18,282 @@ const Client = require("../../models/Client");
 const UserTarget = require("../../models/UserTarget");
 const ProductTarget = require("../../models/ProductTarget");
 
-router.get("/:businessId/:year", auth, async (req, res) => {
-  const { businessId, year } = req.params;
-
-  try {
-    const businessTarget = await ProductTarget.aggregate([
-      {
-        $match: {
-          businessId: new mongoose.Types.ObjectId(businessId),
-        },
-      },
-      {
-        $unwind: "$target",
-      },
-      {
-        $match: {
-          "target.year": parseInt(year),
-        },
-      },
-      {
-        $project: {
-          value: "$target.totalValue",
-        },
-      },
-    ]);
-
-    const businessTargetValue = businessTarget
-      .map((a) => a.value)
-      .reduce((a, b) => a + b, 0);
-
-    return res.status(200).json(businessTarget);
-  } catch (error) {
-    return res.status(500).json({ msg: "Server Error" });
-  }
-});
-
-router.get("/userTarget/:userId/:year", auth, async (req, res) => {
-  const { userId, year } = req.params;
-
-  try {
-    const userTarget = await UserTarget.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(userId),
-        },
-      },
-      {
-        $unwind: "$productsTargets",
-      },
-      {
-        $match: {
-          "productsTargets.year": parseInt(year),
-        },
-      },
-      {
-        $project: {
-          value: "$productsTargets.target.targetValue",
-        },
-      },
-    ]);
-
-    const repValue = userTarget[0]?.value.reduce((a, b) => a + b, 0);
-
-    const business = await BusinessUsers.findOne({ userId });
-
-    const productsTarget = await ProductTarget.aggregate([
-      {
-        $match: {
-          businessId: new mongoose.Types.ObjectId(business.businessId),
-        },
-      },
-      {
-        $unwind: "$target",
-      },
-      {
-        $match: {
-          "target.year": parseInt(year),
-        },
-      },
-      {
-        $project: {
-          value: "$target.totalValue",
-        },
-      },
-    ]);
-
-    const businessValue = productsTarget
-      .map((a) => a.value)
-      .reduce((a, b) => a + b, 0);
-
-    const targetForRep = businessValue * 0.28;
-    const difference = targetForRep - repValue;
-
-    const percent = (repValue / businessValue) * 100;
-
-    return res.status(200).json({
-      repValue,
-      businessValue,
-      // targetForRep,
-      difference,
-      percent,
-      // businessId: business.businessId,
-    });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
-
-router.delete("/:businessId", auth, async (req, res) => {
-  const { businessId } = req.params;
-
-  try {
-    await UserTarget.deleteMany({
-      businessId: new mongoose.Types.ObjectId(businessId),
-    });
-
-    return res
-      .status(200)
-      .json({ message: "User targets deleted successfully" });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
-
 router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
   const { userId, year } = req.params;
 
   try {
-    const userTarget = await UserTarget.aggregate([
+    const userTeam = await BusinessUsers.aggregate([
       {
         $match: {
           userId: new mongoose.Types.ObjectId(userId),
+          isBusinessOwner: true,
         },
       },
       {
-        $unwind: "$productsTargets",
+        $lookup: {
+          from: "businessusers",
+          localField: "businessId",
+          foreignField: "businessId",
+          as: "businessUsers",
+        },
+      },
+      {
+        $unwind: "$businessUsers",
       },
       {
         $match: {
-          "productsTargets.year": parseInt(year),
+          "businessUsers.isBusinessOwner": false,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "businessUsers.userId",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+      {
+        $unwind: "$users",
+      },
+      {
+        $lookup: {
+          from: "usertargets",
+          localField: "users._id",
+          foreignField: "userId",
+          as: "userTarget",
+        },
+      },
+      {
+        $unwind: "$userTarget",
+      },
+      {
+        $unwind: "$userTarget.productsTargets",
+      },
+      {
+        $match: {
+          "userTarget.productsTargets.year": parseInt(year),
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "userTarget.productsTargets.target.productId",
+          foreignField: "_id",
+          as: "products",
+        },
+      },
+      {
+        $lookup: {
+          from: "producttargets",
+          localField: "userTarget.productsTargets.target.productId",
+          foreignField: "productId",
+          as: "productTarget",
+        },
+      },
+      {
+        $unwind: "$productTarget",
+      },
+      {
+        $unwind: "$productTarget.target",
+      },
+      {
+        $match: {
+          "productTarget.target.year": parseInt(year),
+        },
+      },
+      {
+        $project: {
+          _id: "$users._id",
+          userName: "$users.userName",
+          profilePicture: "$users.profilePicture",
+          userType: "$users.userType",
+          businessId: "$businessUsers.businessId",
+          target: {
+            currencyName: { $arrayElemAt: ["$products.currencyName", 0] },
+            currencyCode: { $arrayElemAt: ["$products.currencyCode", 0] },
+            currencySymbol: { $arrayElemAt: ["$products.currencySymbol", 0] },
+            totalValue: {
+              $reduce: {
+                input: "$userTarget.productsTargets.target",
+                initialValue: 0,
+                in: {
+                  $sum: ["$$value", "$$this.targetValue"],
+                },
+              },
+            },
+            productsTarget: {
+              $map: {
+                input: "$userTarget.productsTargets.target",
+                as: "target",
+                in: {
+                  productId: "$$target.productId",
+                  productNickName: {
+                    $arrayElemAt: [
+                      "$products.productNickName",
+                      {
+                        $indexOfArray: ["$products._id", "$$target.productId"],
+                      },
+                    ],
+                  },
+                  totalUnits: "$$target.targetUnits",
+                  totalValue: "$$target.targetValue",
+                  costPrice: {
+                    $arrayElemAt: [
+                      "$products.costPrice",
+                      {
+                        $indexOfArray: ["$products._id", "$$target.productId"],
+                      },
+                    ],
+                  },
+                  retailPrice: {
+                    $arrayElemAt: [
+                      "$products.retailPrice",
+                      {
+                        $indexOfArray: ["$products._id", "$$target.productId"],
+                      },
+                    ],
+                  },
+                  startPeriod: {
+                    $arrayElemAt: [
+                      "$productTarget.target.yearTarget.startPeriod",
+                      {
+                        $indexOfArray: [
+                          "$productTarget.target.yearTarget.month",
+                          "$$target.monthName",
+                        ],
+                      },
+                    ],
+                  },
+                  endPeriod: {
+                    $arrayElemAt: [
+                      "$productTarget.target.yearTarget.endPeriod",
+                      {
+                        $indexOfArray: [
+                          "$productTarget.target.yearTarget.month",
+                          "$$target.monthName",
+                        ],
+                      },
+                    ],
+                  },
+                  addedIn: {
+                    $arrayElemAt: [
+                      "$productTarget.target.yearTarget.addedIn",
+                      {
+                        $indexOfArray: [
+                          "$productTarget.target.yearTarget.month",
+                          "$$target.monthName",
+                        ],
+                      },
+                    ],
+                  },
+                  updatedIn: {
+                    $arrayElemAt: [
+                      "$productTarget.target.yearTarget.updatedIn",
+                      {
+                        $indexOfArray: [
+                          "$productTarget.target.yearTarget.month",
+                          "$$target.monthName",
+                        ],
+                      },
+                    ],
+                  },
+                  target: {
+                    $map: {
+                      input: "$productTarget.target.yearTarget",
+                      as: "yearTarget",
+                      in: {
+                        monthName: "$$yearTarget.month",
+                        targetUnits: {
+                          $multiply: [
+                            "$$target.targetUnits",
+                            {
+                              $divide: [
+                                {
+                                  $toDouble: {
+                                    $replaceOne: {
+                                      input: "$$yearTarget.targetPhases",
+                                      find: "%",
+                                      replacement: "",
+                                    },
+                                  },
+                                },
+                                100,
+                              ],
+                            },
+                          ],
+                        },
+                        targetValue: {
+                          $trunc: {
+                            $multiply: [
+                              "$$target.targetValue",
+                              {
+                                $divide: [
+                                  {
+                                    $toDouble: {
+                                      $replaceOne: {
+                                        input: "$$yearTarget.targetPhases",
+                                        find: "%",
+                                        replacement: "",
+                                      },
+                                    },
+                                  },
+                                  100,
+                                ],
+                              },
+                            ],
+                          },
+                        },
+                        monthPhasing: "$$yearTarget.targetPhases",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$_id",
+          userName: { $first: "$userName" },
+          profilePicture: { $first: "$profilePicture" },
+          userType: { $first: "$userType" },
+          businessId: { $first: "$businessId" },
+          target: {
+            $first: "$target",
+          },
         },
       },
     ]);
 
-    let currencyCode;
-    let currencySymbol;
-    let currencyName;
+    // let finalTeam = [];
+    // for (let data of userTeam) {
+    //   const prodcutsTarget = data.target.map((a) => a.productsTarget).flat(1);
 
-    const userTargetData = {
-      userId,
-      year,
-      businessId: userTarget[0].businessId,
-      currencyName,
-      currencyCode,
-      currencySymbol,
-      totalValue: 0,
-      productsTarget: [],
-    };
+    //   finalTeam.push({
+    //     _id: data._id,
+    //     userName: data.userName,
+    //     profilePicture: data.profilePicture,
+    //     userType: data.userType,
+    //     businessId: data.businessId,
+    //     target: {
+    //       currencyName: data.target[0].currencyName,
+    //       currencyCode: data.target[0].currencyCode,
+    //       currencySymbol: data.target[0].currencySymbol,
+    //       totalValue: prodcutsTarget.reduce((a, b) => a + b.totalValue, 0),
+    //       productsTarget: prodcutsTarget,
+    //     },
+    //   });
+    // }
 
-    for (let data of userTarget) {
-      const productsTarget = data.productsTargets.target;
-
-      const totalTargetValue = productsTarget
-        .map((a) => a.targetValue)
-        .reduce((a, b) => a + b, 0);
-
-      for (let details of productsTarget) {
-        const product = await Products.findOne({ _id: details.productId });
-
-        userTargetData.currencyCode = product.currencyCode;
-        userTargetData.currencySymbol = product.currencySymbol;
-        userTargetData.currencyName = product.currencyName;
-        userTargetData.totalValue = totalTargetValue;
-
-        const productTarget = await ProductTarget.findOne({
-          productId: product._id,
-        });
-
-        const neededTarget = productTarget.target.find(
-          (x) => x.year === parseInt(year)
-        );
-
-        let target = [];
-
-        // return;
-
-        for (let targets of neededTarget.yearTarget) {
-          target.push({
-            monthName: targets.month,
-            targetUnits:
-              (details.targetUnits * parseInt(targets.targetPhases)) / 100,
-
-            targetValue:
-              (details.targetValue * parseInt(targets.targetPhases)) / 100,
-            monthPhasing: targets.targetPhases,
-          });
-        }
-
-        userTargetData.productsTarget.push({
-          productId: product._id,
-          productNickName: product.productNickName,
-          costPrice: neededTarget.yearTarget[0].productPrice,
-          retailPrice: product.retailPrice,
-          startPeriod: neededTarget.yearTarget[0].startPeriod,
-          endPeriod: neededTarget.yearTarget[0].endPeriod,
-          addedIn: neededTarget.yearTarget[0].addedIn,
-          updatedIn: neededTarget.yearTarget[0].updatedIn,
-          totalUnits: +target
-            .map((a) => a.targetUnits)
-            .reduce((a, b) => a + b, 0)
-            .toFixed(0),
-          totalValue: +target
-            .map((a) => a.targetValue)
-            .reduce((a, b) => a + b, 0)
-            .toFixed(2),
-          target: target,
-        });
-      }
-    }
-
-    return res.status(200).json(userTargetData);
+    return res.status(200).json({
+      userTeam: userTeam.sort(
+        (a, b) => a.target.totalValue - b.target.totalValue
+      ),
+    });
   } catch (error) {
     return res
       .status(500)
