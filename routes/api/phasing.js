@@ -4,16 +4,58 @@ const Phasing = require("../../models/Phasing");
 const auth = require("../../middleware/auth");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 const BusinessUsers = require("../../models/BusinessUsers");
+const { default: mongoose } = require("mongoose");
 
 router.get("/:userId", auth, async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const business = await BusinessUsers.find({ userId });
+    // const business = await BusinessUsers.find({ userId });
 
-    const businessIds = business.map((business) => business.businessId);
+    // const businessIds = business.map((business) => business.businessId);
 
-    const phasing = await Phasing.find({ businessId: { $in: businessIds } });
+    // const phasing = await Phasing.find({ businessId: { $in: businessIds } });
+
+    const phasing = await BusinessUsers.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "phasings",
+          localField: "businessId",
+          foreignField: "businessId",
+          as: "phasing",
+        },
+      },
+      {
+        $unwind: "$phasing",
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $unwind: "$business",
+      },
+      {
+        $project: {
+          _id: "$phasing._id",
+          businessId: "$business._id",
+          phasingPercentage: "$phasing.phasingPercentage",
+          businessName: "$business.businessName",
+          addedIn: "$phasing.addedIn",
+          updatedIn: "$phasing.updatedIn",
+          businessLogo: "$business.businessLogo",
+        },
+      },
+    ]);
 
     if (!phasing) {
       return res
