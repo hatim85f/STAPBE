@@ -14,7 +14,10 @@ const PhasingSchema = Schema({
     type: Array,
     required: true,
   },
-
+  name: {
+    type: String,
+    required: true,
+  },
   addedIn: {
     type: Date,
     default: Date.now,

@@ -53,6 +53,7 @@ router.get("/:userId", auth, async (req, res) => {
           addedIn: "$phasing.addedIn",
           updatedIn: "$phasing.updatedIn",
           businessLogo: "$business.businessLogo",
+          phasingName: "$phasing.name",
         },
       },
     ]);
@@ -70,7 +71,7 @@ router.get("/:userId", auth, async (req, res) => {
 });
 
 router.post("/", auth, isCompanyAdmin, async (req, res) => {
-  const { businessId, phasingData } = req.body;
+  const { businessId, phasingData, name } = req.body;
 
   try {
     if (!phasingData) {
@@ -82,6 +83,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     const newPhasing = new Phasing({
       businessId,
       phasingPercentage: phasingData,
+      name,
     });
 
     await Phasing.insertMany(newPhasing);
