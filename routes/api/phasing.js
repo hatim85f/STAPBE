@@ -5,6 +5,8 @@ const auth = require("../../middleware/auth");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 const BusinessUsers = require("../../models/BusinessUsers");
 const { default: mongoose } = require("mongoose");
+const User = require("../../models/User");
+const SupportCase = require("../../models/SupportCase");
 
 router.get("/:userId", auth, async (req, res) => {
   const userId = req.params.userId;
@@ -86,7 +88,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     }
 
     const newPhasing = new Phasing({
-      businessId: business._id,
+      businessId: business.businessId,
       phasingPercentage: phasingData,
       name,
     });
@@ -94,8 +96,21 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     await Phasing.insertMany(newPhasing);
 
     return res.status(200).json({ message: "Phasing data added successfully" });
+    return res.status(200).json({ business });
   } catch (error) {
-    return res.status(500).json({ error: "Error", message: "Server error" });
+    const user = await User.findOne({ _id: userId });
+    const newSupportCase = new SupportCase({
+      userId,
+      email: user.email,
+      subject: "Error Creating Phasing Data",
+      message: error.message,
+    });
+
+    await SupportCase.insertMany(newSupportCase);
+    return res.status(500).json({
+      error: "Error",
+      message: "Something Went Wrong, Please try again later",
+    });
   }
 });
 
