@@ -71,9 +71,14 @@ router.get("/:userId", auth, async (req, res) => {
 });
 
 router.post("/", auth, isCompanyAdmin, async (req, res) => {
-  const { businessId, phasingData, name } = req.body;
+  const { userId, phasingData, name } = req.body;
 
   try {
+    const business = await BusinessUsers.findOne({
+      userId,
+      isBusinessOwner: true,
+    });
+
     if (!phasingData) {
       return res
         .status(400)
@@ -81,7 +86,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     }
 
     const newPhasing = new Phasing({
-      businessId,
+      businessId: business._id,
       phasingPercentage: phasingData,
       name,
     });
