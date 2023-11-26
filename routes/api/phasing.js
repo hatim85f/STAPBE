@@ -114,4 +114,18 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
   }
 });
 
+router.delete("/", auth, async (req, res) => {
+  const { phasingId } = req.body;
+
+  try {
+    await Phasing.deleteOne({ _id: phasingId });
+
+    return res
+      .status(200)
+      .send({ message: "Phasing data deleted successfully" });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: "Server error" });
+  }
+});
+
 module.exports = router;
