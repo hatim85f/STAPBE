@@ -209,11 +209,12 @@ router.delete("/:id", auth, async (req, res) => {
   // then update products in eligibility of the user
 
   try {
-    const product = await Products.deleteOne({ _id: productId });
+    const product = await Products.findOne({ _id: productId });
 
     const businessId = product.businessId;
     const businessUser = await BusinessUsers.findOne({ businessId });
     const userId = businessUser.userId;
+    await Products.deleteOne({ _id: productId });
     await Eligibility.updateOne({ userId }, { $inc: { products: 1 } });
 
     return res.status(200).json({ message: "Product deleted successfully" });
