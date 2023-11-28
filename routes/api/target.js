@@ -409,7 +409,6 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     phasing,
     phasingData,
     startPeriod,
-    isBulk,
   } = req.body;
 
   try {
@@ -434,6 +433,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     const startDate = new Date(startPeriod);
     const endDate = new Date(startDate);
 
+    let isBulk = false;
+
     switch (targetType) {
       case "Yearly":
         endDate.setFullYear(endDate.getFullYear() + 1);
@@ -446,6 +447,9 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       case "Monthly":
         endDate.setMonth(endDate.getMonth() + 1);
         endDate.setDate(0);
+        break;
+      case "Bulk":
+        isBulk = true;
         break;
       default:
         break;
