@@ -409,6 +409,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     phasing,
     phasingData,
     startPeriod,
+    isBulk,
   } = req.body;
 
   try {
@@ -470,6 +471,65 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       }
 
       const newTarget = [];
+
+      if (isBulk) {
+        const startYear = parseInt(moment(startDate).format("YYYY"));
+
+        const yearIndex = target.findIndex((item) => item.year === startYear);
+
+        if (yearIndex === -1) {
+          target.push({
+            year: startYear,
+            yearTarget: [
+              {
+                month: startYear,
+                targetUnits: targetUnits,
+                productPrice: productPrice,
+                targetValue: targetValue,
+                phasing: false,
+                phasingData: null,
+                targetPhases: "100%",
+                startPeriod: startDate,
+                endPeriod: endDate,
+                addedIn: new Date(),
+                updatedIn: new Date(),
+              },
+            ],
+            totalUnits: targetUnits,
+            totalValue: targetValue,
+          });
+        } else {
+          target[yearIndex].yearTarget = [
+            {
+              month: startYear,
+              targetUnits: targetUnits,
+              productPrice: productPrice,
+              targetValue: targetValue,
+              phasing: false,
+              phasingData: null,
+              targetPhases: "100%",
+              startPeriod: startDate,
+              endPeriod: endDate,
+              addedIn: new Date(),
+              updatedIn: new Date(),
+            },
+          ];
+
+          target[yearIndex].totalUnits = targetUnits;
+          target[yearIndex].totalValue = targetValue;
+        }
+
+        await ProductTarget.updateOne(
+          { _id: previousTarget._id },
+          {
+            $set: {
+              target: target,
+            },
+          }
+        );
+
+        return res.status(200).send({ message: "Target updated successfully" });
+      }
 
       for (let i = 0; i <= numberOfMonths - 1; i++) {
         newTarget.push({
@@ -556,6 +616,42 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         );
       }
     } else {
+      if (isBulk) {
+        const startYear = parseInt(moment(startDate).format("YYYY"));
+
+        const newProductTarget = new ProductTarget({
+          productId,
+          businessId,
+          target: [
+            {
+              year: startYear,
+              yearTarget: [
+                {
+                  month: startYear,
+                  targetUnits: targetUnits,
+                  productPrice: productPrice,
+                  targetValue: targetValue,
+                  phasing: false,
+                  phasingData: null,
+                  targetPhases: "100%",
+                  startPeriod: startDate,
+                  endPeriod: endDate,
+                  addedIn: new Date(),
+                  updatedIn: new Date(),
+                },
+              ],
+              totalUnits: targetUnits,
+              totalValue: targetValue,
+            },
+          ],
+          currencyCode,
+          currencyName,
+          currencySymbol,
+        });
+
+        await ProductTarget.insertMany(newProductTarget);
+        return res.status(200).send({ message: "Target added successfully" });
+      }
       // Use the existing addNewTarget function to add a new target
       await addNewTarget(
         productId,

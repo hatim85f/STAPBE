@@ -27,6 +27,7 @@ const ProductTargetSchema = new Schema({
         type: Number,
         required: true,
       },
+
       yearTarget: [
         {
           month: {
