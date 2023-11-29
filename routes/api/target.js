@@ -153,7 +153,7 @@ const addNewTarget = async (
   currencyName,
   currencySymbol,
   productNickName,
-  targetType,
+  isPrevious,
   res
 ) => {
   let productTarget = [];
@@ -171,7 +171,6 @@ const addNewTarget = async (
         targetPhases: `${(1 / numberOfMonths) * 100}%`,
         startPeriod: startDate,
         endPeriod: endDate,
-        targetType: targetType,
       });
     }
   } else {
@@ -205,7 +204,6 @@ const addNewTarget = async (
         ).toFixed(0)}%`,
         startPeriod: startDate,
         endPeriod: endDate,
-        targetType: targetType,
       });
     }
   }
@@ -249,7 +247,6 @@ const updatePreviousTarget = async (
   productNickName,
   actualMonths,
   replace,
-  targetType,
   res
 ) => {
   let productTarget = [];
@@ -267,7 +264,6 @@ const updatePreviousTarget = async (
         targetPhases: `${(1 / numberOfMonths) * 100}%`,
         startPeriod: startDate,
         endPeriod: endDate,
-        targetType: targetType,
       });
     }
   } else {
@@ -301,7 +297,6 @@ const updatePreviousTarget = async (
         ).toFixed(0)}%`,
         startPeriod: startDate,
         endPeriod: endDate,
-        targetType: targetType,
       });
     }
   }
@@ -502,7 +497,6 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
                 endPeriod: endDate,
                 addedIn: new Date(),
                 updatedIn: new Date(),
-                targetType: targetType,
               },
             ],
             totalUnits: targetUnits,
@@ -522,7 +516,6 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
               endPeriod: endDate,
               addedIn: new Date(),
               updatedIn: new Date(),
-              targetType: targetType,
             },
           ];
 
@@ -587,7 +580,6 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           product.productNickName,
           difference,
           false,
-          targetType,
           res
         );
       } else {
@@ -624,7 +616,6 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           product.productNickName,
           actualMonths,
           true,
-          targetType,
           res
         );
       }
@@ -651,7 +642,6 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
                   endPeriod: endDate,
                   addedIn: new Date(),
                   updatedIn: new Date(),
-                  targetType,
                 },
               ],
               totalUnits: targetUnits,
@@ -683,7 +673,6 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         currencySymbol,
         product.productNickName,
         false,
-        targetType,
         res
       );
     }
