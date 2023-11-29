@@ -74,10 +74,10 @@ const ProductTargetSchema = new Schema({
             type: Date,
             default: Date.now,
           },
-          targetType: {
-            type: String,
-            required: true,
-          },
+          // targetType: {
+          //   type: String,
+          //   required: true,
+          // },
         },
       ],
     },
