@@ -153,7 +153,7 @@ const addNewTarget = async (
   currencyName,
   currencySymbol,
   productNickName,
-  isPrevious,
+  targetType,
   res
 ) => {
   let productTarget = [];
@@ -171,6 +171,7 @@ const addNewTarget = async (
         targetPhases: `${(1 / numberOfMonths) * 100}%`,
         startPeriod: startDate,
         endPeriod: endDate,
+        targetType: targetType,
       });
     }
   } else {
@@ -204,6 +205,7 @@ const addNewTarget = async (
         ).toFixed(0)}%`,
         startPeriod: startDate,
         endPeriod: endDate,
+        targetType: targetType,
       });
     }
   }
@@ -247,7 +249,8 @@ const updatePreviousTarget = async (
   productNickName,
   actualMonths,
   replace,
-  res
+  res,
+  targetType
 ) => {
   let productTarget = [];
 
@@ -264,6 +267,7 @@ const updatePreviousTarget = async (
         targetPhases: `${(1 / numberOfMonths) * 100}%`,
         startPeriod: startDate,
         endPeriod: endDate,
+        targetType: targetType,
       });
     }
   } else {
@@ -297,6 +301,7 @@ const updatePreviousTarget = async (
         ).toFixed(0)}%`,
         startPeriod: startDate,
         endPeriod: endDate,
+        targetType: targetType,
       });
     }
   }
@@ -497,6 +502,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
                 endPeriod: endDate,
                 addedIn: new Date(),
                 updatedIn: new Date(),
+                targetType: targetType,
               },
             ],
             totalUnits: targetUnits,
@@ -516,6 +522,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
               endPeriod: endDate,
               addedIn: new Date(),
               updatedIn: new Date(),
+              targetType: targetType,
             },
           ];
 
@@ -580,7 +587,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           product.productNickName,
           difference,
           false,
-          res
+          res,
+          targetType
         );
       } else {
         const monthsTarget = target
@@ -616,7 +624,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           product.productNickName,
           actualMonths,
           true,
-          res
+          res,
+          targetType
         );
       }
     } else {
@@ -642,6 +651,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
                   endPeriod: endDate,
                   addedIn: new Date(),
                   updatedIn: new Date(),
+                  targetType,
                 },
               ],
               totalUnits: targetUnits,
@@ -673,7 +683,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         currencySymbol,
         product.productNickName,
         false,
-        res
+        res,
+        targetType
       );
     }
 
