@@ -115,7 +115,7 @@ router.get("/:userId/:year", auth, async (req, res) => {
   }
 });
 
-const separateTargetDetails = (target, totalUnits, totalValue) => {
+const separateTargetDetails = (target) => {
   const separatedTarget = target.reduce((acc, curr) => {
     const found = acc.find((x) => x.year === curr.year);
 
@@ -128,8 +128,8 @@ const separateTargetDetails = (target, totalUnits, totalValue) => {
       });
     } else {
       found.yearTarget.push(curr);
-      found.totalUnits = totalUnits;
-      found.totalValue = totalValue;
+      found.totalUnits += curr.targetUnits;
+      found.totalValue += curr.targetValue;
     }
 
     return acc;
@@ -211,11 +211,7 @@ const addNewTarget = async (
     }
   }
 
-  const separatedTarget = separateTargetDetails(
-    productTarget,
-    targetUnits,
-    targetValue
-  );
+  const separatedTarget = separateTargetDetails(productTarget);
 
   const newTarget = new ProductTarget({
     productId,
@@ -311,11 +307,7 @@ const updatePreviousTarget = async (
     }
   }
 
-  const separatedTarget = separateTargetDetails(
-    productTarget,
-    targetUnits,
-    targetValue
-  );
+  const separatedTarget = separateTargetDetails(productTarget);
 
   const filteredSeparatedTarget = separatedTarget
     .map((yearTarget) => {

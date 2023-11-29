@@ -86,16 +86,21 @@ router.get("/:userId", auth, async (req, res) => {
 // collection: businessUsers has userId and businessId
 // if he is not the owner of the business
 
-router.get("/employee", auth, async (req, res) => {
-  const { userId } = req.query; // destructuring
+router.get("/employee/:userId", auth, async (req, res) => {
+  const { userId } = req.params; // destructuring
   try {
-    const userBusinesses = await BusinessUsers.find({
+    const userBusiness = await BusinessUsers.findOne({
       userId,
       isBusinessOwner: false,
     });
-    return res.status(200).json({ userBusinesses });
+    return res.status(200).json({ userBusiness });
   } catch (error) {
-    return res.status(500).json({ error: "Error", message: error.message });
+    return res
+      .status(500)
+      .json({
+        error: "Error",
+        message: "Something Went wrong, please try again later",
+      });
   }
 });
 
