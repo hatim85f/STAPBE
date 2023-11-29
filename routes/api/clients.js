@@ -8,6 +8,7 @@ const BusinessUsers = require("../../models/BusinessUsers");
 const Eligibility = require("../../models/Eligibility");
 const isAdmin = require("../../middleware/isAdmin");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
+const { default: mongoose } = require("mongoose");
 
 // @route GET api/clients/test
 // @description tests clients route
@@ -68,7 +69,7 @@ router.get("/:userId", auth, async (req, res) => {
       const clients = await Client.aggregate([
         {
           $match: {
-            personInHandleId: userId,
+            personInHandleId: new mongoose.Types.ObjectId(userId),
           },
         },
         {
