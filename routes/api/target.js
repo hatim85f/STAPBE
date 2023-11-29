@@ -249,8 +249,8 @@ const updatePreviousTarget = async (
   productNickName,
   actualMonths,
   replace,
-  res,
-  targetType
+  targetType,
+  res
 ) => {
   let productTarget = [];
 
@@ -587,8 +587,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           product.productNickName,
           difference,
           false,
-          res,
-          targetType
+          targetType,
+          res
         );
       } else {
         const monthsTarget = target
@@ -624,8 +624,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
           product.productNickName,
           actualMonths,
           true,
-          res,
-          targetType
+          targetType,
+          res
         );
       }
     } else {
@@ -683,8 +683,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
         currencySymbol,
         product.productNickName,
         false,
-        res,
-        targetType
+        targetType,
+        res
       );
     }
 
