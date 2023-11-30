@@ -15,6 +15,11 @@ const OrderSchema = new Schema({
   },
   clientId: {
     type: mongoose.Types.ObjectId,
+    ref: "client",
+    required: true,
+  },
+  details: {
+    type: Array,
     required: true,
   },
   status: {

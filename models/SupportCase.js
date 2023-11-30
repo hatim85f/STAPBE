@@ -9,6 +9,11 @@ const SupportCaseSchema = Schema({
     type: mongoose.Types.ObjectId,
     required: true,
   },
+  businessId: {
+    type: mongoose.Types.ObjectId,
+    ref: "business",
+    required: true,
+  },
   userName: {
     type: String,
     required: true,

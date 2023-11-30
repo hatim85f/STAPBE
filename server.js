@@ -91,6 +91,7 @@ app.use("/api/clients", require("./routes/api/clients"));
 app.use("/api/targets", require("./routes/api/target"));
 app.use("/api/phasing", require("./routes/api/phasing"));
 app.use("/api/userTarget", require("./routes/api/userTarget"));
+app.use("/api/orders", require("./routes/api/orders"));
 app.use("/api/test", require("./routes/api/test"));
 
 const PORT = process.env.PORT || 5000;
