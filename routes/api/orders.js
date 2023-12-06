@@ -101,7 +101,7 @@ router.delete("/:orderId", auth, async (req, res) => {
   const { orderId } = req.params;
 
   try {
-    await OrderProducts.deleteMany({ orderId });
+    // await OrderProducts.deleteMany({ orderId });
     await Orders.deleteOne({ _id: orderId });
 
     return res.status(200).send({ message: `Order deleted sucessfully` });
