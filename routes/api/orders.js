@@ -97,4 +97,17 @@ router.post("/add_order/:orderId", auth, async (req, res) => {
   }
 });
 
+router.delete("/:orderId", auth, async (req, res) => {
+  const { orderId } = req.params;
+
+  try {
+    await OrderProducts.deleteMany({ orderId });
+    await Orders.deleteOne({ _id: orderId });
+
+    return res.status(200).send({ message: `Order deleted sucessfully` });
+  } catch (error) {
+    return res.status(500).send({ error: "Error !", message: error.message });
+  }
+});
+
 module.exports = router;
