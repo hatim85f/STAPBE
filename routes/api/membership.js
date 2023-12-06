@@ -12,6 +12,7 @@ const moment = require("moment");
 const Eligibility = require("../../models/Eligibility");
 const { default: mongoose } = require("mongoose");
 const SupportCase = require("../../models/SupportCase");
+const BusinessUsers = require("../../models/BusinessUsers");
 
 const stripeSecretKey =
   process.env.NODE_ENV === "production"
@@ -747,6 +748,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
   } = req.body;
 
   const user = await User.findOne({ _id: userId }).select("-password");
+  const business = await BusinessUsers.findOne({ userId: userId });
 
   try {
     const newPlan = await Package.findOne({ _id: packageId });
@@ -915,6 +917,7 @@ router.post("/upgrade-subscription", auth, async (req, res) => {
     const newSupportCase = new SupportCase({
       userId: userId,
       userName: user.userName,
+      businessId: business.businessId,
       phone: user.phone,
       email: user.email,
       subject: "Error in upgrade subscription",

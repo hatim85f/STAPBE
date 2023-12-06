@@ -40,7 +40,7 @@ router.post("/:userId", auth, async (req, res) => {
   }
 });
 
-router.post("/products_add/:orderId", auth, async (req, res) => {
+router.post("/add_order/:orderId", auth, async (req, res) => {
   const { orderId } = req.params;
   const {
     productId,

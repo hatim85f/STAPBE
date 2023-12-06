@@ -117,6 +117,9 @@ const getTarget = async (userId, year, res) => {
 // @access  Private
 router.get("/:userId/:year", auth, async (req, res) => {
   const { userId, year } = req.params;
+  const business = await BusinessUsers.findOne({
+    userId,
+  });
 
   try {
     const userTargetData = await getTarget(userId, year, res);
@@ -135,6 +138,7 @@ router.get("/:userId/:year", auth, async (req, res) => {
     const newSupportCase = new SupportCase({
       userId,
       userName: user.userName,
+      businessId: business.businessId,
       email: user.email,
       phone: user.phone,
       subject: "Error in getting user target",
@@ -152,6 +156,10 @@ router.get("/:userId/:year", auth, async (req, res) => {
 
 router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
   const { userId, year } = req.params;
+
+  const business = await BusinessUsers.findOne({
+    userId,
+  });
 
   try {
     const userTeam = await BusinessUsers.aggregate([
@@ -401,13 +409,11 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
       },
     ]);
 
-    return res
-      .status(200)
-      .send({
-        usersTarget: userTeam.sort(
-          (a, b) => a.target.totalValue - b.target.totalValue
-        ),
-      });
+    return res.status(200).send({
+      usersTarget: userTeam.sort(
+        (a, b) => a.target.totalValue - b.target.totalValue
+      ),
+    });
   } catch (error) {
     const user = await User.findOne({ _id: userId });
 
@@ -415,6 +421,7 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
       userId,
       userName: user.userName,
       email: user.email,
+      businessId: business.businessId,
       phone: user.phone,
       subject: "Error in getting team target",
       message: error.message,
@@ -493,10 +500,12 @@ router.get("/business-target/:userId/:year", auth, async (req, res) => {
   } catch (error) {
     // Handle errors and log them
     const user = await User.findOne({ _id: userId });
+    const business = await BusinessUsers.findOne({ userId });
     const newSupportCase = new SupportCase({
       userId,
       userName: user.userName,
       email: user.email,
+      businessId: business.businessId,
       phone: user.phone,
       subject: `Error in getting business target details for userId ${userId}`,
       message: error.message,

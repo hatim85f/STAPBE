@@ -75,12 +75,12 @@ router.get("/:userId", auth, async (req, res) => {
 router.post("/", auth, isCompanyAdmin, async (req, res) => {
   const { userId, phasingData, name } = req.body;
 
-  try {
-    const business = await BusinessUsers.findOne({
-      userId,
-      isBusinessOwner: true,
-    });
+  const business = await BusinessUsers.findOne({
+    userId,
+    isBusinessOwner: true,
+  });
 
+  try {
     if (!phasingData) {
       return res
         .status(400)
@@ -96,12 +96,12 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     await Phasing.insertMany(newPhasing);
 
     return res.status(200).json({ message: "Phasing data added successfully" });
-    return res.status(200).json({ business });
   } catch (error) {
     const user = await User.findOne({ _id: userId });
     const newSupportCase = new SupportCase({
       userId,
       email: user.email,
+      businessId: business.businessId,
       subject: "Error Creating Phasing Data",
       message: error.message,
     });
