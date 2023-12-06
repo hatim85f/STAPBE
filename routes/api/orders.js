@@ -97,8 +97,8 @@ router.post("/add_order/:orderId", auth, async (req, res) => {
   }
 });
 
-router.delete("/:orderId", auth, async (req, res) => {
-  const { orderId } = req.params;
+router.delete("/", auth, async (req, res) => {
+  const { orderId } = req.body;
 
   try {
     // await OrderProducts.deleteMany({ orderId });
