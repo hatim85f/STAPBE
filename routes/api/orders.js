@@ -31,6 +31,11 @@ router.get("/:userId", auth, async (req, res) => {
         $lookup: {
           from: "orderproducts",
           localField: "details",
+          pipeline: [
+            {
+              $match: { businessId: { $in: businessIds } },
+            },
+          ],
           foreignField: "_id",
           as: "orderProducts",
         },
@@ -90,7 +95,7 @@ router.get("/:userId", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).send({ orders, length: orders.length });
+    return res.status(200).send({ orders });
   } catch (error) {
     const newSupportCase = new SupportCase({
       userId,
@@ -112,14 +117,13 @@ router.post("/:userId", auth, async (req, res) => {
   const { clientId } = req.body;
 
   try {
-    const userBusiness = await BusinessUsers.findOne({ userId });
-
     const newOrder = new Orders({
       _id: new mongoose.Types.ObjectId(),
       userId,
       clientId,
       totalValue: 0,
       details: [],
+      businessId: [],
     });
 
     await Orders.insertMany(newOrder);
