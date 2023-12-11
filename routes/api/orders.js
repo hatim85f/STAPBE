@@ -12,8 +12,99 @@ const User = require("../../models/User");
 // @route GET api/clients/test
 // @description tests clients route
 // @access Private
-router.get("/", auth, async (req, res) => {
-  return res.status(200).send({ message: "Client route works" });
+router.get("/:userId", auth, async (req, res) => {
+  const { userId } = req.params;
+  const userBunsiess = await BusinessUsers.find({ userId });
+
+  const user = await User.findOne({ _id: userId });
+  try {
+    const businessIds = userBunsiess.map((business) => business.businessId);
+
+    const orders = await Orders.aggregate([
+      {
+        $match: { businessId: { $in: businessIds } },
+      },
+      {
+        $unwind: "$details",
+      },
+      {
+        $lookup: {
+          from: "orderproducts",
+          localField: "details",
+          foreignField: "_id",
+          as: "orderProducts",
+        },
+      },
+      {
+        $unwind: "$orderProducts",
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderProducts.productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $unwind: "$product",
+      },
+      {
+        $group: {
+          _id: "$_id",
+          businessId: { $first: "$businessId" },
+          userId: { $first: "$userId" },
+          clientId: { $first: "$clientId" },
+          totalValue: { $sum: "$totalValue" },
+          status: { $first: "$status" },
+          timeStamp: { $first: "$timeStamp" },
+          details: {
+            $push: {
+              productId: "$orderProducts.productId",
+              quantity: "$orderProducts.quantity",
+              discount: "$orderProducts.discount",
+              discountType: "$orderProducts.discountType",
+              bonusUnits: "$orderProducts.bonusUnits",
+              productPrice: "$orderProducts.productPrice",
+              totalValue: "$orderProducts.totalValue",
+              productNickName: "$product.productNickName",
+              productImage: "$product.imageURL",
+              productName: "$product.productName",
+              productCategory: "$product.category",
+              productType: "$product.productType",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          businessId: 1,
+          userId: 1,
+          clientId: 1,
+          totalValue: 1,
+          status: 1,
+          timeStamp: 1,
+          details: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).send({ orders, length: orders.length });
+  } catch (error) {
+    const newSupportCase = new SupportCase({
+      userId,
+      userName: user.userName,
+      email: user.email,
+      phone: user.phone,
+      businessId: userBunsiess.map((business) => business.businessId),
+      subject: "Error in placing order",
+      message: error.message,
+    });
+    await SupportCase.insertMany(newSupportCase);
+
+    return res.status(500).send({ error: "Error !", message: error.message });
+  }
 });
 
 router.post("/:userId", auth, async (req, res) => {
