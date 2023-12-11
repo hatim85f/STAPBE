@@ -165,7 +165,8 @@ router.post("/add_order/:orderId", auth, async (req, res) => {
       {
         $inc: { totalValue: totalValue },
         $push: { details: newOrderProduct._id },
-        $set: { timeStamp: Date.now(), businessId: businessId },
+        $set: { timeStamp: Date.now() },
+        $addToSet: { businessId },
       }
     );
 
