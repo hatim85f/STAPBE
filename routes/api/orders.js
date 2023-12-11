@@ -29,6 +29,17 @@ router.get("/:userId", auth, async (req, res) => {
       },
       {
         $lookup: {
+          from: "clients",
+          localField: "clientId",
+          foreignField: "_id",
+          as: "client",
+        },
+      },
+      {
+        $unwind: "$client",
+      },
+      {
+        $lookup: {
           from: "orderproducts",
           localField: "details",
           pipeline: [
@@ -79,6 +90,7 @@ router.get("/:userId", auth, async (req, res) => {
               productType: "$product.productType",
             },
           },
+          client: { $first: "$client" },
         },
       },
       {
@@ -91,6 +103,7 @@ router.get("/:userId", auth, async (req, res) => {
           status: 1,
           timeStamp: 1,
           details: 1,
+          client: 1,
         },
       },
     ]);
