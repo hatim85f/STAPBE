@@ -116,7 +116,7 @@ router.post("/:userId", auth, async (req, res) => {
 
     const newOrder = new Orders({
       _id: new mongoose.Types.ObjectId(),
-      businessId: userBusiness.businessId,
+      businessId: details[0].businessId,
       userId,
       clientId,
       totalValue: 0,
@@ -192,7 +192,7 @@ router.delete("/", auth, async (req, res) => {
   const { orderId } = req.body;
 
   try {
-    // await OrderProducts.deleteMany({ orderId });
+    await OrderProducts.deleteMany({ orderId });
     await Orders.deleteOne({ _id: orderId });
 
     return res.status(200).send({ message: `Order deleted sucessfully` });
