@@ -8,6 +8,11 @@ const OrderProductsSchema = new Schema({
     required: true,
     ref: "order",
   },
+  businessId: {
+    type: mongoose.Types.ObjectId,
+    required: true,
+    ref: "business",
+  },
   productId: {
     type: mongoose.Types.ObjectId,
     required: true,

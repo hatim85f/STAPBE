@@ -3,11 +3,6 @@ const Schema = mongoose.Schema;
 
 const OrderSchema = new Schema({
   _id: mongoose.Types.ObjectId,
-  businessId: {
-    type: mongoose.Types.ObjectId,
-    ref: "business",
-    required: true,
-  },
   userId: {
     type: mongoose.Types.ObjectId,
     required: true,

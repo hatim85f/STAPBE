@@ -116,7 +116,6 @@ router.post("/:userId", auth, async (req, res) => {
 
     const newOrder = new Orders({
       _id: new mongoose.Types.ObjectId(),
-      businessId: details[0].businessId,
       userId,
       clientId,
       totalValue: 0,
@@ -156,6 +155,7 @@ router.post("/add_order/:orderId", auth, async (req, res) => {
       bonusUnits,
       productPrice,
       totalValue,
+      businessId,
     });
 
     await OrderProducts.insertMany(newOrderProduct);
