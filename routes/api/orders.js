@@ -40,6 +40,17 @@ router.get("/:userId", auth, async (req, res) => {
       },
       {
         $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $unwind: "$user",
+      },
+      {
+        $lookup: {
           from: "orderproducts",
           localField: "details",
           pipeline: [
@@ -74,6 +85,9 @@ router.get("/:userId", auth, async (req, res) => {
           totalValue: { $sum: "$totalValue" },
           status: { $first: "$status" },
           timeStamp: { $first: "$timeStamp" },
+          userName: { $first: "$user.userName" },
+          userProfilePicture: { $first: "$user.profilePicture" },
+          designation: { $first: "$user.designation" },
           details: {
             $push: {
               productId: "$orderProducts.productId",
@@ -104,6 +118,9 @@ router.get("/:userId", auth, async (req, res) => {
           timeStamp: 1,
           details: 1,
           client: 1,
+          userName: 1,
+          userProfilePicture: 1,
+          designation: 1,
         },
       },
     ]);
