@@ -156,9 +156,11 @@ router.post("/", auth, async (req, res) => {
 
     const personInHandle = await User.findOne({ _id: personInHandleId });
 
+    const business = await BusinessUsers.findOne({ userId: personInHandleId });
+
     const newClient = new Client({
       clientName,
-      businessId,
+      businessId: businessId ? businessId : business.businessId,
       clientType,
       address,
       contactPerson: {
