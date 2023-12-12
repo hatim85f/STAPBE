@@ -176,7 +176,7 @@ router.post("/", auth, async (req, res) => {
     await Client.insertMany(newClient);
 
     const businessOwner = await BusinessUsers.findOne({
-      businessId,
+      businessId: businessId ? businessId : business.businessId,
       isBusinessOwner: true,
     });
 
