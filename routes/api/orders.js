@@ -12,8 +12,8 @@ const User = require("../../models/User");
 // @route GET api/clients/test
 // @description tests clients route
 // @access Private
-router.get("/:userId", auth, async (req, res) => {
-  const { userId } = req.params;
+router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
+  const { userId, startDate, endDate } = req.params;
   const userBunsiess = await BusinessUsers.find({ userId });
 
   const user = await User.findOne({ _id: userId });
@@ -22,7 +22,11 @@ router.get("/:userId", auth, async (req, res) => {
 
     const orders = await Orders.aggregate([
       {
-        $match: { businessId: { $in: businessIds } },
+        $match: {
+          businessId: { $in: businessIds },
+          $gte: { timeStamp: new Date(startDate) },
+          $lte: { timeStamp: new Date(endDate) },
+        },
       },
       {
         $unwind: "$details",
