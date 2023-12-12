@@ -47,6 +47,10 @@ const OrderProductsSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  updatedIn: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = OrderProducts = mongoose.model(

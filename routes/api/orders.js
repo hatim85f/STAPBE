@@ -93,6 +93,7 @@ router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
           designation: { $first: "$user.designation" },
           details: {
             $push: {
+              orderId: "$orderProducts._id",
               productId: "$orderProducts.productId",
               quantity: "$orderProducts.quantity",
               discount: "$orderProducts.discount",
@@ -105,6 +106,7 @@ router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
               productName: "$product.productName",
               productCategory: "$product.category",
               productType: "$product.productType",
+              businessId: "$orderProducts.businessId",
             },
           },
           client: { $first: "$client" },
@@ -226,6 +228,50 @@ router.post("/add_order/:orderId", auth, async (req, res) => {
   }
 });
 
+router.put("/order_product/:orderProductId", auth, async (req, res) => {
+  const { orderProductId } = req.params;
+  const {
+    productId,
+    quantity,
+    discount,
+    discountType,
+    bonusUnits,
+    productPrice,
+    totalValue,
+    userId,
+    businessId,
+  } = req.body;
+
+  try {
+    const orderProduct = await OrderProducts.findOne({ _id: orderProductId });
+
+    await OrderProducts.updateOne(
+      { _id: orderProductId },
+      {
+        $set: {
+          productId,
+          quantity,
+          discount,
+          discountType,
+          bonusUnits,
+          productPrice,
+          totalValue,
+          businessId,
+          timeStamp: orderProduct.timeStamp,
+          updatedIn: Date.now(),
+        },
+      }
+    );
+
+    return res.status(200).send({ message: `Order updated sucessfully` });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error !",
+      message: "Error in updating your item, Try again later",
+    });
+  }
+});
+
 router.delete("/", auth, async (req, res) => {
   const { orderId } = req.body;
 
@@ -238,5 +284,39 @@ router.delete("/", auth, async (req, res) => {
     return res.status(500).send({ error: "Error !", message: error.message });
   }
 });
+
+router.delete(
+  "/order_product/:orderProductId/userId",
+  auth,
+  async (req, res) => {
+    const { orderProductId, userId } = req.params;
+
+    try {
+      const orderProduct = await OrderProducts.findOne({ _id: orderProductId });
+      const orderValue = orderProduct.totalValue;
+      await OrderProducts.deleteOne({ _id: orderProductId });
+
+      await Orders.updateMany(
+        {
+          details: { $in: new mongoose.Types.ObjectId(orderProductId) },
+        },
+        {
+          $pull: { details: new mongoose.Types.ObjectId(orderProductId) },
+        },
+        {
+          $inc: { totalValue: -orderValue },
+        }
+      );
+
+      return res
+        .status(200)
+        .send({ message: `Order product deleted sucessfully` });
+    } catch (error) {
+      return res
+        .status(500)
+        .send({ error: "Error !", message: "Error in deleting order product" });
+    }
+  }
+);
 
 module.exports = router;
