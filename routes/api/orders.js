@@ -24,8 +24,7 @@ router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
       {
         $match: {
           businessId: { $in: businessIds },
-          $gte: { timeStamp: new Date(startDate) },
-          $lte: { timeStamp: new Date(endDate) },
+          timeStamp: { $gte: new Date(startDate), $lte: new Date(endDate) },
         },
       },
       {
