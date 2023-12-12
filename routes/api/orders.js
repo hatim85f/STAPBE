@@ -286,38 +286,34 @@ router.delete("/", auth, async (req, res) => {
   }
 });
 
-router.delete(
-  "/order_product/:orderProductId/userId",
-  auth,
-  async (req, res) => {
-    const { orderProductId, userId } = req.params;
+router.delete("/order_product/:orderProductId", auth, async (req, res) => {
+  const { orderProductId } = req.params;
 
-    try {
-      const orderProduct = await OrderProducts.findOne({ _id: orderProductId });
-      const orderValue = orderProduct.totalValue;
-      await OrderProducts.deleteOne({ _id: orderProductId });
+  try {
+    const orderProduct = await OrderProducts.findOne({ _id: orderProductId });
+    const orderValue = orderProduct.totalValue;
+    await OrderProducts.deleteOne({ _id: orderProductId });
 
-      await Orders.updateMany(
-        {
-          details: { $in: new mongoose.Types.ObjectId(orderProductId) },
-        },
-        {
-          $pull: { details: new mongoose.Types.ObjectId(orderProductId) },
-        },
-        {
-          $inc: { totalValue: -orderValue },
-        }
-      );
+    await Orders.updateMany(
+      {
+        details: { $in: new mongoose.Types.ObjectId(orderProductId) },
+      },
+      {
+        $pull: { details: new mongoose.Types.ObjectId(orderProductId) },
+      },
+      {
+        $inc: { totalValue: -orderValue },
+      }
+    );
 
-      return res
-        .status(200)
-        .send({ message: `Order product deleted sucessfully` });
-    } catch (error) {
-      return res
-        .status(500)
-        .send({ error: "Error !", message: "Error in deleting order product" });
-    }
+    return res
+      .status(200)
+      .send({ message: `Order product deleted sucessfully` });
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ error: "Error !", message: "Error in deleting order product" });
   }
-);
+});
 
 module.exports = router;
