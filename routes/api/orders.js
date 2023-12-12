@@ -107,6 +107,7 @@ router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
               productCategory: "$product.category",
               productType: "$product.productType",
               businessId: "$orderProducts.businessId",
+              mainOrderId: "$_id",
             },
           },
           client: { $first: "$client" },
