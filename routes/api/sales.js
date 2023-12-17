@@ -48,6 +48,7 @@ router.post("/", auth, async (req, res) => {
         discountType: item.bonusType,
         itemValue: item.quantity * item.productPrice,
         totalQuantity,
+        date: new Date(item.date),
       };
     });
 
