@@ -22,7 +22,7 @@ router.post("/", auth, async (req, res) => {
   const { salesData, userId, version } = req.body;
 
   const user = await User.findOne({ _id: userId });
-  const { businessId, sales } = salesData;
+  const { businessId, sales, salesValue } = salesData;
   try {
     const trimmedVersion = version.trim();
 
@@ -50,10 +50,6 @@ router.post("/", auth, async (req, res) => {
         totalQuantity,
       };
     });
-    const salesValue = newSalesData.reduce(
-      (acc, item) => acc + item.itemValue,
-      0
-    );
 
     const newSales = new Sales({
       businessId,
