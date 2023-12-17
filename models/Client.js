@@ -36,7 +36,8 @@ const ClientSchema = new Schema({
   },
   logoURL: {
     type: String,
-    default: null, // Optional field for client logo URL
+    default:
+      "https://img.freepik.com/premium-vector/client-concept-2-colored-icon-simple-blue-element-illustration-client-concept-symbol-design-can-be-used-web-mobile-ui-ux_159242-4118.jpg", // Optional field for client logo URL
   },
   personInHandleId: {
     type: mongoose.Types.ObjectId,
