@@ -16,18 +16,30 @@ const moment = require("moment");
 // @desc    Get all sales
 // @access  Private
 router.get("/:userId", auth, async (req, res) => {
-  const { userId, startPeriod, endPeriod } = req.params;
+  const { userId } = req.params;
+  const { startPeriod, endPeriod } = req.query;
 
   const user = await User.findOne({ _id: userId });
   const business = await BusinessUsers.find({ userId: userId });
   const businessIds = business.map((a) => a.businessId);
   try {
+    // Convert string dates to JavaScript Date objects
+    const startDate = new Date(startPeriod);
+    const endDate = new Date(endPeriod);
+
+    // Ensure that the dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      // Handle invalid dates
+      res.status(400).json({ error: "Invalid date format" });
+      return;
+    }
+
     const salesData = await Sales.aggregate([
       {
         $match: {
           businessId: { $in: businessIds },
-          startPeriod: { $gte: startPeriod, $lte: endPeriod },
-          endPeriod: { $gte: startPeriod, $lte: endPeriod },
+          startPeriod: { $gte: startDate, $lte: endDate },
+          endPeriod: { $gte: startDate, $lte: endDate },
         },
       },
       {
@@ -56,6 +68,8 @@ router.get("/:userId", auth, async (req, res) => {
           updatedIn: 1,
           lastOpened: 1,
           isFinal: 1,
+          startPeriod: 1,
+          endPeriod: 1,
         },
       },
     ]);
@@ -74,7 +88,7 @@ router.get("/:userId", auth, async (req, res) => {
     await SupportCase.insertMany(newSupportCase);
     return res.status(500).send({
       error: "Error",
-      message: "Something went wrong, please try again later",
+      message: error.message,
     });
   }
 });
