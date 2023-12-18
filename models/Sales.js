@@ -13,6 +13,14 @@ const SalesSchema = Schema({
     type: String,
     required: true,
   },
+  startPeriod: {
+    type: Date,
+    required: true,
+  },
+  endPeriod: {
+    type: Date,
+    required: true,
+  },
   salesData: [
     {
       productId: {
