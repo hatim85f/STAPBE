@@ -74,6 +74,12 @@ router.get("/:userId", auth, async (req, res) => {
       },
     ]);
 
+    if (salesData.length === 0) {
+      return res
+        .status(200)
+        .send({ message: "No Sales Data Found for the specified dates" });
+    }
+
     return res.status(200).send(salesData);
   } catch (error) {
     const newSupportCase = new SupportCase({
