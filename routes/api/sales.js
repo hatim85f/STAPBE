@@ -80,7 +80,9 @@ router.get("/:userId", auth, async (req, res) => {
         .send({ message: "No Sales Data Found for the specified dates" });
     }
 
-    return res.status(200).send(salesData);
+    return res
+      .status(200)
+      .send(salesData.sort((a, b) => b.addedIn - a.addedIn));
   } catch (error) {
     const newSupportCase = new SupportCase({
       userId,
