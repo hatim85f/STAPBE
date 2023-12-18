@@ -38,8 +38,8 @@ router.get("/:userId", auth, async (req, res) => {
       {
         $match: {
           businessId: { $in: businessIds },
-          startPeriod: { $gte: startDate, $lte: endDate },
-          endPeriod: { $gte: startDate, $lte: endDate },
+          // startPeriod: { $gte: startDate, $lte: endDate },
+          // endPeriod: { $gte: startDate, $lte: endDate },
         },
       },
       {
