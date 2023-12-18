@@ -28,11 +28,11 @@ router.get("/:userId", auth, async (req, res) => {
     const endDate = new Date(endPeriod);
 
     // Ensure that the dates are valid
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      // Handle invalid dates
-      res.status(400).json({ error: "Invalid date format" });
-      return;
-    }
+    // if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    //   // Handle invalid dates
+    //   res.status(400).json({ error: "Invalid date format" });
+    //   return;
+    // }
 
     const salesData = await Sales.aggregate([
       {
