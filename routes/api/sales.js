@@ -30,8 +30,7 @@ router.get("/:userId", auth, async (req, res) => {
     // Ensure that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       // Handle invalid dates
-      res.status(400).json({ error: "Invalid date format" });
-      return;
+      return res.status(400).json({ error: "Invalid date format" });
     }
 
     const salesData = await Sales.aggregate([
@@ -48,6 +47,14 @@ router.get("/:userId", auth, async (req, res) => {
           localField: "businessId",
           foreignField: "_id",
           as: "business",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "addedBy",
+          foreignField: "_id",
+          as: "user",
         },
       },
       {
@@ -70,19 +77,20 @@ router.get("/:userId", auth, async (req, res) => {
           isFinal: 1,
           startPeriod: 1,
           endPeriod: 1,
+          addByName: { $arrayElemAt: ["$user.userName", 0] },
         },
       },
     ]);
 
     if (salesData.length === 0) {
-      return res
-        .status(200)
-        .send({ message: "No Sales Data Found for the specified dates" });
+      return res.status(200).send({
+        message: "No Sales Data Found for the specified dates",
+      });
     }
 
-    return res
-      .status(200)
-      .send(salesData.sort((a, b) => b.addedIn - a.addedIn));
+    const sortedSalesData = salesData.sort((a, b) => b.addedIn - a.addedIn);
+
+    return res.status(200).send({ salesData: sortedSalesData });
   } catch (error) {
     const newSupportCase = new SupportCase({
       userId,
