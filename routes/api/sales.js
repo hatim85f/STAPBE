@@ -131,8 +131,9 @@ router.post("/", auth, async (req, res) => {
     const newSalesData = sales.map((item) => {
       const totalQuantity =
         item.bonusType === "Percentage"
-          ? item.quantity + (item.quantity * item.bonus) / 100
-          : item.quantity;
+          ? parseInt(item.quantity) +
+            (parseInt(item.quantity) * parseInt(item.bonus)) / 100
+          : parseInt(item.quantity);
       return {
         ...item,
         discount: item.bonus,
@@ -172,7 +173,7 @@ router.post("/", auth, async (req, res) => {
     await SupportCase.insertMany(newSupportCase);
     return res.status(500).send({
       error: "Error",
-      message: "Something went wrong, please try again later",
+      message: "Something Went wrong, please try again later",
     });
   }
 });
