@@ -217,8 +217,28 @@ router.put("/opened/:salesId", auth, async (req, res) => {
 
 router.put("/set_final/:salesId", auth, async (req, res) => {
   const { salesId } = req.params;
+  const { userId } = req.body;
 
   try {
+    const businesses = await BusinessUsers.find({ userId: userId });
+
+    const businessIds = businesses.map((a) => a.businessId);
+
+    const sales = await Sales.find({
+      businessId: { $in: businessIds },
+      isFinal: true,
+    });
+
+    if (sales.length > 0) {
+      // change every isFinal to false
+      await Sales.updateMany(
+        { businessId: { $in: businessIds } },
+        {
+          isFinal: false,
+        }
+      );
+    }
+
     await Sales.updateMany(
       { _id: salesId },
       {
