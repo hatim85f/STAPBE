@@ -58,6 +58,14 @@ router.get("/:userId", auth, async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "users",
+          localField: "openedWith",
+          foreignField: "_id",
+          as: "openedBy",
+        },
+      },
+      {
         $project: {
           _id: 1,
           version: 1,
@@ -70,14 +78,14 @@ router.get("/:userId", auth, async (req, res) => {
           salesData: 1,
           addedBy: 1,
           totalValue: 1,
-          openedWith: 1,
+          openedWith: { $arrayElemAt: ["$openedBy.userName", 0] },
           addedIn: 1,
           updatedIn: 1,
           lastOpened: 1,
           isFinal: 1,
           startPeriod: 1,
           endPeriod: 1,
-          addByName: { $arrayElemAt: ["$user.userName", 0] },
+          addedByName: { $arrayElemAt: ["$user.userName", 0] },
         },
       },
     ]);
