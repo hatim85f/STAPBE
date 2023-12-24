@@ -215,4 +215,24 @@ router.put("/opened/:salesId", auth, async (req, res) => {
   }
 });
 
+router.put("/set_final/:salesId", auth, async (req, res) => {
+  const { salesId } = req.params;
+
+  try {
+    await Sales.updateMany(
+      { _id: salesId },
+      {
+        isFinal: true,
+      }
+    );
+
+    return res.status(200).send({ message: "Sales Data Set as Final" });
+  } catch (error) {
+    return res.status(500).send({
+      error: error.message,
+      message: "Something went wrong, please try again later",
+    });
+  }
+});
+
 module.exports = router;
