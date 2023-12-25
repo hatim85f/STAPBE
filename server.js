@@ -13,8 +13,8 @@ const app = express();
 connectDB();
 
 const rule = new RecurrenceRule();
-rule.hour = 0; // Set to the current hour
-rule.minute = 0; // Set to the current minute
+rule.hour = 19; // Set to the current hour
+rule.minute = 59; // Set to the current minute
 
 const job = scheduleJob(rule, async () => {
   console.log("Scheduled task started...");
