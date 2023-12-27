@@ -23,11 +23,13 @@ router.post("/", auth, async (req, res) => {
     const newSales = new UserSales({
       user: userId,
       versionName: versionName,
+      businessId: businessIds,
       salesData: salesData,
       startDate: startDate,
       endDate: endDate,
       addedIn: Date.now(),
       updatedIn: Date.now(),
+      addingUser: addingUser,
       isFinal: false,
     });
 
