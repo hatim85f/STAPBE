@@ -15,6 +15,22 @@ router.post("/", auth, async (req, res) => {
   const { userId, startDate, endDate, salesData, addingUser, versionName } =
     req.body;
 
+  const existingSales = await UserSales.findOne({
+    user: userId,
+    versionName: versionName,
+    startDate: startDate,
+    endDate: endDate,
+  });
+
+  if (existingSales) {
+    return res
+      .status(400)
+      .send({
+        error: "DuplicateData",
+        message: "Duplicate data already exists.",
+      });
+  }
+
   const business = await BusinessUsers.find({ userId: addingUser });
   const businessIds = business.map((business) => business.businessId);
 
