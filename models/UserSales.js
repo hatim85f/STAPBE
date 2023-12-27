@@ -9,6 +9,10 @@ const UserSalesSchema = Schema({
     type: mongoose.Types.ObjectId,
     ref: "users",
   },
+  versionName: {
+    type: String,
+    required: true,
+  },
   salesData: [
     {
       product: {

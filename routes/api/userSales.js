@@ -12,7 +12,8 @@ router.get("/", auth, async (req, res) => {
 });
 
 router.post("/", auth, async (req, res) => {
-  const { userId, startDate, endDate, salesData, addingUser } = req.body;
+  const { userId, startDate, endDate, salesData, addingUser, versionName } =
+    req.body;
 
   const business = await BusinessUsers.find({ userId: addingUser });
   const businessIds = business.map((business) => business.businessId);
@@ -21,6 +22,7 @@ router.post("/", auth, async (req, res) => {
   try {
     const newSales = new UserSales({
       user: userId,
+      versionName: versionName,
       salesData: salesData,
       startDate: startDate,
       endDate: endDate,
