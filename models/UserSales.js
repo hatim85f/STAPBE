@@ -45,7 +45,7 @@ const UserSalesSchema = Schema({
     required: true,
   },
   endDate: {
-    type: String,
+    type: Date,
     required: true,
   },
   addedIn: {
