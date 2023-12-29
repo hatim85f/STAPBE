@@ -116,10 +116,20 @@ const getUserAchievement = async (userId, month, year, res) => {
       },
     },
     {
+      $lookup: {
+        from: "businesses",
+        foreignField: "_id",
+        localField: "businessId",
+        as: "business",
+      },
+    },
+    {
       $group: {
         _id: {
           _id: "$_id",
           businessId: "$businessId",
+          businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
+          businessName: { $arrayElemAt: ["$business.businessName", 0] },
           currencyCode: {
             $arrayElemAt: ["$userTargetProduct.currencyCode", 0],
           },
@@ -144,6 +154,12 @@ const getUserAchievement = async (userId, month, year, res) => {
             targetUnits: "$productTarget.target.yearTarget.targetUnits",
             targetValue: "$productTarget.target.yearTarget.targetValue",
             targetPhases: "$productTarget.target.yearTarget.targetPhases",
+            salesValue: {
+              $multiply: [
+                "$sales.salesData.quantity",
+                "$sales.salesData.price",
+              ],
+            },
             productName: {
               $arrayElemAt: ["$userTargetProduct.productName", 0],
             },
@@ -172,6 +188,8 @@ const getUserAchievement = async (userId, month, year, res) => {
       $project: {
         _id: "$_id._id",
         businessId: "$_id.businessId",
+        businessLogo: "$_id.businessLogo",
+        businessName: "$_id.businessName",
         currencyCode: "$_id.currencyCode",
         currencyName: "$_id.currencyName",
         currencySymbol: "$_id.currencySymbol",
@@ -181,45 +199,150 @@ const getUserAchievement = async (userId, month, year, res) => {
         phone: "$_id.phone",
         profilePicture: "$_id.profilePicture",
         achievement: 1,
+        totalSales: {
+          $sum: "$achievement.salesValue",
+        },
+        totalTargets: {
+          $sum: "$achievement.targetValue",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        businessId: 1,
+        businessLogo: 1,
+        businessName: 1,
+        currencyCode: 1,
+        currencyName: 1,
+        currencySymbol: 1,
+        userName: 1,
+        designation: 1,
+        email: 1,
+        phone: 1,
+        profilePicture: 1,
+        achievement: 1,
+        totalSales: 1,
+        totalTargets: 1,
+        // Calculate totalAchievement based on totalSales and totalTargets
+        totalAchievement: {
+          $multiply: [
+            {
+              $divide: ["$totalSales", "$totalTargets"],
+            },
+            100,
+          ],
+        },
       },
     },
   ]);
 
-  // Continue with any additional pipeline stages or handling of results...
-
   return userAhc;
 };
 
+// get user achievement
+// for same user
+// for managers of the teams and business admins
 router.get("/ach/:userId/:month/:year", auth, async (req, res) => {
   const { userId, month, year } = req.params;
 
   try {
-    const userSales = await getUserAchievement(userId, month, year, res);
+    const monthlySales = await getUserAchievement(userId, month, year, res);
 
-    if (userSales.length === 0) {
+    if (monthlySales.length === 0) {
       return res.status(500).send({
         error: "Oops",
         message: "No Sales or Targets Data Found for the specified dates",
       });
     }
 
-    const userAchievement = userSales[0].achievement;
-    const targetValues = userAchievement
-      .map((target) => target.targetValue)
-      .reduce((a, b) => a + b, 0);
-    const salesValues = userAchievement
-      .map((target) => target.salesQuantity * target.productPrice)
-      .reduce((a, b) => a + b, 0);
-    const targetAch = (salesValues / targetValues) * 100;
+    return res.status(200).send({
+      monthlySales,
+    });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error",
+      message: "Something Went wrong, please try again later",
+    });
+  }
+});
 
-    if (userSales.length === 0) {
+// get team achievement
+// for same team members
+// for managers of the teams and business admins
+router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
+  const { userId, month, year } = req.params;
+
+  try {
+    const business = await BusinessUsers.find({ userId: userId });
+    const businessIds = business.map((business) => business.businessId);
+
+    const teamData = await BusinessUsers.find({
+      businessId: { $in: businessIds },
+      isBusinessOwner: false,
+    });
+    const usersIds = teamData.map((user) => user.userId);
+
+    let teamSales = [];
+
+    for (let i = 0; i < usersIds.length; i++) {
+      const userSales = await getUserAchievement(usersIds[i], month, year, res);
+      teamSales.push(userSales);
+    }
+
+    if (teamSales.length === 0) {
       return res.status(500).send({
         error: "Oops",
         message: "No Sales or Targets Data Found for the specified dates",
       });
     }
 
-    return res.status(200).send({ userSales, targetAch });
+    const teamSalesFlat = teamSales.flat();
+
+    const teamSalesGrouped = teamSalesFlat.reduce((acc, curr) => {
+      const found = acc.find(
+        (a) => a.businessId.toString() === curr.businessId.toString()
+      );
+
+      const value = {
+        achievement: curr.achievement,
+        designation: curr.designation,
+        email: curr.email,
+        phone: curr.phone,
+        profilePicture: curr.profilePicture,
+        userName: curr.userName,
+        totalSales: curr.totalSales,
+        totalTargets: curr.totalTargets,
+        totalAchievement: curr.totalAchievement,
+        currencyCode: curr.currencyCode,
+        currencyName: curr.currencyName,
+        currencySymbol: curr.currencySymbol,
+      };
+
+      if (!found) {
+        acc.push({
+          businessId: curr.businessId,
+          businessLogo: curr.businessLogo,
+          currencyCode: curr.currencyCode,
+          currencyName: curr.currencyName,
+          currencySymbol: curr.currencySymbol,
+          totalSales: curr.totalSales,
+          totalTargets: curr.totalTargets,
+          teamData: [value],
+        });
+      } else {
+        found.totalSales += curr.totalSales;
+        found.totalTargets += curr.totalTargets;
+        found.teamAchievement = (found.totalSales / found.totalTargets) * 100;
+        found.teamData.push(value);
+      }
+
+      return acc;
+    }, []);
+
+    return res.status(200).send({
+      teamSales: teamSalesGrouped,
+    });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
