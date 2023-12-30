@@ -82,6 +82,44 @@ router.get("/:userId", auth, async (req, res) => {
   }
 });
 
+router.get("/businesses/:userId", auth, async (req, res) => {
+  const { userId } = req.params; // destructuring
+  try {
+    const userBusiness = await BusinessUsers.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $unwind: "$business",
+      },
+      {
+        $project: {
+          businessId: "$business._id",
+          businessName: "$business.businessName",
+          businessLogo: "$business.businessLogo",
+          currencyCode: "$business.currencyCode",
+          currencyName: "$business.currencyName",
+          currencySymbol: "$business.currencySymbol",
+        },
+      },
+    ]);
+
+    return res.status(200).send({ userBusiness });
+  } catch (error) {
+    return res.status(500).json({ error: "Error", message: error.message });
+  }
+});
+
 // getting business for user if he is not the owner
 // collection: businessUsers has userId and businessId
 // if he is not the owner of the business
@@ -95,12 +133,10 @@ router.get("/employee/:userId", auth, async (req, res) => {
     });
     return res.status(200).json({ userBusiness });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        error: "Error",
-        message: "Something Went wrong, please try again later",
-      });
+    return res.status(500).json({
+      error: "Error",
+      message: "Something Went wrong, please try again later",
+    });
   }
 });
 
