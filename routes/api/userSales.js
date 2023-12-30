@@ -62,20 +62,28 @@ const getUserAchievement = async (userId, month, year, res) => {
       },
     },
     {
-      $unwind: "$sales",
-    },
-    {
-      $set: {
-        "sales.salesData": {
-          $filter: {
-            input: "$sales.salesData",
-            as: "sale",
-            cond: {
-              $eq: ["$$sale.product", "$productsTargets.target.productId"],
-            },
+      $addFields: {
+        sales: {
+          $cond: {
+            if: { $eq: [{ $size: "$sales" }, 0] },
+            then: [
+              {
+                salesData: [
+                  {
+                    product: "$productsTargets.target.productId",
+                    quantity: 0,
+                    price: 0,
+                  },
+                ],
+              },
+            ],
+            else: "$sales",
           },
         },
       },
+    },
+    {
+      $unwind: "$sales",
     },
     {
       $unwind: "$sales.salesData",
