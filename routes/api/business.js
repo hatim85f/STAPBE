@@ -85,7 +85,7 @@ router.get("/:userId", auth, async (req, res) => {
 router.get("/businesses/:userId", auth, async (req, res) => {
   const { userId } = req.params; // destructuring
   try {
-    const userBusiness = await BusinessUsers.aggregate([
+    const businesses = await BusinessUsers.aggregate([
       {
         $match: {
           userId: new mongoose.Types.ObjectId(userId),
@@ -114,7 +114,7 @@ router.get("/businesses/:userId", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).send({ userBusiness });
+    return res.status(200).send({ businesses });
   } catch (error) {
     return res.status(500).json({ error: "Error", message: error.message });
   }
