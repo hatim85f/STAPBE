@@ -6,13 +6,26 @@ const BusinessUsers = require("../../models/BusinessUsers");
 const SupportCase = require("../../models/SupportCase");
 const auth = require("../../middleware/auth");
 const Sales = require("../../models/Sales");
+const Products = require("../../models/Products");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
 const UserTarget = require("../../models/UserTarget");
 
-// router.get("/", auth, async (req, res) => {
-//   return res.status(200).json({ msg: "User Sales Route" });
-// });
+router.get("/:userId/:month/:year", auth, async (req, res) => {
+  const { userId, month, year } = req.params;
+
+  try {
+    const businessUser = await BusinessUsers.find({ userId: userId });
+    const businessIds = businessUser.map((business) => business.businessId);
+
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const userSales = await UserSales.find({ business });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
 
 const getUserAchievement = async (userId, month, year, res) => {
   const startDate = new Date(year, month - 1, 1);
@@ -374,15 +387,16 @@ router.post("/", auth, async (req, res) => {
     });
   }
 
-  const business = await BusinessUsers.find({ userId: addingUser });
-  const businessIds = business.map((business) => business.businessId);
+  const productId = salesData[0].product;
+  const product = await Products.findOne({ _id: productId });
+  const businessId = product.businessId;
 
   const userAdding = await User.findOne({ _id: addingUser });
   try {
     const newSales = new UserSales({
       user: userId,
       versionName: versionName,
-      businessId: businessIds,
+      businessId: businessId,
       salesData: salesData,
       startDate: startDate,
       endDate: endDate,

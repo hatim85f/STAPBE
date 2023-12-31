@@ -13,12 +13,11 @@ const UserSalesSchema = Schema({
     type: String,
     required: true,
   },
-  businessId: [
-    {
-      type: mongoose.Types.ObjectId,
-      ref: "businesses",
-    },
-  ],
+  businessId: {
+    type: mongoose.Types.ObjectId,
+    ref: "businesses",
+  },
+
   addingUser: {
     type: mongoose.Types.ObjectId,
     ref: "users",
