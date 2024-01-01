@@ -21,7 +21,179 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    const userSales = await UserSales.find({ business });
+    const userSales = await UserSales.aggregate([
+      {
+        $match: {
+          businessId: { $in: businessIds },
+          startDate: { $gte: startDate, $lte: endDate },
+          endDate: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          foreignField: "_id",
+          localField: "businessId",
+          as: "business",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          foreignField: "_id",
+          localField: "user",
+          as: "user",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          foreignField: "_id",
+          localField: "addingUser",
+          as: "addingUser",
+        },
+      },
+      {
+        $unwind: "$salesData",
+      },
+      {
+        $lookup: {
+          from: "products",
+          foreignField: "_id",
+          localField: "salesData.product",
+          as: "product",
+        },
+      },
+      {
+        $addFields: {
+          salesData: {
+            $mergeObjects: [
+              "$salesData",
+              {
+                productNickName: {
+                  $arrayElemAt: ["$product.productNickName", 0],
+                },
+                productImage: { $arrayElemAt: ["$product.imageURL", 0] },
+                salesValue: {
+                  $multiply: ["$salesData.quantity", "$salesData.price"],
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          versionName: 1,
+          businessId: 1,
+          businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
+          businessName: { $arrayElemAt: ["$business.businessName", 0] },
+          addingUser: { $arrayElemAt: ["$addingUser._id", 0] },
+          addedBy: { $arrayElemAt: ["$addingUser.userName", 0] },
+          addedByDesignation: { $arrayElemAt: ["$addingUser.designation", 0] },
+          addedByProfilePicture: {
+            $arrayElemAt: ["$addingUser.profilePicture", 0],
+          },
+          salesData: 1,
+          addedIn: 1,
+          totalSalesValue: { $sum: "$salesData.salesValue" },
+          userName: { $arrayElemAt: ["$user.userName", 0] },
+          designation: { $arrayElemAt: ["$user.designation", 0] },
+          profilePicture: { $arrayElemAt: ["$user.profilePicture", 0] },
+          isFinal: 1,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            _id: "$_id",
+            versionName: "$versionName",
+            businessId: "$businessId",
+            businessLogo: "$businessLogo",
+            businessName: "$businessName",
+            addingUser: "$addingUser",
+            addedBy: "$addedBy",
+            addedByDesignation: "$addedByDesignation",
+            addedByProfilePicture: "$addedByProfilePicture",
+            addedIn: "$addedIn",
+          },
+          salesData: { $push: "$salesData" },
+          userName: { $first: "$userName" },
+          designation: { $first: "$designation" },
+          profilePicture: { $first: "$profilePicture" },
+          isFinal: { $first: "$isFinal" },
+        },
+      },
+      {
+        $project: {
+          _id: "$_id._id",
+          versionName: "$_id.versionName",
+          businessId: "$_id.businessId",
+          businessLogo: "$_id.businessLogo",
+          businessName: "$_id.businessName",
+          addingUser: "$_id.addingUser",
+          addedBy: "$_id.addedBy",
+          addedByDesignation: "$_id.addedByDesignation",
+          addedByProfilePicture: "$_id.addedByProfilePicture",
+          addedIn: "$_id.addedIn",
+          salesData: 1,
+          totalSalesValue: { $sum: "$salesData.salesValue" },
+          userName: 1,
+          designation: 1,
+          profilePicture: 1,
+          isFinal: 1,
+        },
+      },
+    ]);
+
+    const finalSales = userSales.reduce((acc, data) => {
+      const found = acc.find(
+        (x) =>
+          x.businessId.toString() === data.businessId.toString() &&
+          x.versionName === data.versionName
+      );
+
+      if (!found) {
+        acc.push({
+          _id: data._id,
+          versionName: data.versionName,
+          businessId: data.businessId,
+          businessLogo: data.businessLogo,
+          businessName: data.businessName,
+          addingUser: data.addingUser,
+          addedBy: data.addedBy,
+          addedByDesignation: data.addedByDesignation,
+          addedByProfilePicture: data.addedByProfilePicture,
+          addedIn: data.addedIn,
+          sales: [
+            {
+              salesData: data.salesData,
+              userName: data.userName,
+              designation: data.designation,
+              profilePicture: data.profilePicture,
+              totalSalesValue: data.totalSalesValue,
+            },
+          ],
+          isFinal: data.isFinal,
+        });
+      } else {
+        found.sales = found.sales.concat({
+          salesData: data.salesData,
+          userName: data.userName,
+          designation: data.designation,
+          profilePicture: data.profilePicture,
+          totalSalesValue: data.totalSalesValue,
+        });
+        found.totalSalesValue += data.totalSalesValue;
+      }
+
+      return acc;
+    }, []);
+
+    return res
+      .status(200)
+      .json({ finalSales, finalSalesLenght: finalSales.length });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
