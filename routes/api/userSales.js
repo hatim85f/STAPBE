@@ -103,6 +103,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           profilePicture: { $arrayElemAt: ["$user.profilePicture", 0] },
           userId: { $arrayElemAt: ["$user._id", 0] },
           isFinal: 1,
+          startDate: 1,
+          endDate: 1,
         },
       },
       {
@@ -123,6 +125,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             profilePicture: "$profilePicture",
             isFinal: "$isFinal",
             userId: "$userId",
+            startDate: "$startDate",
+            endDate: "$endDate",
           },
           salesData: { $push: "$salesData" },
           totalSalesValue: { $sum: "$salesData.salesValue" },
@@ -140,6 +144,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           addedByDesignation: "$_id.addedByDesignation",
           addedByProfilePicture: "$_id.addedByProfilePicture",
           addedIn: "$_id.addedIn",
+          startDate: "$_id.startDate",
+          endDate: "$_id.endDate",
           sales: {
             salesData: "$salesData",
             userName: "$_id.userName",
@@ -177,6 +183,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           sales: [data.sales],
           totalSalesValue: data.totalSalesValue,
           isFinal: data.isFinal,
+          startDate: data.startDate,
+          endDate: data.endDate,
         });
       } else {
         found.sales.push(data.sales);
