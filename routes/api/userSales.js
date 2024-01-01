@@ -101,6 +101,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           userName: { $arrayElemAt: ["$user.userName", 0] },
           designation: { $arrayElemAt: ["$user.designation", 0] },
           profilePicture: { $arrayElemAt: ["$user.profilePicture", 0] },
+          userId: { $arrayElemAt: ["$user._id", 0] },
           isFinal: 1,
         },
       },
@@ -117,12 +118,14 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             addedByDesignation: "$addedByDesignation",
             addedByProfilePicture: "$addedByProfilePicture",
             addedIn: "$addedIn",
+            userName: "$userName",
+            designation: "$designation",
+            profilePicture: "$profilePicture",
+            isFinal: "$isFinal",
+            userId: "$userId",
           },
           salesData: { $push: "$salesData" },
-          userName: { $first: "$userName" },
-          designation: { $first: "$designation" },
-          profilePicture: { $first: "$profilePicture" },
-          isFinal: { $first: "$isFinal" },
+          totalSalesValue: { $sum: "$salesData.salesValue" },
         },
       },
       {
@@ -137,26 +140,31 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           addedByDesignation: "$_id.addedByDesignation",
           addedByProfilePicture: "$_id.addedByProfilePicture",
           addedIn: "$_id.addedIn",
-          salesData: 1,
-          totalSalesValue: { $sum: "$salesData.salesValue" },
-          userName: 1,
-          designation: 1,
-          profilePicture: 1,
-          isFinal: 1,
+          sales: {
+            salesData: "$salesData",
+            userName: "$_id.userName",
+            designation: "$_id.designation",
+            profilePicture: "$_id.profilePicture",
+            userId: "$_id.userId",
+          },
+          totalSalesValue: "$totalSalesValue",
+          isFinal: "$_id.isFinal",
         },
       },
     ]);
 
-    const finalSales = userSales.reduce((acc, data) => {
-      const found = acc.find(
-        (x) =>
-          x.businessId.toString() === data.businessId.toString() &&
-          x.versionName === data.versionName
-      );
+    if (userSales.length === 0) {
+      return res.status(500).send({
+        error: "Oops",
+        message: "No Sales Data Found for the specified dates",
+      });
+    }
+
+    const finalData = userSales.reduce((acc, data) => {
+      const found = acc.find((a) => a.versionName === data.versionName);
 
       if (!found) {
         acc.push({
-          _id: data._id,
           versionName: data.versionName,
           businessId: data.businessId,
           businessLogo: data.businessLogo,
@@ -166,36 +174,26 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           addedByDesignation: data.addedByDesignation,
           addedByProfilePicture: data.addedByProfilePicture,
           addedIn: data.addedIn,
-          sales: [
-            {
-              salesData: data.salesData,
-              userName: data.userName,
-              designation: data.designation,
-              profilePicture: data.profilePicture,
-              totalSalesValue: data.totalSalesValue,
-            },
-          ],
+          sales: [data.sales],
+          totalSalesValue: data.totalSalesValue,
           isFinal: data.isFinal,
         });
       } else {
-        found.sales = found.sales.concat({
-          salesData: data.salesData,
-          userName: data.userName,
-          designation: data.designation,
-          profilePicture: data.profilePicture,
-          totalSalesValue: data.totalSalesValue,
-        });
+        found.sales.push(data.sales);
         found.totalSalesValue += data.totalSalesValue;
       }
 
       return acc;
     }, []);
 
-    return res
-      .status(200)
-      .json({ finalSales, finalSalesLenght: finalSales.length });
+    return res.status(200).json({ userSales: finalData });
   } catch (error) {
-    return res.status(500).send({ error: "Error", message: error.message });
+    return res
+      .status(500)
+      .send({
+        error: "Error",
+        message: "Something went wrong, please try again later",
+      });
   }
 });
 
