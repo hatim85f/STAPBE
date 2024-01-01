@@ -186,14 +186,12 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       return acc;
     }, []);
 
-    return res.status(200).json({ userSales: finalData });
+    return res.status(200).json({ salesVersions: finalData });
   } catch (error) {
-    return res
-      .status(500)
-      .send({
-        error: "Error",
-        message: "Something went wrong, please try again later",
-      });
+    return res.status(500).send({
+      error: "Error",
+      message: "Something went wrong, please try again later",
+    });
   }
 });
 
