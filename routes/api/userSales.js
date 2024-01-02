@@ -258,9 +258,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           isFinal: 1,
           startDate: 1,
           endDate: 1,
-          currencyName: { $arrayElemAt: ["$product.currencyName", 0] },
-          currencyCode: { $arrayElemAt: ["$product.currencyCode", 0] },
-          currencySymbol: { $arrayElemAt: ["$product.currencySymbol", 0] },
+          currencyName: "$product.currencyName",
+          currencyCode: "$product.currencyCode",
+          currencySymbol: "$product.currencySymbol",
         },
       },
       {
