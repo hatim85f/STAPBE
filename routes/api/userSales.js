@@ -258,6 +258,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           isFinal: 1,
           startDate: 1,
           endDate: 1,
+          currencyName: { $arrayElemAt: ["$product.currencyName", 0] },
+          currencyCode: { $arrayElemAt: ["$product.currencyCode", 0] },
+          currencySymbol: { $arrayElemAt: ["$product.currencySymbol", 0] },
         },
       },
       {
@@ -280,6 +283,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             startDate: "$startDate",
             endDate: "$endDate",
             isFinal: "$isFinal",
+            currencyName: "$currencyName",
+            currencyCode: "$currencyCode",
+            currencySymbol: "$currencySymbol",
           },
           salesData: { $addToSet: "$salesData" },
           totalSalesValue: { $sum: "$salesData.salesValue" },
@@ -312,6 +318,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           totalSalesValue: "$totalSalesValue",
           totalTargetValue: "$totalTargetValue",
           totalAchievement: "$totalAchievement",
+          currencyName: "$_id.currencyName",
+          currencyCode: "$_id.currencyCode",
+          currencySymbol: "$_id.currencySymbol",
         },
       },
     ]);
@@ -344,6 +353,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           isFinal: data.isFinal,
           startDate: data.startDate,
           endDate: data.endDate,
+          currencyName: data.currencyName,
+          currencyCode: data.currencyCode,
+          currencySymbol: data.currencySymbol,
         });
       } else {
         found.sales.push(data.sales);
