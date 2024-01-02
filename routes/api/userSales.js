@@ -21,7 +21,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    const userSales = await UserSales.aggregate([
+    const salesVersions = await UserSales.aggregate([
       {
         $match: {
           businessId: { $in: businessIds },
@@ -30,39 +30,76 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
         },
       },
       {
-        $lookup: {
-          from: "businesses",
-          foreignField: "_id",
-          localField: "businessId",
-          as: "business",
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          foreignField: "_id",
-          localField: "user",
-          as: "user",
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          foreignField: "_id",
-          localField: "addingUser",
-          as: "addingUser",
-        },
-      },
-      {
         $unwind: "$salesData",
       },
       {
         $lookup: {
+          from: "usertargets",
+          let: { product_id: "$salesData.product" },
+          pipeline: [
+            {
+              $unwind: "$productsTargets",
+            },
+            {
+              $unwind: "$productsTargets.target",
+            },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$productsTargets.target.productId", "$$product_id"],
+                },
+              },
+            },
+          ],
+          as: "userTarget",
+        },
+      },
+      {
+        $unwind: "$userTarget", // Unwind the matchedTargets array
+      },
+      {
+        $match: {
+          "userTarget.productsTargets.year": parseInt(year),
+        },
+      },
+      {
+        $lookup: {
+          from: "producttargets",
+          localField: "userTarget.productsTargets.target.productId",
+          foreignField: "productId",
+          as: "productTarget",
+        },
+      },
+      {
+        $unwind: "$productTarget",
+      },
+      {
+        $unwind: "$productTarget.target",
+      },
+      {
+        $match: {
+          "productTarget.target.year": parseInt(year),
+        },
+      },
+      {
+        $unwind: "$productTarget.target.yearTarget",
+      },
+      {
+        $match: {
+          "productTarget.target.yearTarget.month":
+            moment(startDate).format("MMMM"),
+        },
+      },
+      {
+        $lookup: {
           from: "products",
-          foreignField: "_id",
           localField: "salesData.product",
+          foreignField: "_id",
           as: "product",
         },
+      },
+      {
+        $unwind: "$product",
       },
       {
         $addFields: {
@@ -70,16 +107,113 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             $mergeObjects: [
               "$salesData",
               {
-                productNickName: {
-                  $arrayElemAt: ["$product.productNickName", 0],
-                },
-                productImage: { $arrayElemAt: ["$product.imageURL", 0] },
+                productNickName: "$product.productNickName",
+                productImage: "$product.imageURL",
                 salesValue: {
                   $multiply: ["$salesData.quantity", "$salesData.price"],
+                },
+                targetUnits: {
+                  $multiply: [
+                    "$userTarget.productsTargets.target.targetUnits",
+                    {
+                      $divide: [
+                        {
+                          $toDouble: {
+                            $replaceOne: {
+                              input:
+                                "$productTarget.target.yearTarget.targetPhases",
+                              find: "%",
+                              replacement: "",
+                            },
+                          },
+                        },
+                        100,
+                      ],
+                    },
+                  ],
+                },
+                targetValue: {
+                  $multiply: [
+                    "$userTarget.productsTargets.target.targetValue",
+                    {
+                      $divide: [
+                        {
+                          $toDouble: {
+                            $replaceOne: {
+                              input:
+                                "$productTarget.target.yearTarget.targetPhases",
+                              find: "%",
+                              replacement: "",
+                            },
+                          },
+                        },
+                        100,
+                      ],
+                    },
+                  ],
+                },
+                achievement: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        {
+                          $multiply: [
+                            "$salesData.quantity",
+                            "$salesData.price",
+                          ],
+                        },
+                        {
+                          $multiply: [
+                            "$userTarget.productsTargets.target.targetValue",
+                            {
+                              $divide: [
+                                {
+                                  $toDouble: {
+                                    $replaceOne: {
+                                      input:
+                                        "$productTarget.target.yearTarget.targetPhases",
+                                      find: "%",
+                                      replacement: "",
+                                    },
+                                  },
+                                },
+                                100,
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    100,
+                  ],
                 },
               },
             ],
           },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "addingUser",
+          foreignField: "_id",
+          as: "addingUser_details",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user_details",
+        },
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
         },
       },
       {
@@ -89,19 +223,38 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           businessId: 1,
           businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
           businessName: { $arrayElemAt: ["$business.businessName", 0] },
-          addingUser: { $arrayElemAt: ["$addingUser._id", 0] },
-          addedBy: { $arrayElemAt: ["$addingUser.userName", 0] },
-          addedByDesignation: { $arrayElemAt: ["$addingUser.designation", 0] },
+          addingUser: { $arrayElemAt: ["$addingUser_details._id", 0] },
+          addedBy: { $arrayElemAt: ["$addingUser_details.userName", 0] },
+          addedByDesignation: {
+            $arrayElemAt: ["$addingUser_details.designation", 0],
+          },
           addedByProfilePicture: {
-            $arrayElemAt: ["$addingUser.profilePicture", 0],
+            $arrayElemAt: ["$addingUser_details.profilePicture", 0],
           },
           salesData: 1,
           addedIn: 1,
           totalSalesValue: { $sum: "$salesData.salesValue" },
-          userName: { $arrayElemAt: ["$user.userName", 0] },
-          designation: { $arrayElemAt: ["$user.designation", 0] },
-          profilePicture: { $arrayElemAt: ["$user.profilePicture", 0] },
-          userId: { $arrayElemAt: ["$user._id", 0] },
+          totalTargetValue: { $sum: "$salesData.targetValue" },
+          totalAchievement: {
+            $multiply: [
+              {
+                $divide: [
+                  {
+                    $sum: "$salesData.salesValue",
+                  },
+                  {
+                    $sum: "$salesData.targetValue",
+                  },
+                ],
+              },
+              100,
+            ],
+          },
+          userName: { $arrayElemAt: ["$user_details.userName", 0] },
+          designation: { $arrayElemAt: ["$user_details.designation", 0] },
+          profilePicture: { $arrayElemAt: ["$user_details.profilePicture", 0] },
+          userId: { $arrayElemAt: ["$user_details._id", 0] },
+          userSalesId: "$_id",
           isFinal: 1,
           startDate: 1,
           endDate: 1,
@@ -110,7 +263,6 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       {
         $group: {
           _id: {
-            _id: "$_id",
             versionName: "$versionName",
             businessId: "$businessId",
             businessLogo: "$businessLogo",
@@ -121,20 +273,22 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             addedByProfilePicture: "$addedByProfilePicture",
             addedIn: "$addedIn",
             userName: "$userName",
+            userSalesId: "$userSalesId",
             designation: "$designation",
             profilePicture: "$profilePicture",
-            isFinal: "$isFinal",
             userId: "$userId",
             startDate: "$startDate",
             endDate: "$endDate",
+            isFinal: "$isFinal",
           },
-          salesData: { $push: "$salesData" },
+          salesData: { $addToSet: "$salesData" },
           totalSalesValue: { $sum: "$salesData.salesValue" },
+          totalTargetValie: { $sum: "$salesData.targetValue" },
+          totalAchievement: { $first: "$totalAchievement" },
         },
       },
       {
         $project: {
-          _id: "$_id._id",
           versionName: "$_id.versionName",
           businessId: "$_id.businessId",
           businessLogo: "$_id.businessLogo",
@@ -152,21 +306,24 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             designation: "$_id.designation",
             profilePicture: "$_id.profilePicture",
             userId: "$_id.userId",
+            userSalesId: "$_id.userSalesId",
+            isFinal: "$_id.isFinal",
           },
           totalSalesValue: "$totalSalesValue",
-          isFinal: "$_id.isFinal",
+          totalTargetValue: "$totalTargetValue",
+          totalAchievement: "$totalAchievement",
         },
       },
     ]);
 
-    if (userSales.length === 0) {
+    if (salesVersions.length === 0) {
       return res.status(500).send({
         error: "Oops",
         message: "No Sales Data Found for the specified dates",
       });
     }
 
-    const finalData = userSales.reduce((acc, data) => {
+    const finalData = salesVersions.reduce((acc, data) => {
       const found = acc.find((a) => a.versionName === data.versionName);
 
       if (!found) {
@@ -189,6 +346,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       } else {
         found.sales.push(data.sales);
         found.totalSalesValue += data.totalSalesValue;
+        found.totalTargetValue += data.totalTargetValue;
+        found.totalAchievement =
+          (found.totalSalesValue / found.totalTargetValue) * 100;
       }
 
       return acc;
@@ -198,7 +358,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: "Something went wrong, please try again later",
+      message: error.message,
     });
   }
 });

@@ -1,86 +1,64 @@
 const express = require("express");
-const router = express.Router();
 const auth = require("../../middleware/auth");
-const User = require("../../models/User");
+const UserSales = require("../../models/UserSales");
 const BusinessUsers = require("../../models/BusinessUsers");
-const Business = require("../../models/Business");
-const { default: mongoose } = require("mongoose");
-const Products = require("../../models/Products");
-const config = require("config");
-const createStripeSignatureHeader = require("../../modules/createStripeSignatureHeader");
-const bodyParser = require("body-parser");
-const Package = require("../../models/Package");
-const moment = require("moment");
-const Subscription = require("../../models/Subscription");
-const MemberShip = require("../../models/MemberShip");
-const Payment = require("../../models/Payment");
-const Client = require("../../models/Client");
 const UserTarget = require("../../models/UserTarget");
-const ProductTarget = require("../../models/ProductTarget");
+const router = express.Router();
+const moment = require("moment");
 
-router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
-  const { userId, year } = req.params;
+router.get("/:user_id/:month/:year", auth, async (req, res) => {
+  const { user_id, month, year } = req.params;
+
+  const businessUser = await BusinessUsers.find({ userId: user_id });
+
+  if (businessUser.length === 0) {
+    return res.status(400).send({ error: "No business found" });
+  }
+  const businessIds = businessUser.map((business) => business.businessId);
+
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0);
 
   try {
-    const userTeam = await BusinessUsers.aggregate([
+    const salesVersions = await UserSales.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(userId),
-          isBusinessOwner: true,
+          businessId: { $in: businessIds },
+          startDate: { $gte: startDate, $lte: endDate },
+          endDate: { $gte: startDate, $lte: endDate },
         },
       },
       {
-        $lookup: {
-          from: "businessusers",
-          localField: "businessId",
-          foreignField: "businessId",
-          as: "businessUsers",
-        },
-      },
-      {
-        $unwind: "$businessUsers",
-      },
-      {
-        $match: {
-          "businessUsers.isBusinessOwner": false,
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "businessUsers.userId",
-          foreignField: "_id",
-          as: "users",
-        },
-      },
-      {
-        $unwind: "$users",
+        $unwind: "$salesData",
       },
       {
         $lookup: {
           from: "usertargets",
-          localField: "users._id",
-          foreignField: "userId",
+          let: { product_id: "$salesData.product" },
+          pipeline: [
+            {
+              $unwind: "$productsTargets",
+            },
+            {
+              $unwind: "$productsTargets.target",
+            },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$productsTargets.target.productId", "$$product_id"],
+                },
+              },
+            },
+          ],
           as: "userTarget",
         },
       },
       {
-        $unwind: "$userTarget",
-      },
-      {
-        $unwind: "$userTarget.productsTargets",
+        $unwind: "$userTarget", // Unwind the matchedTargets array
       },
       {
         $match: {
           "userTarget.productsTargets.year": parseInt(year),
-        },
-      },
-      {
-        $lookup: {
-          from: "products",
-          localField: "userTarget.productsTargets.target.productId",
-          foreignField: "_id",
-          as: "products",
         },
       },
       {
@@ -103,116 +81,96 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
         },
       },
       {
-        $project: {
-          _id: "$users._id",
-          userName: "$users.userName",
-          profilePicture: "$users.profilePicture",
-          userType: "$users.userType",
-          businessId: "$businessUsers.businessId",
-          target: {
-            currencyName: { $arrayElemAt: ["$products.currencyName", 0] },
-            currencyCode: { $arrayElemAt: ["$products.currencyCode", 0] },
-            currencySymbol: { $arrayElemAt: ["$products.currencySymbol", 0] },
-            totalValue: {
-              $reduce: {
-                input: "$userTarget.productsTargets.target",
-                initialValue: 0,
-                in: {
-                  $sum: ["$$value", "$$this.targetValue"],
+        $unwind: "$productTarget.target.yearTarget",
+      },
+      {
+        $match: {
+          "productTarget.target.yearTarget.month":
+            moment(startDate).format("MMMM"),
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "salesData.product",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $unwind: "$product",
+      },
+      {
+        $addFields: {
+          salesData: {
+            $mergeObjects: [
+              "$salesData",
+              {
+                productNickName: "$product.productNickName",
+                productImage: "$product.imageURL",
+                salesValue: {
+                  $multiply: ["$salesData.quantity", "$salesData.price"],
                 },
-              },
-            },
-            productsTarget: {
-              $map: {
-                input: "$userTarget.productsTargets.target",
-                as: "target",
-                in: {
-                  productId: "$$target.productId",
-                  productNickName: {
-                    $arrayElemAt: [
-                      "$products.productNickName",
-                      {
-                        $indexOfArray: ["$products._id", "$$target.productId"],
-                      },
-                    ],
-                  },
-                  totalUnits: "$$target.targetUnits",
-                  totalValue: "$$target.targetValue",
-                  costPrice: {
-                    $arrayElemAt: [
-                      "$products.costPrice",
-                      {
-                        $indexOfArray: ["$products._id", "$$target.productId"],
-                      },
-                    ],
-                  },
-                  retailPrice: {
-                    $arrayElemAt: [
-                      "$products.retailPrice",
-                      {
-                        $indexOfArray: ["$products._id", "$$target.productId"],
-                      },
-                    ],
-                  },
-                  startPeriod: {
-                    $arrayElemAt: [
-                      "$productTarget.target.yearTarget.startPeriod",
-                      {
-                        $indexOfArray: [
-                          "$productTarget.target.yearTarget.month",
-                          "$$target.monthName",
-                        ],
-                      },
-                    ],
-                  },
-                  endPeriod: {
-                    $arrayElemAt: [
-                      "$productTarget.target.yearTarget.endPeriod",
-                      {
-                        $indexOfArray: [
-                          "$productTarget.target.yearTarget.month",
-                          "$$target.monthName",
-                        ],
-                      },
-                    ],
-                  },
-                  addedIn: {
-                    $arrayElemAt: [
-                      "$productTarget.target.yearTarget.addedIn",
-                      {
-                        $indexOfArray: [
-                          "$productTarget.target.yearTarget.month",
-                          "$$target.monthName",
-                        ],
-                      },
-                    ],
-                  },
-                  updatedIn: {
-                    $arrayElemAt: [
-                      "$productTarget.target.yearTarget.updatedIn",
-                      {
-                        $indexOfArray: [
-                          "$productTarget.target.yearTarget.month",
-                          "$$target.monthName",
-                        ],
-                      },
-                    ],
-                  },
-                  target: {
-                    $map: {
-                      input: "$productTarget.target.yearTarget",
-                      as: "yearTarget",
-                      in: {
-                        monthName: "$$yearTarget.month",
-                        targetUnits: {
+                targetUnits: {
+                  $multiply: [
+                    "$userTarget.productsTargets.target.targetUnits",
+                    {
+                      $divide: [
+                        {
+                          $toDouble: {
+                            $replaceOne: {
+                              input:
+                                "$productTarget.target.yearTarget.targetPhases",
+                              find: "%",
+                              replacement: "",
+                            },
+                          },
+                        },
+                        100,
+                      ],
+                    },
+                  ],
+                },
+                targetValue: {
+                  $multiply: [
+                    "$userTarget.productsTargets.target.targetValue",
+                    {
+                      $divide: [
+                        {
+                          $toDouble: {
+                            $replaceOne: {
+                              input:
+                                "$productTarget.target.yearTarget.targetPhases",
+                              find: "%",
+                              replacement: "",
+                            },
+                          },
+                        },
+                        100,
+                      ],
+                    },
+                  ],
+                },
+                achievement: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        {
                           $multiply: [
-                            "$$target.targetUnits",
+                            "$salesData.quantity",
+                            "$salesData.price",
+                          ],
+                        },
+                        {
+                          $multiply: [
+                            "$userTarget.productsTargets.target.targetValue",
                             {
                               $divide: [
                                 {
                                   $toDouble: {
                                     $replaceOne: {
-                                      input: "$$yearTarget.targetPhases",
+                                      input:
+                                        "$productTarget.target.yearTarget.targetPhases",
                                       find: "%",
                                       replacement: "",
                                     },
@@ -223,81 +181,142 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
                             },
                           ],
                         },
-                        targetValue: {
-                          $trunc: {
-                            $multiply: [
-                              "$$target.targetValue",
-                              {
-                                $divide: [
-                                  {
-                                    $toDouble: {
-                                      $replaceOne: {
-                                        input: "$$yearTarget.targetPhases",
-                                        find: "%",
-                                        replacement: "",
-                                      },
-                                    },
-                                  },
-                                  100,
-                                ],
-                              },
-                            ],
-                          },
-                        },
-                        monthPhasing: "$$yearTarget.targetPhases",
-                      },
+                      ],
                     },
-                  },
+                    100,
+                  ],
                 },
               },
-            },
+            ],
           },
         },
       },
-
+      {
+        $lookup: {
+          from: "users",
+          localField: "addingUser",
+          foreignField: "_id",
+          as: "addingUser_details",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user_details",
+        },
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          versionName: 1,
+          businessId: 1,
+          businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
+          businessName: { $arrayElemAt: ["$business.businessName", 0] },
+          addingUser: { $arrayElemAt: ["$addingUser_details._id", 0] },
+          addedBy: { $arrayElemAt: ["$addingUser_details.userName", 0] },
+          addedByDesignation: {
+            $arrayElemAt: ["$addingUser_details.designation", 0],
+          },
+          addedByProfilePicture: {
+            $arrayElemAt: ["$addingUser_details.profilePicture", 0],
+          },
+          salesData: 1,
+          addedIn: 1,
+          totalSalesValue: { $sum: "$salesData.salesValue" },
+          totalTargetValie: { $sum: "$salesData.targetValue" },
+          totalAchievement: {
+            $multiply: [
+              {
+                $divide: [
+                  {
+                    $sum: "$salesData.salesValue",
+                  },
+                  {
+                    $sum: "$salesData.targetValue",
+                  },
+                ],
+              },
+              100,
+            ],
+          },
+          userName: { $arrayElemAt: ["$user_details.userName", 0] },
+          designation: { $arrayElemAt: ["$user_details.designation", 0] },
+          profilePicture: { $arrayElemAt: ["$user_details.profilePicture", 0] },
+          userId: { $arrayElemAt: ["$user_details._id", 0] },
+          isFinal: 1,
+          startDate: 1,
+          endDate: 1,
+        },
+      },
       {
         $group: {
-          _id: "$_id",
-          userName: { $first: "$userName" },
-          profilePicture: { $first: "$profilePicture" },
-          userType: { $first: "$userType" },
-          businessId: { $first: "$businessId" },
-          target: {
-            $first: "$target",
+          _id: {
+            _id: "$_id",
+            versionName: "$versionName",
+            businessId: "$businessId",
+            businessLogo: "$businessLogo",
+            businessName: "$businessName",
+            addingUser: "$addingUser",
+            addedBy: "$addedBy",
+            addedByDesignation: "$addedByDesignation",
+            addedByProfilePicture: "$addedByProfilePicture",
+            addedIn: "$addedIn",
+            userName: "$userName",
+            designation: "$designation",
+            profilePicture: "$profilePicture",
+            isFinal: "$isFinal",
+            userId: "$userId",
+            startDate: "$startDate",
+            endDate: "$endDate",
           },
+          salesData: { $addToSet: "$salesData" },
+          totalSalesValue: { $sum: "$salesData.salesValue" },
+          totalTargetValie: { $sum: "$salesData.targetValue" },
+          totalAchievement: { $first: "$totalAchievement" },
+        },
+      },
+      {
+        $project: {
+          _id: "$_id._id",
+          versionName: "$_id.versionName",
+          businessId: "$_id.businessId",
+          businessLogo: "$_id.businessLogo",
+          businessName: "$_id.businessName",
+          addingUser: "$_id.addingUser",
+          addedBy: "$_id.addedBy",
+          addedByDesignation: "$_id.addedByDesignation",
+          addedByProfilePicture: "$_id.addedByProfilePicture",
+          addedIn: "$_id.addedIn",
+          startDate: "$_id.startDate",
+          endDate: "$_id.endDate",
+          sales: {
+            salesData: "$salesData",
+            userName: "$_id.userName",
+            designation: "$_id.designation",
+            profilePicture: "$_id.profilePicture",
+            userId: "$_id.userId",
+          },
+          totalSalesValue: "$totalSalesValue",
+          totalTargetValie: "$totalTargetValie",
+          totalAchievement: "$totalAchievement",
+          isFinal: "$_id.isFinal",
         },
       },
     ]);
 
-    // let finalTeam = [];
-    // for (let data of userTeam) {
-    //   const prodcutsTarget = data.target.map((a) => a.productsTarget).flat(1);
-
-    //   finalTeam.push({
-    //     _id: data._id,
-    //     userName: data.userName,
-    //     profilePicture: data.profilePicture,
-    //     userType: data.userType,
-    //     businessId: data.businessId,
-    //     target: {
-    //       currencyName: data.target[0].currencyName,
-    //       currencyCode: data.target[0].currencyCode,
-    //       currencySymbol: data.target[0].currencySymbol,
-    //       totalValue: prodcutsTarget.reduce((a, b) => a + b.totalValue, 0),
-    //       productsTarget: prodcutsTarget,
-    //     },
-    //   });
-    // }
-
-    return res.status(200).json({
-      userTeam: userTeam.sort(
-        (a, b) => a.target.totalValue - b.target.totalValue
-      ),
-    });
+    return res.status(200).json({ salesVersions });
   } catch (error) {
-    return res
-      .status(500)
-      .send({ error: "Error in server", message: error.message });
+    return res.status(500).send({ error: "Error", message: error.message });
   }
 });
 
