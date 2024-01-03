@@ -10,6 +10,7 @@ const Products = require("../../models/Products");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
 const UserTarget = require("../../models/UserTarget");
+const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 
 router.get("/:userId/:month/:year", auth, async (req, res) => {
   const { userId, month, year } = req.params;
@@ -776,5 +777,56 @@ router.post("/", auth, async (req, res) => {
       .send({ error: "Error", message: "Error Adding Users Sales" });
   }
 });
+
+// change user sales status isFinal
+router.put(
+  "/:userSalesId/:userId:/",
+  auth,
+  isCompanyAdmin,
+  async (req, res) => {
+    const { userSalesId, userId } = req.params;
+
+    try {
+      // check if user sales has any isFinal true with the same start and end date
+      const userSales = await UserSales.findOne({ _id: userSalesId });
+      const startDate = userSales.startDate;
+      const endDate = userSales.endDate;
+
+      const existingUserSales = await UserSales.findOne({
+        user: userId,
+        startDate: { $gte: startDate, $lte: endDate },
+        endDate: { $gte: startDate, $lte: endDate },
+        isFinal: true,
+      });
+
+      // change all isFinal to false
+      if (existingUserSales) {
+        await UserSales.updateMany(
+          {
+            user: userId,
+            startDate: {
+              $gte: startDate,
+              $lte: endDate,
+            },
+            endDate: { $gte: startDate, $lte: endDate },
+          },
+          { $set: { isFinal: false } }
+        );
+      }
+
+      // change selected userSales isFinal to true
+      await UserSales.updateOne(
+        { _id: userSalesId },
+        { $set: { isFinal: true } }
+      );
+
+      return res
+        .status(200)
+        .send({ message: "User Sales Status Changed Successfully" });
+    } catch (error) {
+      return res.status(500).send({ error: "Error", message: error.message });
+    }
+  }
+);
 
 module.exports = router;
