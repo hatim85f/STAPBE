@@ -350,6 +350,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           addedByDesignation: data.addedByDesignation,
           addedByProfilePicture: data.addedByProfilePicture,
           addedIn: data.addedIn,
+          updatedIn: data.updatedIn,
           sales: [data.sales],
           totalSalesValue: data.totalSalesValue,
           totalTargetValue: data.totalTargetValue,
