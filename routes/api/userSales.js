@@ -779,64 +779,59 @@ router.post("/", auth, async (req, res) => {
 });
 
 // change user sales status isFinal
-router.put(
-  "/:userSalesId/:userId:/",
-  auth,
-  isCompanyAdmin,
-  async (req, res) => {
-    const { userSalesIds, userIds } = req.params;
+router.put("/isFinal", auth, isCompanyAdmin, async (req, res) => {
+  const { userSalesIds, userIds } = req.body;
 
-    try {
+  try {
+    // check if user sales has any isFinal true with the same start and end date
+    // Iterate through userSalesIds and userIds arrays
+    for (let i = 0; i < userSalesIds.length; i++) {
+      const currentSalesId = userSalesIds[i];
+      const currentUserId = userIds[i];
+
       // check if user sales has any isFinal true with the same start and end date
-      // Iterate through userSalesIds and userIds arrays
-      for (let i = 0; i < userSalesIds.length; i++) {
-        const currentSalesId = userSalesIds[i];
-        const currentUserId = userIds[i];
+      const userSales = await UserSales.findOne({ _id: currentSalesId });
+      const startDate = userSales.startDate;
+      const endDate = userSales.endDate;
+      const addedIn = userSales.addedIn;
 
-        // check if user sales has any isFinal true with the same start and end date
-        const userSales = await UserSales.findOne({ _id: currentSalesId });
-        const startDate = userSales.startDate;
-        const endDate = userSales.endDate;
-        const addedIn = userSales.addedIn;
+      const existingUserSales = await UserSales.findOne({
+        user: currentUserId,
+        startDate: { $gte: startDate, $lte: endDate },
+        endDate: { $gte: startDate, $lte: endDate },
+        isFinal: true,
+      });
 
-        const existingUserSales = await UserSales.findOne({
-          user: currentUserId,
-          startDate: { $gte: startDate, $lte: endDate },
-          endDate: { $gte: startDate, $lte: endDate },
-          isFinal: true,
-        });
-
-        // change all isFinal to false
-        if (existingUserSales) {
-          await UserSales.updateMany(
-            {
-              user: currentUserId,
-              startDate: {
-                $gte: startDate,
-                $lte: endDate,
-              },
-              endDate: { $gte: startDate, $lte: endDate },
+      // change all isFinal to false
+      if (existingUserSales) {
+        await UserSales.updateMany(
+          {
+            user: currentUserId,
+            startDate: {
+              $gte: startDate,
+              $lte: endDate,
             },
-            {
-              $set: { isFinal: false, addedIn: addedIn, updatedIn: Date.now() },
-            }
-          );
-        }
-
-        // change selected userSales isFinal to true
-        await UserSales.updateOne(
-          { _id: currentSalesId },
-          { $set: { isFinal: true, updatedIn: Date.now() } }
+            endDate: { $gte: startDate, $lte: endDate },
+          },
+          {
+            $set: { isFinal: false, addedIn: addedIn, updatedIn: Date.now() },
+          }
         );
       }
 
-      return res
-        .status(200)
-        .send({ message: "User Sales Status Changed Successfully" });
-    } catch (error) {
-      return res.status(500).send({ error: "Error", message: error.message });
+      // change selected userSales isFinal to true
+      await UserSales.updateOne(
+        { _id: currentSalesId },
+        { $set: { isFinal: true, updatedIn: Date.now() } }
+      );
     }
+
+    return res
+      .status(200)
+      .send({ message: "User Sales Status Changed Successfully" });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
   }
-);
+});
 
 module.exports = router;
