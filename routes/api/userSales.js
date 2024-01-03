@@ -784,41 +784,51 @@ router.put(
   auth,
   isCompanyAdmin,
   async (req, res) => {
-    const { userSalesId, userId } = req.params;
+    const { userSalesIds, userIds } = req.params;
 
     try {
       // check if user sales has any isFinal true with the same start and end date
-      const userSales = await UserSales.findOne({ _id: userSalesId });
-      const startDate = userSales.startDate;
-      const endDate = userSales.endDate;
+      // Iterate through userSalesIds and userIds arrays
+      for (let i = 0; i < userSalesIds.length; i++) {
+        const currentSalesId = userSalesIds[i];
+        const currentUserId = userIds[i];
 
-      const existingUserSales = await UserSales.findOne({
-        user: userId,
-        startDate: { $gte: startDate, $lte: endDate },
-        endDate: { $gte: startDate, $lte: endDate },
-        isFinal: true,
-      });
+        // check if user sales has any isFinal true with the same start and end date
+        const userSales = await UserSales.findOne({ _id: currentSalesId });
+        const startDate = userSales.startDate;
+        const endDate = userSales.endDate;
+        const addedIn = userSales.addedIn;
 
-      // change all isFinal to false
-      if (existingUserSales) {
-        await UserSales.updateMany(
-          {
-            user: userId,
-            startDate: {
-              $gte: startDate,
-              $lte: endDate,
+        const existingUserSales = await UserSales.findOne({
+          user: currentUserId,
+          startDate: { $gte: startDate, $lte: endDate },
+          endDate: { $gte: startDate, $lte: endDate },
+          isFinal: true,
+        });
+
+        // change all isFinal to false
+        if (existingUserSales) {
+          await UserSales.updateMany(
+            {
+              user: currentUserId,
+              startDate: {
+                $gte: startDate,
+                $lte: endDate,
+              },
+              endDate: { $gte: startDate, $lte: endDate },
             },
-            endDate: { $gte: startDate, $lte: endDate },
-          },
-          { $set: { isFinal: false } }
+            {
+              $set: { isFinal: false, addedIn: addedIn, updatedIn: Date.now() },
+            }
+          );
+        }
+
+        // change selected userSales isFinal to true
+        await UserSales.updateOne(
+          { _id: currentSalesId },
+          { $set: { isFinal: true, updatedIn: Date.now() } }
         );
       }
-
-      // change selected userSales isFinal to true
-      await UserSales.updateOne(
-        { _id: userSalesId },
-        { $set: { isFinal: true } }
-      );
 
       return res
         .status(200)
