@@ -234,6 +234,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           },
           salesData: 1,
           addedIn: 1,
+          updatedIn: 1,
           totalSalesValue: { $sum: "$salesData.salesValue" },
           totalTargetValue: { $sum: "$salesData.targetValue" },
           totalAchievement: {
@@ -276,6 +277,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             addedByDesignation: "$addedByDesignation",
             addedByProfilePicture: "$addedByProfilePicture",
             addedIn: "$addedIn",
+            updatedIn: "$updatedIn",
             userName: "$userName",
             userSalesId: "$userSalesId",
             designation: "$designation",
@@ -305,6 +307,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           addedByDesignation: "$_id.addedByDesignation",
           addedByProfilePicture: "$_id.addedByProfilePicture",
           addedIn: "$_id.addedIn",
+          updatedIn: "$_id.updatedIn",
           startDate: "$_id.startDate",
           endDate: "$_id.endDate",
           sales: {
