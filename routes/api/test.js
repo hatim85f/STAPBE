@@ -35,6 +35,8 @@ router.get("/:user_id/:month/:year", auth, async (req, res) => {
         $lookup: {
           from: "usertargets",
           let: { product_id: "$salesData.product" },
+          localField: "user",
+          foreignField: "userId",
           pipeline: [
             {
               $unwind: "$productsTargets",
@@ -106,6 +108,11 @@ router.get("/:user_id/:month/:year", auth, async (req, res) => {
             $mergeObjects: [
               "$salesData",
               {
+                month: "$productTarget.target.yearTarget.month",
+                productTargetYear: "$productTarget.target.year",
+                userTargetYar: "$userTarget.productsTargets.year",
+                productNickName: "$product.productNickName",
+                userIdData: "$user",
                 productNickName: "$product.productNickName",
                 productImage: "$product.imageURL",
                 salesValue: {

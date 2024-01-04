@@ -37,6 +37,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
         $lookup: {
           from: "usertargets",
           let: { product_id: "$salesData.product" },
+          localField: "user",
+          foreignField: "userId",
           pipeline: [
             {
               $unwind: "$productsTargets",
@@ -108,6 +110,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             $mergeObjects: [
               "$salesData",
               {
+                month: "$productTarget.target.yearTarget.month",
+                productTargetYear: "$productTarget.target.year",
+                userTargetYar: "$userTarget.productsTargets.year",
                 productNickName: "$product.productNickName",
                 productImage: "$product.imageURL",
                 salesValue: {
@@ -329,6 +334,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       },
     ]);
 
+    // return res.status(200).json({ salesVersions: salesVersions[0] });
+
     if (salesVersions.length === 0) {
       return res.status(500).send({
         error: "Oops",
@@ -338,6 +345,20 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
 
     const finalData = salesVersions.reduce((acc, data) => {
       const found = acc.find((a) => a.versionName === data.versionName);
+
+      let salesDetails = data.sales.salesData;
+      const uniqueSales = salesDetails.reduce((item, curr) => {
+        const itemFound = item.find((a) => a.product === curr.product);
+
+        if (!itemFound) {
+          item.push(curr);
+        } else {
+          // return without pushing to return unique array
+          return item;
+        }
+
+        return item;
+      }, []);
 
       if (!found) {
         acc.push({
@@ -351,7 +372,17 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           addedByProfilePicture: data.addedByProfilePicture,
           addedIn: data.addedIn,
           updatedIn: data.updatedIn,
-          sales: [data.sales],
+          sales: [
+            {
+              salesData: uniqueSales,
+              userName: data.sales.userName,
+              designation: data.sales.designation,
+              profilePicture: data.sales.profilePicture,
+              userId: data.sales.userId,
+              userSalesId: data.sales.userSalesId,
+              isFinal: data.sales.isFinal,
+            },
+          ],
           totalSalesValue: data.totalSalesValue,
           totalTargetValue: data.totalTargetValue,
           totalAchievement: data.totalAchievement,
@@ -363,7 +394,15 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           currencySymbol: data.currencySymbol,
         });
       } else {
-        found.sales.push(data.sales);
+        found.sales.push({
+          salesData: uniqueSales,
+          userName: data.sales.userName,
+          designation: data.sales.designation,
+          profilePicture: data.sales.profilePicture,
+          userId: data.sales.userId,
+          userSalesId: data.sales.userSalesId,
+          isFinal: data.sales.isFinal,
+        });
         found.totalSalesValue += data.totalSalesValue;
         found.totalTargetValue += data.totalTargetValue;
         found.totalAchievement =
