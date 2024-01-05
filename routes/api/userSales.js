@@ -110,9 +110,6 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
             $mergeObjects: [
               "$salesData",
               {
-                month: "$productTarget.target.yearTarget.month",
-                productTargetYear: "$productTarget.target.year",
-                userTargetYar: "$userTarget.productsTargets.year",
                 productNickName: "$product.productNickName",
                 productImage: "$product.imageURL",
                 salesValue: {
@@ -872,6 +869,45 @@ router.put("/isFinal", auth, isCompanyAdmin, async (req, res) => {
     return res
       .status(200)
       .send({ message: "User Sales Status Changed Successfully" });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
+// editing user sales data by admin
+// for user sales
+router.put("/edit/:userSalesId", auth, isCompanyAdmin, async (req, res) => {
+  const { userSalesId } = req.params;
+  const { salesDetails } = req.body;
+
+  try {
+    await UserSales.updateOne(
+      { _id: userSalesId },
+      {
+        $set: {
+          salesData: salesDetails.salesData,
+          updatedIn: Date.now(),
+        },
+      }
+    );
+
+    return res.status(200).send({
+      message: `Sales for ${salesDetails.userName} updated successfully`,
+    });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
+router.delete("/", auth, isCompanyAdmin, async (req, res) => {
+  const { salesIds } = req.body;
+
+  try {
+    await UserSales.deleteMany({ _id: { $in: salesIds } });
+
+    return res
+      .status(200)
+      .send({ message: "Users Sales Deleted Successfully" });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
