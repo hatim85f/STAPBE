@@ -761,8 +761,15 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
 });
 
 router.post("/", auth, async (req, res) => {
-  const { userId, startDate, endDate, salesData, addingUser, versionName } =
-    req.body;
+  const {
+    userId,
+    startDate,
+    endDate,
+    salesData,
+    addingUser,
+    versionName,
+    isFinal,
+  } = req.body;
 
   const existingSales = await UserSales.findOne({
     user: userId,
@@ -794,7 +801,7 @@ router.post("/", auth, async (req, res) => {
       addedIn: Date.now(),
       updatedIn: Date.now(),
       addingUser: addingUser,
-      isFinal: false,
+      isFinal: isFinal,
     });
 
     await UserSales.insertMany(newSales);
