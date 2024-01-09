@@ -273,6 +273,23 @@ router.put("/order_product/:orderProductId", auth, async (req, res) => {
   }
 });
 
+// change order status
+router.put("/status/:orderId", auth, async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  try {
+    await Orders.updateOne({ _id: orderId }, { $set: { status } });
+
+    return res.status(200).send({ message: `Order updated sucessfully` });
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error !",
+      message: "Error in updating your item, Try again later",
+    });
+  }
+});
+
 router.delete("/", auth, async (req, res) => {
   const { orderId } = req.body;
 
