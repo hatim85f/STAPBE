@@ -8,6 +8,7 @@ const BusinessUsers = require("../../models/BusinessUsers");
 const { default: mongoose } = require("mongoose");
 const SupportCase = require("../../models/SupportCase");
 const User = require("../../models/User");
+const UserSales = require("../../models/UserSales");
 
 // @route GET api/clients/test
 // @description tests clients route
@@ -279,9 +280,143 @@ router.put("/status/:orderId", auth, async (req, res) => {
   const { status } = req.body;
 
   try {
-    await Orders.updateOne({ _id: orderId }, { $set: { status } });
+    const order = await Orders.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(orderId),
+        },
+      },
+      {
+        $lookup: {
+          from: "orderproducts",
+          localField: "details",
+          foreignField: "_id",
+          as: "orderProducts",
+        },
+      },
+      {
+        $unwind: "$orderProducts",
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderProducts.productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "clientId",
+          foreignField: "_id",
+          as: "client",
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          businessId: { $first: "$orderProducts.businessId" },
+          userId: { $first: "$userId" },
+          clientId: { $first: "$clientId" },
+          totalValue: { $first: "$totalValue" },
+          status: { $first: "$status" },
+          timeStamp: { $first: "$timeStamp" },
+          details: {
+            $push: {
+              product: "$orderProducts._id",
+              quantity: "$orderProducts.quantity",
+              price: "$orderProducts.productPrice",
+            },
+          },
+          client: { $first: "$client" },
+        },
+      },
+      {
+        $project: {
+          user: "$userId",
+          versionName: {
+            $concat: [
+              "Order for ",
+              { $arrayElemAt: ["$client.clientName", 0] },
+            ],
+          },
+          businessId: "$businessId",
+          addingUser: "$userId",
+          salesData: "$details",
+          timeStamp: "$timeStamp",
+        },
+      },
+    ]);
 
-    return res.status(200).send({ message: `Order updated sucessfully` });
+    const currentDate = new Date(order[0].timeStamp);
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+
+    // Get the first day of the month
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+
+    // Get the last day of the month
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
+    // Format dates to ISO strings
+    const firstDayISO = firstDayOfMonth.toISOString();
+    const lastDayISO = lastDayOfMonth.toISOString();
+
+    const isFinalData = status === "Completed" ? true : false;
+
+    order[0].startDate = firstDayISO;
+    order[0].endDate = lastDayISO;
+    order[0].isFinal = isFinalData;
+
+    const isExistingUserSales = await UserSales.findOne({
+      user: order[0].user,
+      businessId: order[0].businessId,
+      startDate: firstDayISO,
+      endDate: lastDayISO,
+    });
+
+    if (isExistingUserSales) {
+      await UserSales.updateOne(
+        {
+          user: order[0].user,
+          businessId: order[0].businessId,
+          startDate: firstDayISO,
+          endDate: lastDayISO,
+        },
+        {
+          $set: {
+            salesData: order[0].salesData,
+            updatedIn: Date.now(),
+            isFinal: isFinalData,
+          },
+        }
+      );
+    } else {
+      const newUserSales = new UserSales({
+        user: order[0].user,
+        versionName: order[0].versionName,
+        businessId: order[0].businessId,
+        addingUser: order[0].addingUser,
+        salesData: order[0].salesData,
+        startDate: firstDayISO,
+        endDate: lastDayISO,
+        isFinal: isFinalData,
+      });
+
+      await UserSales.insertMany(newUserSales);
+    }
+
+    await Orders.updateOne(
+      { _id: orderId },
+      {
+        $set: { status },
+      }
+    );
+
+    return res
+      .status(200)
+      .send({ message: "Order status updated sucessfully" });
   } catch (error) {
     return res.status(500).send({
       error: "Error !",
