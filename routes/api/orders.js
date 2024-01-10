@@ -11,7 +11,6 @@ const User = require("../../models/User");
 const UserSales = require("../../models/UserSales");
 
 // @route GET api/clients/test
-// @description tests clients route
 // @access Private
 router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
   const { userId, startDate, endDate } = req.params;

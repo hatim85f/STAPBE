@@ -22,6 +22,45 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
+    const userSalesVersions = await UserSales.aggregate([
+      {
+        $match: {
+          businessId: { $in: businessIds },
+          startDate: { $gte: startDate, $lte: endDate },
+          endDate: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $unwind: "$salesData",
+      },
+      {
+        $lookup: {
+          from: "usertargets",
+          let: { product_id: "$salesData.product" },
+          localField: "user",
+          foreignField: "userId",
+          pipeline: [
+            // {
+            //   $unwind: "$productsTargets",
+            // },
+            // {
+            //   $unwind: "$productsTargets.target",
+            // },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$productsTargets.target.productId", "$$product_id"],
+                },
+              },
+            },
+          ],
+          as: "userTarget",
+        },
+      },
+    ]);
+
+    return res.status(200).send({ userSalesVersions });
+
     const salesVersions = await UserSales.aggregate([
       {
         $match: {

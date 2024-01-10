@@ -166,7 +166,7 @@ const addNewTarget = async (
         year: moment(startDate).add(i, "months").format("YYYY"),
         targetUnits: Math.round(targetUnits / numberOfMonths) + 1,
         productPrice: productPrice,
-        targetValue: Math.round(targetValue / numberOfMonths),
+        targetValue: Math.round(parseFloat(targetValue) / numberOfMonths),
         phasing: phasing,
         phasingData: null,
         targetPhases: `${(1 / numberOfMonths) * 100}%`,
@@ -191,11 +191,13 @@ const addNewTarget = async (
             ]
         ),
         productPrice: productPrice,
-        targetValue: Math.round(
-          targetValue *
-            phasingPercentage.find((obj) => obj[targetMonth] !== undefined)[
-              targetMonth
-            ]
+        targetValue: parseFloat(
+          Math.round(
+            targetValue *
+              phasingPercentage.find((obj) => obj[targetMonth] !== undefined)[
+                targetMonth
+              ]
+          )
         ),
         phasing: phasing,
         phasingData: phasingData,
@@ -262,7 +264,7 @@ const updatePreviousTarget = async (
         year: moment(startDate).add(i, "months").format("YYYY"),
         targetUnits: Math.floor(targetUnits / numberOfMonths) + 1,
         productPrice: productPrice,
-        targetValue: Math.floor(targetValue / numberOfMonths),
+        targetValue: Math.round(parseFloat(targetValue) / numberOfMonths),
         phasing: phasing,
         phasingData: null,
         targetPhases: `${(1 / numberOfMonths) * 100}%`,
