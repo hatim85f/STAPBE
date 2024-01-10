@@ -11,6 +11,7 @@ const User = require("../../models/User");
 const UserSales = require("../../models/UserSales");
 
 // @route GET api/clients/test
+// @description tests clients route
 // @access Private
 router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
   const { userId, startDate, endDate } = req.params;
@@ -323,7 +324,7 @@ router.put("/status/:orderId", auth, async (req, res) => {
           timeStamp: { $first: "$timeStamp" },
           details: {
             $push: {
-              product: "$orderProducts._id",
+              product: "$orderProducts.productId",
               quantity: "$orderProducts.quantity",
               price: "$orderProducts.productPrice",
             },
@@ -373,6 +374,11 @@ router.put("/status/:orderId", auth, async (req, res) => {
       businessId: order[0].businessId,
       startDate: firstDayISO,
       endDate: lastDayISO,
+      salesData: {
+        $elemMatch: {
+          $eq: order[0].salesData,
+        },
+      },
     });
 
     if (isExistingUserSales) {

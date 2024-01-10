@@ -264,7 +264,7 @@ const updatePreviousTarget = async (
         year: moment(startDate).add(i, "months").format("YYYY"),
         targetUnits: Math.floor(targetUnits / numberOfMonths) + 1,
         productPrice: productPrice,
-        targetValue: Math.round(parseFloat(targetValue) / numberOfMonths),
+        targetValue: parseFloat(targetValue) / numberOfMonths,
         phasing: phasing,
         phasingData: null,
         targetPhases: `${(1 / numberOfMonths) * 100}%`,

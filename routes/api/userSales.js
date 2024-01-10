@@ -36,16 +36,16 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       {
         $lookup: {
           from: "usertargets",
-          let: { product_id: "$salesData.product" },
+          let: { product_id: "659dc2827adbfee05131c0c2" },
           localField: "user",
           foreignField: "userId",
           pipeline: [
-            // {
-            //   $unwind: "$productsTargets",
-            // },
-            // {
-            //   $unwind: "$productsTargets.target",
-            // },
+            {
+              $unwind: "$productsTargets",
+            },
+            {
+              $unwind: "$productsTargets.target",
+            },
             {
               $match: {
                 $expr: {
