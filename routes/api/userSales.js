@@ -875,10 +875,18 @@ router.put("/isFinal", auth, isCompanyAdmin, async (req, res) => {
 });
 
 router.put("/single_isFinal", auth, isCompanyAdmin, async (req, res) => {
-  const { salesId, userId } = req.body;
+  const { salesId, userId, month, year } = req.body;
 
   try {
-    const userSales = await UserSales.find({ user: userId, isFinal: true });
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const userSales = await UserSales.find({
+      user: userId,
+      isFinal: true,
+      startDate: { $gte: startDate, $lte: endDate },
+      endDate: { $gte: startDate, $lte: endDate },
+    });
 
     if (userSales.length > 0) {
       await UserSales.updateMany(
