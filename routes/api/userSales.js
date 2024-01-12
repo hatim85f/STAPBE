@@ -874,6 +874,29 @@ router.put("/isFinal", auth, isCompanyAdmin, async (req, res) => {
   }
 });
 
+router.put("/single_isFinal", auth, isCompanyAdmin, async (req, res) => {
+  const { salesId, userId } = req.body;
+
+  try {
+    const userSales = await UserSales.find({ user: userId, isFinal: true });
+
+    if (userSales.length > 0) {
+      await UserSales.updateMany(
+        { user: userId },
+        { $set: { isFinal: false } }
+      );
+    } else {
+      await UserSales.updateOne({ _id: salesId }, { $set: { isFinal: true } });
+    }
+
+    return res
+      .status(200)
+      .send({ message: "User Sales Status Changed Successfully" });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
 // editing user sales data by admin
 // for user sales
 router.put("/edit/:userSalesId", auth, isCompanyAdmin, async (req, res) => {
