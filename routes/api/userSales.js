@@ -764,6 +764,9 @@ router.post("/", auth, async (req, res) => {
   const { userId, startDate, endDate, salesData, addingUser, versionName } =
     req.body;
 
+  const businessUser = await BusinessUsers.find({ userId: addingUser });
+  const businessIds = businessUser.map((business) => business.businessId);
+
   const existingSales = await UserSales.findOne({
     user: userId,
     versionName: versionName,
@@ -812,9 +815,7 @@ router.post("/", auth, async (req, res) => {
     });
 
     await SupportCase.insertMany(newSupportCase);
-    return res
-      .status(500)
-      .send({ error: "Error", message: "Error Adding Users Sales" });
+    return res.status(500).send({ error: "Error", message: error.message });
   }
 });
 
