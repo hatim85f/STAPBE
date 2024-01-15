@@ -824,8 +824,6 @@ router.put("/isFinal", auth, isCompanyAdmin, async (req, res) => {
   const { userSalesIds, userIds } = req.body;
 
   try {
-    // check if user sales has any isFinal true with the same start and end date
-    // Iterate through userSalesIds and userIds arrays
     for (let i = 0; i < userSalesIds.length; i++) {
       const currentSalesId = userSalesIds[i];
       const currentUserId = userIds[i];
