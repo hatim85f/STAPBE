@@ -20,6 +20,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
+    console.log(startDate, endDate);
+
     const salesVersions = await UserSales.aggregate([
       {
         $match: {
