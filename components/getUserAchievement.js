@@ -2,16 +2,24 @@ const { default: mongoose } = require("mongoose");
 const UserSales = require("../models/UserSales");
 const moment = require("moment");
 
-const getFinalUserAchievement = async (userId, month, year) => {
+const getFinalUserAchievement = async (userId, month, year, res) => {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0);
+
+  const selectedMonth = moment(startDate).format("MMMM");
 
   const userAchievement = await UserSales.aggregate([
     {
       $match: {
         user: new mongoose.Types.ObjectId(userId),
-        startDate: { $gte: startDate },
-        endDate: { $lte: endDate },
+        startDate: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+        endDate: {
+          $gte: startDate,
+          $lte: endDate,
+        },
         isFinal: true,
       },
     },
@@ -180,14 +188,6 @@ const getFinalUserAchievement = async (userId, month, year) => {
     {
       $lookup: {
         from: "users",
-        localField: "addingUser",
-        foreignField: "_id",
-        as: "addingUser_details",
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
         localField: "user",
         foreignField: "_id",
         as: "user_details",
@@ -204,21 +204,11 @@ const getFinalUserAchievement = async (userId, month, year) => {
     {
       $project: {
         _id: 1,
-        versionName: 1,
         businessId: 1,
         businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
         businessName: { $arrayElemAt: ["$business.businessName", 0] },
         addingUser: { $arrayElemAt: ["$addingUser_details._id", 0] },
-        addedBy: { $arrayElemAt: ["$addingUser_details.userName", 0] },
-        addedByDesignation: {
-          $arrayElemAt: ["$addingUser_details.designation", 0],
-        },
-        addedByProfilePicture: {
-          $arrayElemAt: ["$addingUser_details.profilePicture", 0],
-        },
         salesData: 1,
-        addedIn: 1,
-        updatedIn: 1,
         totalSalesValue: { $sum: "$salesData.salesValue" },
         totalTargetValue: { $sum: "$salesData.targetValue" },
         userName: { $arrayElemAt: ["$user_details.userName", 0] },
@@ -237,16 +227,9 @@ const getFinalUserAchievement = async (userId, month, year) => {
     {
       $group: {
         _id: {
-          versionName: "$versionName",
           businessId: "$businessId",
           businessLogo: "$businessLogo",
           businessName: "$businessName",
-          addingUser: "$addingUser",
-          addedBy: "$addedBy",
-          addedByDesignation: "$addedByDesignation",
-          addedByProfilePicture: "$addedByProfilePicture",
-          addedIn: "$addedIn",
-          updatedIn: "$updatedIn",
           userName: "$userName",
           userSalesId: "$userSalesId",
           designation: "$designation",
@@ -266,29 +249,25 @@ const getFinalUserAchievement = async (userId, month, year) => {
     },
     {
       $project: {
-        versionName: "$_id.versionName",
+        _id: 0,
         businessId: "$_id.businessId",
         businessLogo: "$_id.businessLogo",
         businessName: "$_id.businessName",
-        addingUser: "$_id.addingUser",
-        addedBy: "$_id.addedBy",
-        addedByDesignation: "$_id.addedByDesignation",
-        addedByProfilePicture: "$_id.addedByProfilePicture",
-        addedIn: "$_id.addedIn",
-        updatedIn: "$_id.updatedIn",
-        startDate: "$_id.startDate",
-        endDate: "$_id.endDate",
-        sales: {
-          salesData: "$salesData",
-          userName: "$_id.userName",
-          designation: "$_id.designation",
-          profilePicture: "$_id.profilePicture",
-          userId: "$_id.userId",
-          userSalesId: "$_id.userSalesId",
-          isFinal: "$_id.isFinal",
-        },
+        salesData: "$salesData",
+        userName: "$_id.userName",
+        designation: "$_id.designation",
+        profilePicture: "$_id.profilePicture",
+        userId: "$_id.userId",
+        userSalesId: "$_id.userSalesId",
+        isFinal: "$_id.isFinal",
         totalSalesValue: "$totalSalesValue",
         totalTargetValue: "$totalTargetValue",
+        totalAchievement: {
+          $divide: [
+            { $multiply: ["$totalSalesValue", 100] },
+            "$totalTargetValue",
+          ],
+        },
         currencyName: "$_id.currencyName",
         currencyCode: "$_id.currencyCode",
         currencySymbol: "$_id.currencySymbol",
@@ -296,85 +275,7 @@ const getFinalUserAchievement = async (userId, month, year) => {
     },
   ]);
 
-  if (userAchievement.length === 0) {
-    return res.status(500).send({
-      error: "Oops",
-      message: "No Sales Data Found for the specified dates",
-    });
-  }
-
-  const finalData = userAchievement.reduce((acc, data) => {
-    const found = acc.find((a) => a.versionName === data.versionName);
-
-    let salesDetails = data.sales.salesData;
-    const uniqueSales = salesDetails.reduce((item, curr) => {
-      const itemFound = item.find((a) => a.product === curr.product);
-
-      if (!itemFound) {
-        item.push(curr);
-      } else {
-        // return without pushing to return unique array
-        return item;
-      }
-
-      return item;
-    }, []);
-
-    if (!found) {
-      acc.push({
-        versionName: data.versionName,
-        businessId: data.businessId,
-        businessLogo: data.businessLogo,
-        businessName: data.businessName,
-        addingUser: data.addingUser,
-        addedBy: data.addedBy,
-        addedByDesignation: data.addedByDesignation,
-        addedByProfilePicture: data.addedByProfilePicture,
-        addedIn: data.addedIn,
-        updatedIn: data.updatedIn,
-        sales: [
-          {
-            salesData: uniqueSales,
-            userName: data.sales.userName,
-            designation: data.sales.designation,
-            profilePicture: data.sales.profilePicture,
-            userId: data.sales.userId,
-            userSalesId: data.sales.userSalesId,
-            isFinal: data.sales.isFinal,
-          },
-        ],
-        totalSalesValue: data.totalSalesValue,
-        totalTargetValue: data.totalTargetValue,
-        totalAchievement:
-          (parseFloat(data.totalSalesValue) /
-            parseFloat(data.totalTargetValue)) *
-          100,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        currencyName: data.currencyName,
-        currencyCode: data.currencyCode,
-        currencySymbol: data.currencySymbol,
-      });
-    } else {
-      found.sales.push({
-        salesData: uniqueSales,
-        userName: data.sales.userName,
-        designation: data.sales.designation,
-        profilePicture: data.sales.profilePicture,
-        userId: data.sales.userId,
-        userSalesId: data.sales.userSalesId,
-        isFinal: data.sales.isFinal,
-      });
-      found.totalSalesValue += data.totalSalesValue;
-      found.totalTargetValue += data.totalTargetValue;
-      found.totalAchievement =
-        (found.totalSalesValue / found.totalTargetValue) * 100;
-    }
-
-    return acc;
-  }, []);
-
-  return finalData;
+  return userAchievement;
 };
 
 module.exports = { getFinalUserAchievement };

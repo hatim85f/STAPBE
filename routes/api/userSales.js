@@ -721,6 +721,7 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
         year,
         res
       );
+
       teamSales.push(userSales);
     }
 
@@ -733,7 +734,55 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
 
     const teamSalesFlat = teamSales.flat();
 
-    return res.status(200).json({ teamSales: teamSalesFlat });
+    const teamSalesGrouped = teamSalesFlat.reduce((acc, data) => {
+      const found = acc.find(
+        (a) => a.businessId.toString() === data.businessId.toString()
+      );
+
+      const value = {
+        salesData: data.salesData,
+      };
+
+      if (!found) {
+        acc.push({
+          businessId: data.businessId,
+          businessLogo: data.businessLogo,
+          businessName: data.businessName,
+          currencyCode: data.currencyCode,
+          currencyName: data.currencyName,
+          currencySymbol: data.currencySymbol,
+          totalSalesValue: data.totalSalesValue,
+          totalTargetValue: data.totalTargetValue,
+          membersSales: [value],
+        });
+      } else {
+        data.salesData.forEach((item) => {
+          const foundItem = found.membersSales[0].salesData.find(
+            (x) => x.product.toString() === item.product.toString()
+          );
+
+          if (!foundItem) {
+            found.membersSales[0].salesData.push(item);
+          } else {
+            foundItem.quantity += item.quantity;
+            foundItem.salesValue += item.salesValue;
+            foundItem.targetValue += item.targetValue;
+            foundItem.targetUnits += item.targetUnits;
+            foundItem.achievement =
+              (foundItem.salesValue / foundItem.targetValue) * 100;
+          }
+        });
+
+        found.totalSalesValue += data.totalSalesValue;
+        found.totalTargetValue += data.totalTargetValue;
+        found.totalAchievement =
+          (found.totalSalesValue / found.totalTargetValue) * 100;
+      }
+
+      return acc;
+    }, []);
+
+    return res.status(200).json({ teamSales: teamSalesGrouped });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }

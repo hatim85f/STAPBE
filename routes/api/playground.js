@@ -1,197 +1,116 @@
-const userSales = {
-  userSales: [
-    {
-      sales: [
-        {
-          salesData: [
-            {
-              product: "64f10748a134b298df10e184",
-              quantity: 3600,
-              price: 12,
-              _id: "6591a26dee4436e4891dfbb1",
-              productNickName: "Cefutil 500",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil500.jpeg?alt=media&token=9f57e1f4-a602-4380-89ab-9764540b9812",
-              salesValue: 43200,
-            },
-          ],
-          userName: "Mohamed Samir",
-          designation: "Medical Rep",
-          profilePicture:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiJpYfga7uPDBAn_DkFa9n60gjLDY0rESJWg&usqp=CAU",
-        },
-        {
-          salesData: [
-            {
-              product: "64f10748a134b298df10e184",
-              quantity: 2141,
-              price: 12,
-              _id: "6591a266ee4436e4891dfb9c",
-              productNickName: "Cefutil 500",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil500.jpeg?alt=media&token=9f57e1f4-a602-4380-89ab-9764540b9812",
-              salesValue: 25692,
-            },
-            {
-              product: "64f1087ea134b298df10e187",
-              quantity: -260,
-              price: 7.27,
-              _id: "6591a266ee4436e4891dfb9d",
-              productNickName: "Cefutil 250",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil250.jpeg?alt=media&token=96c7178f-63e5-4b54-8c09-0970294e76b0",
-              salesValue: -1890.1999999999998,
-            },
-          ],
-          userName: "Bilal Al Jabouri",
-          designation: "Medical Rep",
-          profilePicture:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkE0kQxLcPKeywJEZDgVQ8AYjh-n-ToAfUrw&usqp=CAU",
-        },
-        {
-          salesData: [
-            {
-              product: "64f10748a134b298df10e184",
-              quantity: 2500,
-              price: 12,
-              _id: "6591a27bee4436e4891dfbc6",
-              productNickName: "Cefutil 500",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil500.jpeg?alt=media&token=9f57e1f4-a602-4380-89ab-9764540b9812",
-              salesValue: 30000,
-            },
-            {
-              product: "64f1087ea134b298df10e187",
-              quantity: -260,
-              price: 7.27,
-              _id: "6591a27bee4436e4891dfbc7",
-              productNickName: "Cefutil 250",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil250.jpeg?alt=media&token=96c7178f-63e5-4b54-8c09-0970294e76b0",
-              salesValue: -1890.1999999999998,
-            },
-          ],
-          userName: "Hatim Fayez",
-          designation: "Senior Medical Rep",
-          profilePicture:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKAZAyWT6KeGNvhx2C1FtS_3SCOI6VoeAAVGO_ASslTw25o9pfj8l1-Si99DipnVDHsaU&usqp=CAU",
-        },
-      ],
-      isFinal: false,
-      _id: "6591a26dee4436e4891dfbc2",
-      versionName: "Cefutil Team Dec #2",
-      businessId: "64f103076bb4701c1127a39b",
+const test = {
+  teamSales: {
+    _id: {
+      versionName: "Jan Version Without NMC",
+      businessId: "64f102286bb4701c1127a392",
       businessLogo:
-        "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_logo%2FCefutil%20team?alt=media&token=7b8b99b5-8603-4e79-8380-0e7e0fa53939",
-      businessName: "Cefutil team",
+        "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_logo%2FSefarin%20Team?alt=media&token=b100e560-bf25-4cd5-b9ec-3d8bbcb23e25",
+      businessName: "Sefarin Team",
       addingUser: "64f100836bb4701c1127a38b",
       addedBy: "Aseel Khalid",
       addedByDesignation: "Supervisor",
       addedByProfilePicture: "https://i.imgur.com/2WZtV3H.png",
-      addedIn: "2023-12-31T17:18:37.188Z",
-      totalSalesValue: "sum of all sales values under the same version",
+      addedIn: "2024-01-12T20:11:06.355Z",
+      updatedIn: "2024-01-15T21:04:03.017Z",
+      userName: "Leena Al Kordi",
+      userSalesId: "65a19cdaa8cfa86c3bd024f1",
+      designation: "Medical Rep",
+      profilePicture:
+        "data:image/jpeg;base64,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",
+      userId: "64f503fb9ae9b029e720ffd1",
+      startDate: "2023-12-31T20:00:00.000Z",
+      endDate: "2024-01-30T20:00:00.000Z",
+      isFinal: true,
+      currencyName: "United States dollar",
+      currencyCode: "USD",
+      currencySymbol: "$",
     },
-
-    {
-      sales: [
+    businessId: "64f102286bb4701c1127a392",
+    businessLogo:
+      "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_logo%2FSefarin%20Team?alt=media&token=b100e560-bf25-4cd5-b9ec-3d8bbcb23e25",
+    businessName: "Sefarin Team",
+    startDate: "2023-12-31T20:00:00.000Z",
+    endDate: "2024-01-30T20:00:00.000Z",
+    sales: {
+      salesData: [
         {
-          salesData: [
-            {
-              product: "64f10748a134b298df10e184",
-              quantity: 1200,
-              price: 12,
-              _id: "6591a216ee4436e4891dfb72",
-              productNickName: "Cefutil 500",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil500.jpeg?alt=media&token=9f57e1f4-a602-4380-89ab-9764540b9812",
-              salesValue: 14400,
-            },
-            {
-              product: "64f1087ea134b298df10e187",
-              quantity: 350,
-              price: 7.27,
-              _id: "6591a216ee4436e4891dfb73",
-              productNickName: "Cefutil 250",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil250.jpeg?alt=media&token=96c7178f-63e5-4b54-8c09-0970294e76b0",
-              salesValue: 2544.5,
-            },
-          ],
-          userName: "Mohamed Samir",
-          designation: "Medical Rep",
-          profilePicture:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiJpYfga7uPDBAn_DkFa9n60gjLDY0rESJWg&usqp=CAU",
+          product: "64f106a7a134b298df10e17d",
+          quantity: 0,
+          price: 1.94,
+          _id: "65a19cdaa8cfa86c3bd024ef",
+          productNickName: "Aeriallerg Syp",
+          productImage:
+            "data:image/jpeg;base64,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",
+          salesValue: 0,
+          targetUnits: 326.40000000000003,
+          targetValue: 326.40000000000003,
+          achievement: 0,
         },
         {
-          salesData: [
-            {
-              product: "64f10748a134b298df10e184",
-              quantity: 1015,
-              price: 12,
-              _id: "6591a22eee4436e4891dfb87",
-              productNickName: "Cefutil 500",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil500.jpeg?alt=media&token=9f57e1f4-a602-4380-89ab-9764540b9812",
-              salesValue: 12180,
-            },
-            {
-              product: "64f1087ea134b298df10e187",
-              quantity: -260,
-              price: 7.27,
-              _id: "6591a22eee4436e4891dfb88",
-              productNickName: "Cefutil 250",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil250.jpeg?alt=media&token=96c7178f-63e5-4b54-8c09-0970294e76b0",
-              salesValue: -1890.1999999999998,
-            },
-          ],
-          userName: "Hatim Fayez",
-          designation: "Senior Medical Rep",
-          profilePicture:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKAZAyWT6KeGNvhx2C1FtS_3SCOI6VoeAAVGO_ASslTw25o9pfj8l1-Si99DipnVDHsaU&usqp=CAU",
+          product: "64f104356bb4701c1127a3a6",
+          quantity: 1300,
+          price: 13.09,
+          _id: "65a19cdaa8cfa86c3bd024eb",
+          productNickName: "Sefarin cap",
+          productImage:
+            "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f102286bb4701c1127a392%2FSefarin%20300%20mg%20cap?alt=media&token=e724bbf7-0c4b-4794-95f4-d59688cf431d",
+          salesValue: 17017,
+          targetUnits: 884,
+          targetValue: 11571.6,
+          achievement: 147.05831518545403,
         },
         {
-          salesData: [
-            {
-              product: "64f10748a134b298df10e184",
-              quantity: 650,
-              price: 12,
-              _id: "6591a20bee4436e4891dfb5d",
-              productNickName: "Cefutil 500",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil500.jpeg?alt=media&token=9f57e1f4-a602-4380-89ab-9764540b9812",
-              salesValue: 7800,
-            },
-            {
-              product: "64f1087ea134b298df10e187",
-              quantity: -260,
-              price: 7.27,
-              _id: "6591a20bee4436e4891dfb5e",
-              productNickName: "Cefutil 250",
-              productImage:
-                "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f103076bb4701c1127a39b%2Fcefutil250.jpeg?alt=media&token=96c7178f-63e5-4b54-8c09-0970294e76b0",
-              salesValue: -1890.1999999999998,
-            },
-          ],
-          userName: "Bilal Al Jabouri",
-          designation: "Medical Rep",
-          profilePicture:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkE0kQxLcPKeywJEZDgVQ8AYjh-n-ToAfUrw&usqp=CAU",
+          product: "64f105746bb4701c1127a3ac",
+          quantity: 250,
+          price: 7.99,
+          _id: "65a19cdaa8cfa86c3bd024ed",
+          productNickName: "Sefarin susp 50",
+          productImage:
+            "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f102286bb4701c1127a392%2FSefarin%20susp%2050ml%20of%20125ml?alt=media&token=f95c3db8-ac07-461c-a32a-14194b5f3039",
+          salesValue: 1997.5,
+          targetUnits: 1224,
+          targetValue: 9779.800000000001,
+          achievement: 20.42475306243481,
+        },
+        {
+          product: "64f104e56bb4701c1127a3a9",
+          quantity: 1500,
+          price: 13.58,
+          _id: "65a19cdaa8cfa86c3bd024ec",
+          productNickName: "Sefarin susp 100ml",
+          productImage:
+            "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f102286bb4701c1127a392%2FSefarin%20susp%20100%20ml%20125%2F5ml?alt=media&token=5feaf7aa-588b-4a99-b980-af0fb839462c",
+          salesValue: 20370,
+          targetUnits: 884,
+          targetValue: 12004.7,
+          achievement: 169.6835406132598,
+        },
+        {
+          product: "64f105ef6bb4701c1127a3af",
+          quantity: 250,
+          price: 4,
+          _id: "65a19cdaa8cfa86c3bd024ee",
+          productNickName: "Aeriallerg tab",
+          productImage:
+            "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_products%2F64f102286bb4701c1127a392%2FAeriallerg%20tab?alt=media&token=e7c05c64-9972-4f79-bb50-06c63b151d2a",
+          salesValue: 1000,
+          targetUnits: 816,
+          targetValue: 3264,
+          achievement: 30.637254901960787,
         },
       ],
-      isFinal: false,
-      _id: "6591a216ee4436e4891dfb83",
-      versionName: "Cefutil Team Dec #1",
-      businessId: "64f103076bb4701c1127a39b",
-      businessLogo:
-        "https://firebasestorage.googleapis.com/v0/b/stap-82624.appspot.com/o/businesses_logo%2FCefutil%20team?alt=media&token=7b8b99b5-8603-4e79-8380-0e7e0fa53939",
-      businessName: "Cefutil team",
-      addingUser: "64f100836bb4701c1127a38b",
-      addedBy: "Aseel Khalid",
-      addedByDesignation: "Supervisor",
-      addedByProfilePicture: "https://i.imgur.com/2WZtV3H.png",
-      addedIn: "2023-12-31T17:17:10.465Z",
-      totalSalesValue: "sum of all sales values under the same version",
+      userName: "Leena Al Kordi",
+      designation: "Medical Rep",
+      profilePicture:
+        "data:image/jpeg;base64,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",
+      userId: "64f503fb9ae9b029e720ffd1",
+      userSalesId: "65a19cdaa8cfa86c3bd024f1",
+      isFinal: true,
     },
-  ],
+    totalSalesValue: 40384.5,
+    totalTargetValue: 36946.5,
+    currencyName: "United States dollar",
+    currencyCode: "USD",
+    currencySymbol: "$",
+  },
 };
