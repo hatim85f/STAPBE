@@ -11,6 +11,9 @@ const moment = require("moment");
 const { default: mongoose } = require("mongoose");
 const UserTarget = require("../../models/UserTarget");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
+const {
+  getFinalUserAchievement,
+} = require("../../components/getUserAchievement");
 
 router.get("/:userId/:month/:year", auth, async (req, res) => {
   const { userId, month, year } = req.params;
@@ -679,6 +682,20 @@ router.get("/ach/:userId/:month/:year", auth, async (req, res) => {
   }
 });
 
+// get the achievement of final sales of sinlge user
+// for same user
+router.get("/final_ach/:userId/:month/:year", auth, async (req, res) => {
+  const { userId, month, year } = req.params;
+
+  try {
+    const userAchievement = await getFinalUserAchievement(userId, month, year);
+
+    return res.status(200).json({ userAchievement });
+  } catch (error) {
+    return res.status(500).send({ error: "Error", message: error.message });
+  }
+});
+
 // get team achievement
 // for same team members
 // for managers of the teams and business admins
@@ -698,7 +715,12 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
     let teamSales = [];
 
     for (let i = 0; i < usersIds.length; i++) {
-      const userSales = await getUserAchievement(usersIds[i], month, year, res);
+      const userSales = await getFinalUserAchievement(
+        usersIds[i],
+        month,
+        year,
+        res
+      );
       teamSales.push(userSales);
     }
 
@@ -711,50 +733,52 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
 
     const teamSalesFlat = teamSales.flat();
 
-    const teamSalesGrouped = teamSalesFlat.reduce((acc, curr) => {
-      const found = acc.find(
-        (a) => a.businessId.toString() === curr.businessId.toString()
-      );
+    return res.status(200).json({ teamSalesFlat });
 
-      const value = {
-        achievement: curr.achievement,
-        designation: curr.designation,
-        email: curr.email,
-        phone: curr.phone,
-        profilePicture: curr.profilePicture,
-        userName: curr.userName,
-        totalSales: curr.totalSales,
-        totalTargets: curr.totalTargets,
-        totalAchievement: curr.totalAchievement,
-        currencyCode: curr.currencyCode,
-        currencyName: curr.currencyName,
-        currencySymbol: curr.currencySymbol,
-      };
+    // const teamSalesGrouped = teamSalesFlat.reduce((acc, curr) => {
+    //   const found = acc.find(
+    //     (a) => a.businessId.toString() === curr.businessId.toString()
+    //   );
 
-      if (!found) {
-        acc.push({
-          businessId: curr.businessId,
-          businessLogo: curr.businessLogo,
-          currencyCode: curr.currencyCode,
-          currencyName: curr.currencyName,
-          currencySymbol: curr.currencySymbol,
-          totalSales: curr.totalSales,
-          totalTargets: curr.totalTargets,
-          teamData: [value],
-        });
-      } else {
-        found.totalSales += curr.totalSales;
-        found.totalTargets += curr.totalTargets;
-        found.teamAchievement = (found.totalSales / found.totalTargets) * 100;
-        found.teamData.push(value);
-      }
+    //   const value = {
+    //     achievement: curr.achievement,
+    //     designation: curr.designation,
+    //     email: curr.email,
+    //     phone: curr.phone,
+    //     profilePicture: curr.profilePicture,
+    //     userName: curr.userName,
+    //     totalSales: curr.totalSales,
+    //     totalTargets: curr.totalTargets,
+    //     totalAchievement: curr.totalAchievement,
+    //     currencyCode: curr.currencyCode,
+    //     currencyName: curr.currencyName,
+    //     currencySymbol: curr.currencySymbol,
+    //   };
 
-      return acc;
-    }, []);
+    //   if (!found) {
+    //     acc.push({
+    //       businessId: curr.businessId,
+    //       businessLogo: curr.businessLogo,
+    //       currencyCode: curr.currencyCode,
+    //       currencyName: curr.currencyName,
+    //       currencySymbol: curr.currencySymbol,
+    //       totalSales: curr.totalSales,
+    //       totalTargets: curr.totalTargets,
+    //       teamData: [value],
+    //     });
+    //   } else {
+    //     found.totalSales += curr.totalSales;
+    //     found.totalTargets += curr.totalTargets;
+    //     found.teamAchievement = (found.totalSales / found.totalTargets) * 100;
+    //     found.teamData.push(value);
+    //   }
 
-    return res.status(200).send({
-      teamSales: teamSalesGrouped,
-    });
+    //   return acc;
+    // }, []);
+
+    // return res.status(200).send({
+    //   teamSales: teamSalesGrouped,
+    // });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
@@ -763,9 +787,6 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
 router.post("/", auth, async (req, res) => {
   const { userId, startDate, endDate, salesData, addingUser, versionName } =
     req.body;
-
-  const businessUser = await BusinessUsers.find({ userId: addingUser });
-  const businessIds = businessUser.map((business) => business.businessId);
 
   const existingSales = await UserSales.findOne({
     user: userId,
@@ -815,7 +836,9 @@ router.post("/", auth, async (req, res) => {
     });
 
     await SupportCase.insertMany(newSupportCase);
-    return res.status(500).send({ error: "Error", message: error.message });
+    return res
+      .status(500)
+      .send({ error: "Error", message: "Error Adding Users Sales" });
   }
 });
 
