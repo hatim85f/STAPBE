@@ -733,52 +733,7 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
 
     const teamSalesFlat = teamSales.flat();
 
-    return res.status(200).json({ teamSalesFlat });
-
-    // const teamSalesGrouped = teamSalesFlat.reduce((acc, curr) => {
-    //   const found = acc.find(
-    //     (a) => a.businessId.toString() === curr.businessId.toString()
-    //   );
-
-    //   const value = {
-    //     achievement: curr.achievement,
-    //     designation: curr.designation,
-    //     email: curr.email,
-    //     phone: curr.phone,
-    //     profilePicture: curr.profilePicture,
-    //     userName: curr.userName,
-    //     totalSales: curr.totalSales,
-    //     totalTargets: curr.totalTargets,
-    //     totalAchievement: curr.totalAchievement,
-    //     currencyCode: curr.currencyCode,
-    //     currencyName: curr.currencyName,
-    //     currencySymbol: curr.currencySymbol,
-    //   };
-
-    //   if (!found) {
-    //     acc.push({
-    //       businessId: curr.businessId,
-    //       businessLogo: curr.businessLogo,
-    //       currencyCode: curr.currencyCode,
-    //       currencyName: curr.currencyName,
-    //       currencySymbol: curr.currencySymbol,
-    //       totalSales: curr.totalSales,
-    //       totalTargets: curr.totalTargets,
-    //       teamData: [value],
-    //     });
-    //   } else {
-    //     found.totalSales += curr.totalSales;
-    //     found.totalTargets += curr.totalTargets;
-    //     found.teamAchievement = (found.totalSales / found.totalTargets) * 100;
-    //     found.teamData.push(value);
-    //   }
-
-    //   return acc;
-    // }, []);
-
-    // return res.status(200).send({
-    //   teamSales: teamSalesGrouped,
-    // });
+    return res.status(200).json({ teamSales: teamSalesFlat });
   } catch (error) {
     return res.status(500).send({ error: "Error", message: error.message });
   }
