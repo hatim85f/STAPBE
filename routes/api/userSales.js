@@ -753,16 +753,16 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
           currencySymbol: data.currencySymbol,
           totalSalesValue: data.totalSalesValue,
           totalTargetValue: data.totalTargetValue,
-          membersSales: [value],
+          salesData: data.salesData,
         });
       } else {
         data.salesData.forEach((item) => {
-          const foundItem = found.membersSales[0].salesData.find(
+          const foundItem = found.salesData.find(
             (x) => x.product.toString() === item.product.toString()
           );
 
           if (!foundItem) {
-            found.membersSales[0].salesData.push(item);
+            found.salesData.push(item);
           } else {
             foundItem.quantity += item.quantity;
             foundItem.salesValue += item.salesValue;
