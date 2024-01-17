@@ -106,7 +106,12 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
               productNickName: "$product.productNickName",
               productImage: "$product.imageURL",
               salesValue: {
-                $multiply: ["$salesData.quantity", "$salesData.price"],
+                $round: [
+                  {
+                    $multiply: ["$salesData.quantity", "$salesData.price"],
+                  },
+                  2, // Number of decimal places
+                ],
               },
               targetUnits: {
                 $multiply: [
@@ -129,35 +134,12 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
                 ],
               },
               targetValue: {
-                $multiply: [
-                  "$userTarget.productsTargets.target.targetValue",
+                $round: [
                   {
-                    $divide: [
-                      {
-                        $toDouble: {
-                          $replaceOne: {
-                            input:
-                              "$productTarget.target.yearTarget.targetPhases",
-                            find: "%",
-                            replacement: "",
-                          },
-                        },
-                      },
-                      100,
-                    ],
-                  },
-                ],
-              },
-              achievement: {
-                $multiply: [
-                  {
-                    $divide: [
-                      {
-                        $multiply: ["$salesData.quantity", "$salesData.price"],
-                      },
+                    $multiply: [
                       {
                         $multiply: [
-                          "$userTarget.productsTargets.target.targetValue",
+                          "$userTarget.productsTargets.target.targetUnits",
                           {
                             $divide: [
                               {
@@ -175,9 +157,50 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
                           },
                         ],
                       },
+                      "$salesData.price",
                     ],
                   },
-                  100,
+                  2, // Number of decimal places
+                ],
+              },
+              achievement: {
+                $round: [
+                  {
+                    $multiply: [
+                      {
+                        $divide: [
+                          {
+                            $multiply: [
+                              "$salesData.quantity",
+                              "$salesData.price",
+                            ],
+                          },
+                          {
+                            $multiply: [
+                              "$userTarget.productsTargets.target.targetValue",
+                              {
+                                $divide: [
+                                  {
+                                    $toDouble: {
+                                      $replaceOne: {
+                                        input:
+                                          "$productTarget.target.yearTarget.targetPhases",
+                                        find: "%",
+                                        replacement: "",
+                                      },
+                                    },
+                                  },
+                                  100,
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                      100,
+                    ],
+                  },
+                  2, // Number of decimal places
                 ],
               },
             },
@@ -260,12 +283,19 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
         userId: "$_id.userId",
         userSalesId: "$_id.userSalesId",
         isFinal: "$_id.isFinal",
-        totalSalesValue: "$totalSalesValue",
-        totalTargetValue: "$totalTargetValue",
+        totalSalesValue: { $round: ["$totalSalesValue", 2] },
+        totalTargetValue: { $round: ["$totalTargetValue", 2] },
         totalAchievement: {
-          $divide: [
-            { $multiply: ["$totalSalesValue", 100] },
-            "$totalTargetValue",
+          $round: [
+            {
+              $multiply: [
+                {
+                  $divide: ["$totalSalesValue", "$totalTargetValue"],
+                },
+                100,
+              ],
+            },
+            2,
           ],
         },
         currencyName: "$_id.currencyName",

@@ -739,10 +739,6 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
         (a) => a.businessId.toString() === data.businessId.toString()
       );
 
-      const value = {
-        salesData: data.salesData,
-      };
-
       if (!found) {
         acc.push({
           businessId: data.businessId,
@@ -762,7 +758,18 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
           );
 
           if (!foundItem) {
-            found.salesData.push(item);
+            found.salesData.push({
+              product: item.product,
+              quantity: item.quantity,
+              price: item.price,
+              _id: item._id,
+              productNickName: item.productNickName,
+              productImage: item.productImage,
+              salesValue: item.salesValue.toFixed(0),
+              targetUnits: item.targetUnits,
+              targetValue: item.targetValue.toFixed(0),
+              achievement: parseInt(item.achievement).toFixed(0),
+            });
           } else {
             foundItem.quantity += item.quantity;
             foundItem.salesValue += item.salesValue;
@@ -775,8 +782,10 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
 
         found.totalSalesValue += data.totalSalesValue;
         found.totalTargetValue += data.totalTargetValue;
-        found.totalAchievement =
-          (found.totalSalesValue / found.totalTargetValue) * 100;
+        found.totalAchievement = +(
+          (found.totalSalesValue / found.totalTargetValue) *
+          100
+        ).toFixed(2);
       }
 
       return acc;
