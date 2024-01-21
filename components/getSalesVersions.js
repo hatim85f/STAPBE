@@ -1,26 +1,20 @@
-const { default: mongoose } = require("mongoose");
-const UserSales = require("../models/UserSales");
 const moment = require("moment");
+const UserSales = require("../models/UserSales");
+const { default: mongoose } = require("mongoose");
 
-const getFinalUserAchievement = async (userId, month, year, res) => {
+const getSalesVersions = async (userId, month, year, res) => {
+  const businessUser = await BusinessUsers.find({ userId: userId });
+  const businessIds = businessUser.map((business) => business.businessId);
+
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0);
 
-  const selectedMonth = moment(startDate).format("MMMM");
-
-  const userAchievement = await UserSales.aggregate([
+  const salesVersions = await UserSales.aggregate([
     {
       $match: {
-        user: new mongoose.Types.ObjectId(userId),
-        startDate: {
-          $gte: startDate,
-          $lte: endDate,
-        },
-        endDate: {
-          $gte: startDate,
-          $lte: endDate,
-        },
-        isFinal: true,
+        businessId: { $in: businessIds },
+        startDate: { $gte: startDate, $lte: endDate },
+        endDate: { $gte: startDate, $lte: endDate },
       },
     },
     {
@@ -106,12 +100,7 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
               productNickName: "$product.productNickName",
               productImage: "$product.imageURL",
               salesValue: {
-                $round: [
-                  {
-                    $multiply: ["$salesData.quantity", "$salesData.price"],
-                  },
-                  2, // Number of decimal places
-                ],
+                $multiply: ["$salesData.quantity", "$salesData.price"],
               },
               targetUnits: {
                 $multiply: [
@@ -134,12 +123,35 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
                 ],
               },
               targetValue: {
-                $round: [
+                $multiply: [
+                  "$userTarget.productsTargets.target.targetValue",
                   {
-                    $multiply: [
+                    $divide: [
+                      {
+                        $toDouble: {
+                          $replaceOne: {
+                            input:
+                              "$productTarget.target.yearTarget.targetPhases",
+                            find: "%",
+                            replacement: "",
+                          },
+                        },
+                      },
+                      100,
+                    ],
+                  },
+                ],
+              },
+              achievement: {
+                $multiply: [
+                  {
+                    $divide: [
+                      {
+                        $multiply: ["$salesData.quantity", "$salesData.price"],
+                      },
                       {
                         $multiply: [
-                          "$userTarget.productsTargets.target.targetUnits",
+                          "$userTarget.productsTargets.target.targetValue",
                           {
                             $divide: [
                               {
@@ -157,55 +169,22 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
                           },
                         ],
                       },
-                      "$salesData.price",
                     ],
                   },
-                  2, // Number of decimal places
-                ],
-              },
-              achievement: {
-                $round: [
-                  {
-                    $multiply: [
-                      {
-                        $divide: [
-                          {
-                            $multiply: [
-                              "$salesData.quantity",
-                              "$salesData.price",
-                            ],
-                          },
-                          {
-                            $multiply: [
-                              "$userTarget.productsTargets.target.targetValue",
-                              {
-                                $divide: [
-                                  {
-                                    $toDouble: {
-                                      $replaceOne: {
-                                        input:
-                                          "$productTarget.target.yearTarget.targetPhases",
-                                        find: "%",
-                                        replacement: "",
-                                      },
-                                    },
-                                  },
-                                  100,
-                                ],
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                      100,
-                    ],
-                  },
-                  2, // Number of decimal places
+                  100,
                 ],
               },
             },
           ],
         },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "addingUser",
+        foreignField: "_id",
+        as: "addingUser_details",
       },
     },
     {
@@ -227,13 +206,38 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
     {
       $project: {
         _id: 1,
+        versionName: 1,
         businessId: 1,
         businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
         businessName: { $arrayElemAt: ["$business.businessName", 0] },
         addingUser: { $arrayElemAt: ["$addingUser_details._id", 0] },
+        addedBy: { $arrayElemAt: ["$addingUser_details.userName", 0] },
+        addedByDesignation: {
+          $arrayElemAt: ["$addingUser_details.designation", 0],
+        },
+        addedByProfilePicture: {
+          $arrayElemAt: ["$addingUser_details.profilePicture", 0],
+        },
         salesData: 1,
+        addedIn: 1,
+        updatedIn: 1,
         totalSalesValue: { $sum: "$salesData.salesValue" },
         totalTargetValue: { $sum: "$salesData.targetValue" },
+        totalAchievement: {
+          $multiply: [
+            {
+              $divide: [
+                {
+                  $sum: "$salesData.salesValue",
+                },
+                {
+                  $sum: "$salesData.targetValue",
+                },
+              ],
+            },
+            100,
+          ],
+        },
         userName: { $arrayElemAt: ["$user_details.userName", 0] },
         designation: { $arrayElemAt: ["$user_details.designation", 0] },
         profilePicture: { $arrayElemAt: ["$user_details.profilePicture", 0] },
@@ -250,9 +254,16 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
     {
       $group: {
         _id: {
+          versionName: "$versionName",
           businessId: "$businessId",
           businessLogo: "$businessLogo",
           businessName: "$businessName",
+          addingUser: "$addingUser",
+          addedBy: "$addedBy",
+          addedByDesignation: "$addedByDesignation",
+          addedByProfilePicture: "$addedByProfilePicture",
+          addedIn: "$addedIn",
+          updatedIn: "$updatedIn",
           userName: "$userName",
           userSalesId: "$userSalesId",
           designation: "$designation",
@@ -265,39 +276,38 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
           currencyCode: "$currencyCode",
           currencySymbol: "$currencySymbol",
         },
-        salesData: { $push: "$salesData" },
+        salesData: { $addToSet: "$salesData" },
         totalSalesValue: { $sum: "$salesData.salesValue" },
         totalTargetValue: { $sum: "$salesData.targetValue" },
+        totalAchievement: { $first: "$totalAchievement" },
       },
     },
     {
       $project: {
-        _id: 0,
+        versionName: "$_id.versionName",
         businessId: "$_id.businessId",
         businessLogo: "$_id.businessLogo",
         businessName: "$_id.businessName",
-        salesData: "$salesData",
-        userName: "$_id.userName",
-        designation: "$_id.designation",
-        profilePicture: "$_id.profilePicture",
-        userId: "$_id.userId",
-        userSalesId: "$_id.userSalesId",
-        isFinal: "$_id.isFinal",
-        totalSalesValue: { $round: ["$totalSalesValue", 2] },
-        totalTargetValue: { $round: ["$totalTargetValue", 2] },
-        totalAchievement: {
-          $round: [
-            {
-              $multiply: [
-                {
-                  $divide: ["$totalSalesValue", "$totalTargetValue"],
-                },
-                100,
-              ],
-            },
-            2,
-          ],
+        addingUser: "$_id.addingUser",
+        addedBy: "$_id.addedBy",
+        addedByDesignation: "$_id.addedByDesignation",
+        addedByProfilePicture: "$_id.addedByProfilePicture",
+        addedIn: "$_id.addedIn",
+        updatedIn: "$_id.updatedIn",
+        startDate: "$_id.startDate",
+        endDate: "$_id.endDate",
+        sales: {
+          salesData: "$salesData",
+          userName: "$_id.userName",
+          designation: "$_id.designation",
+          profilePicture: "$_id.profilePicture",
+          userId: "$_id.userId",
+          userSalesId: "$_id.userSalesId",
+          isFinal: "$_id.isFinal",
         },
+        totalSalesValue: "$totalSalesValue",
+        totalTargetValue: "$totalTargetValue",
+        totalAchievement: "$totalAchievement",
         currencyName: "$_id.currencyName",
         currencyCode: "$_id.currencyCode",
         currencySymbol: "$_id.currencySymbol",
@@ -305,7 +315,7 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
     },
   ]);
 
-  return userAchievement;
+  return salesVersions;
 };
 
-module.exports = { getFinalUserAchievement };
+module.exports = { getSalesVersions };

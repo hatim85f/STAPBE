@@ -14,325 +14,16 @@ const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 const {
   getFinalUserAchievement,
 } = require("../../components/getUserAchievement");
+const { getYTDAchivement } = require("../../components/getYTDAchivement");
+const { getMonthlySales } = require("../../components/getMonthlySales");
+const { getSalesVersions } = require("../../components/getSalesVersions");
+const { getTeamYTDAch } = require("../../components/getTeamYTDAch");
 
 router.get("/:userId/:month/:year", auth, async (req, res) => {
   const { userId, month, year } = req.params;
 
   try {
-    const businessUser = await BusinessUsers.find({ userId: userId });
-    const businessIds = businessUser.map((business) => business.businessId);
-
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
-
-    const salesVersions = await UserSales.aggregate([
-      {
-        $match: {
-          businessId: { $in: businessIds },
-          startDate: { $gte: startDate, $lte: endDate },
-          endDate: { $gte: startDate, $lte: endDate },
-        },
-      },
-      {
-        $unwind: "$salesData",
-      },
-      {
-        $lookup: {
-          from: "usertargets",
-          let: { product_id: "$salesData.product" },
-          localField: "user",
-          foreignField: "userId",
-          pipeline: [
-            {
-              $unwind: "$productsTargets",
-            },
-            {
-              $unwind: "$productsTargets.target",
-            },
-            {
-              $match: {
-                $expr: {
-                  $eq: ["$productsTargets.target.productId", "$$product_id"],
-                },
-              },
-            },
-          ],
-          as: "userTarget",
-        },
-      },
-      {
-        $unwind: "$userTarget", // Unwind the matchedTargets array
-      },
-      {
-        $match: {
-          "userTarget.productsTargets.year": parseInt(year),
-        },
-      },
-      {
-        $lookup: {
-          from: "producttargets",
-          localField: "userTarget.productsTargets.target.productId",
-          foreignField: "productId",
-          as: "productTarget",
-        },
-      },
-      {
-        $unwind: "$productTarget",
-      },
-      {
-        $unwind: "$productTarget.target",
-      },
-      {
-        $match: {
-          "productTarget.target.year": parseInt(year),
-        },
-      },
-      {
-        $unwind: "$productTarget.target.yearTarget",
-      },
-      {
-        $match: {
-          "productTarget.target.yearTarget.month":
-            moment(startDate).format("MMMM"),
-        },
-      },
-      {
-        $lookup: {
-          from: "products",
-          localField: "salesData.product",
-          foreignField: "_id",
-          as: "product",
-        },
-      },
-      {
-        $unwind: "$product",
-      },
-      {
-        $addFields: {
-          salesData: {
-            $mergeObjects: [
-              "$salesData",
-              {
-                productNickName: "$product.productNickName",
-                productImage: "$product.imageURL",
-                salesValue: {
-                  $multiply: ["$salesData.quantity", "$salesData.price"],
-                },
-                targetUnits: {
-                  $multiply: [
-                    "$userTarget.productsTargets.target.targetUnits",
-                    {
-                      $divide: [
-                        {
-                          $toDouble: {
-                            $replaceOne: {
-                              input:
-                                "$productTarget.target.yearTarget.targetPhases",
-                              find: "%",
-                              replacement: "",
-                            },
-                          },
-                        },
-                        100,
-                      ],
-                    },
-                  ],
-                },
-                targetValue: {
-                  $multiply: [
-                    "$userTarget.productsTargets.target.targetValue",
-                    {
-                      $divide: [
-                        {
-                          $toDouble: {
-                            $replaceOne: {
-                              input:
-                                "$productTarget.target.yearTarget.targetPhases",
-                              find: "%",
-                              replacement: "",
-                            },
-                          },
-                        },
-                        100,
-                      ],
-                    },
-                  ],
-                },
-                achievement: {
-                  $multiply: [
-                    {
-                      $divide: [
-                        {
-                          $multiply: [
-                            "$salesData.quantity",
-                            "$salesData.price",
-                          ],
-                        },
-                        {
-                          $multiply: [
-                            "$userTarget.productsTargets.target.targetValue",
-                            {
-                              $divide: [
-                                {
-                                  $toDouble: {
-                                    $replaceOne: {
-                                      input:
-                                        "$productTarget.target.yearTarget.targetPhases",
-                                      find: "%",
-                                      replacement: "",
-                                    },
-                                  },
-                                },
-                                100,
-                              ],
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                    100,
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "addingUser",
-          foreignField: "_id",
-          as: "addingUser_details",
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "user_details",
-        },
-      },
-      {
-        $lookup: {
-          from: "businesses",
-          localField: "businessId",
-          foreignField: "_id",
-          as: "business",
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          versionName: 1,
-          businessId: 1,
-          businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
-          businessName: { $arrayElemAt: ["$business.businessName", 0] },
-          addingUser: { $arrayElemAt: ["$addingUser_details._id", 0] },
-          addedBy: { $arrayElemAt: ["$addingUser_details.userName", 0] },
-          addedByDesignation: {
-            $arrayElemAt: ["$addingUser_details.designation", 0],
-          },
-          addedByProfilePicture: {
-            $arrayElemAt: ["$addingUser_details.profilePicture", 0],
-          },
-          salesData: 1,
-          addedIn: 1,
-          updatedIn: 1,
-          totalSalesValue: { $sum: "$salesData.salesValue" },
-          totalTargetValue: { $sum: "$salesData.targetValue" },
-          totalAchievement: {
-            $multiply: [
-              {
-                $divide: [
-                  {
-                    $sum: "$salesData.salesValue",
-                  },
-                  {
-                    $sum: "$salesData.targetValue",
-                  },
-                ],
-              },
-              100,
-            ],
-          },
-          userName: { $arrayElemAt: ["$user_details.userName", 0] },
-          designation: { $arrayElemAt: ["$user_details.designation", 0] },
-          profilePicture: { $arrayElemAt: ["$user_details.profilePicture", 0] },
-          userId: { $arrayElemAt: ["$user_details._id", 0] },
-          userSalesId: "$_id",
-          isFinal: 1,
-          startDate: 1,
-          endDate: 1,
-          currencyName: "$product.currencyName",
-          currencyCode: "$product.currencyCode",
-          currencySymbol: "$product.currencySymbol",
-        },
-      },
-      {
-        $group: {
-          _id: {
-            versionName: "$versionName",
-            businessId: "$businessId",
-            businessLogo: "$businessLogo",
-            businessName: "$businessName",
-            addingUser: "$addingUser",
-            addedBy: "$addedBy",
-            addedByDesignation: "$addedByDesignation",
-            addedByProfilePicture: "$addedByProfilePicture",
-            addedIn: "$addedIn",
-            updatedIn: "$updatedIn",
-            userName: "$userName",
-            userSalesId: "$userSalesId",
-            designation: "$designation",
-            profilePicture: "$profilePicture",
-            userId: "$userId",
-            startDate: "$startDate",
-            endDate: "$endDate",
-            isFinal: "$isFinal",
-            currencyName: "$currencyName",
-            currencyCode: "$currencyCode",
-            currencySymbol: "$currencySymbol",
-          },
-          salesData: { $addToSet: "$salesData" },
-          totalSalesValue: { $sum: "$salesData.salesValue" },
-          totalTargetValue: { $sum: "$salesData.targetValue" },
-          totalAchievement: { $first: "$totalAchievement" },
-        },
-      },
-      {
-        $project: {
-          versionName: "$_id.versionName",
-          businessId: "$_id.businessId",
-          businessLogo: "$_id.businessLogo",
-          businessName: "$_id.businessName",
-          addingUser: "$_id.addingUser",
-          addedBy: "$_id.addedBy",
-          addedByDesignation: "$_id.addedByDesignation",
-          addedByProfilePicture: "$_id.addedByProfilePicture",
-          addedIn: "$_id.addedIn",
-          updatedIn: "$_id.updatedIn",
-          startDate: "$_id.startDate",
-          endDate: "$_id.endDate",
-          sales: {
-            salesData: "$salesData",
-            userName: "$_id.userName",
-            designation: "$_id.designation",
-            profilePicture: "$_id.profilePicture",
-            userId: "$_id.userId",
-            userSalesId: "$_id.userSalesId",
-            isFinal: "$_id.isFinal",
-          },
-          totalSalesValue: "$totalSalesValue",
-          totalTargetValue: "$totalTargetValue",
-          totalAchievement: "$totalAchievement",
-          currencyName: "$_id.currencyName",
-          currencyCode: "$_id.currencyCode",
-          currencySymbol: "$_id.currencySymbol",
-        },
-      },
-    ]);
+    const salesVersions = await getSalesVersions(userId, month, year, res);
 
     // return res.status(200).json({ salesVersions: salesVersions[0] });
 
@@ -421,240 +112,6 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
   }
 });
 
-const getUserAchievement = async (userId, month, year, res) => {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
-
-  const selectedMonth = moment(startDate).format("MMMM");
-
-  const userAhc = await UserTarget.aggregate([
-    {
-      $match: {
-        userId: new mongoose.Types.ObjectId(userId),
-      },
-    },
-    {
-      $unwind: "$productsTargets",
-    },
-    {
-      $match: {
-        "productsTargets.year": parseInt(year),
-      },
-    },
-    {
-      $unwind: "$productsTargets.target",
-    },
-    {
-      $lookup: {
-        from: "products",
-        foreignField: "_id",
-        localField: "productsTargets.target.productId",
-        as: "userTargetProduct",
-      },
-    },
-    {
-      $lookup: {
-        from: "usersales",
-        foreignField: "user",
-        pipeline: [
-          {
-            $match: {
-              startDate: { $gte: startDate, $lte: endDate },
-              endDate: { $gte: startDate, $lte: endDate },
-            },
-          },
-        ],
-        localField: "userId",
-        as: "sales",
-      },
-    },
-    {
-      $addFields: {
-        sales: {
-          $cond: {
-            if: { $eq: [{ $size: "$sales" }, 0] },
-            then: [
-              {
-                salesData: [
-                  {
-                    product: "$productsTargets.target.productId",
-                    quantity: 0,
-                    price: 0,
-                  },
-                ],
-              },
-            ],
-            else: "$sales",
-          },
-        },
-      },
-    },
-    {
-      $unwind: "$sales",
-    },
-    {
-      $unwind: "$sales.salesData",
-    },
-    {
-      $lookup: {
-        from: "producttargets",
-        foreignField: "productId",
-        localField: "productsTargets.target.productId",
-        as: "productTarget",
-      },
-    },
-    {
-      $unwind: "$productTarget",
-    },
-    {
-      $unwind: "$productTarget.target",
-    },
-    {
-      $match: {
-        "productTarget.target.year": parseInt(year),
-      },
-    },
-    {
-      $unwind: "$productTarget.target.yearTarget",
-    },
-    {
-      $match: {
-        "productTarget.target.yearTarget.month": selectedMonth,
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        foreignField: "_id",
-        localField: "userId",
-        as: "user",
-      },
-    },
-    {
-      $lookup: {
-        from: "businesses",
-        foreignField: "_id",
-        localField: "businessId",
-        as: "business",
-      },
-    },
-    {
-      $group: {
-        _id: {
-          _id: "$_id",
-          businessId: "$businessId",
-          businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
-          businessName: { $arrayElemAt: ["$business.businessName", 0] },
-          currencyCode: {
-            $arrayElemAt: ["$userTargetProduct.currencyCode", 0],
-          },
-          currencyName: {
-            $arrayElemAt: ["$userTargetProduct.currencyName", 0],
-          },
-          currencySymbol: {
-            $arrayElemAt: ["$userTargetProduct.currencySymbol", 0],
-          },
-          userName: { $arrayElemAt: ["$user.userName", 0] },
-          designation: { $arrayElemAt: ["$user.designation", 0] },
-          email: { $arrayElemAt: ["$user.email", 0] },
-          phone: { $arrayElemAt: ["$user.phone", 0] },
-          profilePicture: { $arrayElemAt: ["$user.profilePicture", 0] },
-        },
-        achievement: {
-          $push: {
-            productId: "$productsTargets.target.productId",
-            salesProductId: "$sales.salesData.product",
-            salesQuantity: "$sales.salesData.quantity",
-            productPrice: "$sales.salesData.price",
-            targetUnits: "$productTarget.target.yearTarget.targetUnits",
-            targetValue: "$productTarget.target.yearTarget.targetValue",
-            targetPhases: "$productTarget.target.yearTarget.targetPhases",
-            salesValue: {
-              $multiply: [
-                "$sales.salesData.quantity",
-                "$sales.salesData.price",
-              ],
-            },
-            productName: {
-              $arrayElemAt: ["$userTargetProduct.productName", 0],
-            },
-            productImage: { $arrayElemAt: ["$userTargetProduct.imageURL", 0] },
-            costPrice: { $arrayElemAt: ["$userTargetProduct.costPrice", 0] },
-            sellingPrice: {
-              $arrayElemAt: ["$userTargetProduct.sellingPrice", 0],
-            },
-            category: { $arrayElemAt: ["$userTargetProduct.category", 0] },
-            achievementPercentage: {
-              $multiply: [
-                {
-                  $divide: [
-                    "$sales.salesData.quantity",
-                    "$productTarget.target.yearTarget.targetUnits",
-                  ],
-                },
-                100,
-              ],
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: "$_id._id",
-        businessId: "$_id.businessId",
-        businessLogo: "$_id.businessLogo",
-        businessName: "$_id.businessName",
-        currencyCode: "$_id.currencyCode",
-        currencyName: "$_id.currencyName",
-        currencySymbol: "$_id.currencySymbol",
-        userName: "$_id.userName",
-        designation: "$_id.designation",
-        email: "$_id.email",
-        phone: "$_id.phone",
-        profilePicture: "$_id.profilePicture",
-        achievement: 1,
-        totalSales: {
-          $sum: "$achievement.salesValue",
-        },
-        totalTargets: {
-          $sum: "$achievement.targetValue",
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 1,
-        businessId: 1,
-        businessLogo: 1,
-        businessName: 1,
-        currencyCode: 1,
-        currencyName: 1,
-        currencySymbol: 1,
-        userName: 1,
-        designation: 1,
-        email: 1,
-        phone: 1,
-        profilePicture: 1,
-        achievement: 1,
-        totalSales: 1,
-        totalTargets: 1,
-        // Calculate totalAchievement based on totalSales and totalTargets
-        totalAchievement: {
-          $multiply: [
-            {
-              $divide: ["$totalSales", "$totalTargets"],
-            },
-            100,
-          ],
-        },
-      },
-    },
-  ]);
-
-  return userAhc;
-};
-
 // get user achievement
 // for same user
 // for managers of the teams and business admins
@@ -662,7 +119,7 @@ router.get("/ach/:userId/:month/:year", auth, async (req, res) => {
   const { userId, month, year } = req.params;
 
   try {
-    const monthlySales = await getUserAchievement(userId, month, year, res);
+    const monthlySales = await getMonthlySales(userId, month, year, res);
 
     if (monthlySales.length === 0) {
       return res.status(500).send({
@@ -677,7 +134,7 @@ router.get("/ach/:userId/:month/:year", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: "Something Went wrong, please try again later",
+      message: "Something went wrong, Please try again later",
     });
   }
 });
@@ -797,9 +254,53 @@ router.get("/team/ach/:userId/:month/:year", auth, async (req, res) => {
   }
 });
 
+// get personal YTD achievement
+// user achievement for personal YTD
+router.get(
+  "/ytd_ach/:userId/:startMonth/:endMonth/:year",
+  auth,
+  async (req, res) => {
+    const { userId, startMonth, endMonth, year } = req.params;
+
+    try {
+      const data = await getYTDAchivement(userId, startMonth, endMonth, year);
+
+      return res.status(200).json({ data });
+    } catch (error) {
+      return res.status(500).send({ error: "Error", message: error.message });
+    }
+  }
+);
+
+// get team YTD achievement
+// team achievement for team YTD
+router.get(
+  "/team_ytd_ach/:userId/:startMonth/:endMonth/:year",
+  auth,
+  async (req, res) => {
+    const { userId, startMonth, endMonth, year } = req.params;
+
+    try {
+      const teamAchievement = await getTeamYTDAch(
+        userId,
+        startMonth,
+        endMonth,
+        year
+      );
+
+      return res.status(200).json({ teamAchievement });
+    } catch (error) {
+      return res.status(500).send({ error: "Error", message: error.message });
+    }
+  }
+);
+
 router.post("/", auth, async (req, res) => {
   const { userId, startDate, endDate, salesData, addingUser, versionName } =
     req.body;
+
+  const businesses = await BusinessUsers.find({ userId: userId });
+  const businessIds = businesses.map((business) => business.businessId);
 
   const existingSales = await UserSales.findOne({
     user: userId,
@@ -894,6 +395,19 @@ router.put("/isFinal", auth, isCompanyAdmin, async (req, res) => {
             $set: { isFinal: false, addedIn: addedIn, updatedIn: Date.now() },
           }
         );
+
+        // loop into userSales and increase the quantity of the products
+        for (let i = 0; i < userSales.length; i++) {
+          const salesData = userSales[i].salesData;
+
+          for (let product in salesData) {
+            await Products.updateOne(
+              { _id: salesData[product].product },
+              // increase the quantity of the product
+              { $inc: { quantity: salesData[product].quantity } }
+            );
+          }
+        }
       }
 
       // change selected userSales isFinal to true
@@ -901,6 +415,17 @@ router.put("/isFinal", auth, isCompanyAdmin, async (req, res) => {
         { _id: currentSalesId },
         { $set: { isFinal: true, updatedIn: Date.now() } }
       );
+
+      const neededUserSales = await UserSales.findOne({ _id: currentSalesId });
+      const salesData = neededUserSales.salesData;
+
+      for (let product in salesData) {
+        await Products.updateOne(
+          { _id: salesData[product].product },
+          // decrease the quantity of the product
+          { $inc: { quantity: -salesData[product].quantity } }
+        );
+      }
     }
 
     return res
@@ -930,8 +455,32 @@ router.put("/single_isFinal", auth, isCompanyAdmin, async (req, res) => {
         { user: userId },
         { $set: { isFinal: false } }
       );
+
+      // loop into userSales and increase the quantity of the products
+      for (let i = 0; i < userSales.length; i++) {
+        const salesData = userSales[i].salesData;
+
+        for (let product in salesData) {
+          await Products.updateOne(
+            { _id: salesData[product].product },
+            // increase the quantity of the product
+            { $inc: { quantity: salesData[product].quantity } }
+          );
+        }
+      }
     } else {
       await UserSales.updateOne({ _id: salesId }, { $set: { isFinal: true } });
+
+      const neededUserSales = await UserSales.findOne({ _id: salesId });
+      const salesData = neededUserSales.salesData;
+
+      for (let product in salesData) {
+        await Products.updateOne(
+          { _id: salesData[product].product },
+          // decrease the quantity of the product
+          { $inc: { quantity: -salesData[product].quantity } }
+        );
+      }
     }
 
     return res
