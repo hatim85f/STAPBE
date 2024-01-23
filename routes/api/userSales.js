@@ -306,9 +306,7 @@ router.get(
         userId
       );
 
-      return res
-        .status(200)
-        .json({ teamAchievement, monthlyTargets: monthlyData, monthlySales });
+      return res.status(200).json({ monthlyData });
     } catch (error) {
       return res.status(500).send({ error: "Error", message: error.message });
     }
