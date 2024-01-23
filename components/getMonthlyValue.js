@@ -64,7 +64,7 @@ const getMonthlyValues = async (startMonth, endMonth, year, userId) => {
     },
   ]);
 
-  return monthlyData.sort((a, b) => a.month - b.month);
+  return monthlyData.sort((a, b) => a.month.localeCompare(b.month));
 };
 
 module.exports = { getMonthlyValues };
