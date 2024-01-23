@@ -18,6 +18,10 @@ const { getYTDAchivement } = require("../../components/getYTDAchivement");
 const { getMonthlySales } = require("../../components/getMonthlySales");
 const { getSalesVersions } = require("../../components/getSalesVersions");
 const { getTeamYTDAch } = require("../../components/getTeamYTDAch");
+const { getMonthlyValues } = require("../../components/getMonthlyValue");
+const {
+  getMonthlySalesValues,
+} = require("../../components/getMonthlySalesValues");
 
 router.get("/:userId/:month/:year", auth, async (req, res) => {
   const { userId, month, year } = req.params;
@@ -288,7 +292,23 @@ router.get(
         year
       );
 
-      return res.status(200).json({ teamAchievement });
+      const monthlyData = await getMonthlyValues(
+        startMonth,
+        endMonth,
+        year,
+        userId
+      );
+
+      const monthlySales = await getMonthlySalesValues(
+        startMonth,
+        endMonth,
+        year,
+        userId
+      );
+
+      return res
+        .status(200)
+        .json({ teamAchievement, monthlyTargets: monthlyData, monthlySales });
     } catch (error) {
       return res.status(500).send({ error: "Error", message: error.message });
     }
