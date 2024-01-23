@@ -209,6 +209,7 @@ const getTeamYTDAch = async (userId, startMonth, endMonth, year) => {
             productNickName: "$productNickName",
             productImage: "$productImage",
             productSalesValue: "$productSalesValue",
+            ProductTargetValue: "$totalTargetValue",
             soldQuantity: "$soldQuantity",
             price: "$price",
             productAchievement: "$productAchievement",
