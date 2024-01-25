@@ -313,6 +313,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         _id: 1,
         userId: 1,
         userName: { $arrayElemAt: ["$user.userName", 0] },
+        firstName: { $arrayElemAt: ["$user.firstName", 0] },
         profilePicture: { $arrayElemAt: ["$user.profilePicture", 0] },
         designation: { $arrayElemAt: ["$user.designation", 0] },
         businessId: 1,
@@ -343,6 +344,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         _id: {
           userId: "$userId",
           userName: "$userName",
+          firstName: "$firstName",
           profilePicture: "$profilePicture",
           designation: "$designation",
           businessId: "$businessId",
@@ -368,6 +370,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         _id: 0,
         userId: "$_id.userId",
         userName: "$_id.userName",
+        firstName: "$_id.firstName",
         profilePicture: "$_id.profilePicture",
         designation: "$_id.designation",
         businessId: "$_id.businessId",
