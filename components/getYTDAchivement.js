@@ -180,6 +180,14 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
       },
     },
     {
+      $lookup: {
+        from: "products",
+        localField: "productId",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    {
       $addFields: {
         mergedData: {
           $map: {
@@ -190,6 +198,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                 { $arrayElemAt: ["$productTarget", "$$index"] },
                 { $arrayElemAt: ["$userSales", "$$index"] },
                 {
+                  productImage: { $arrayElemAt: ["$product.imageURL", 0] },
                   soldQuantity: {
                     $ifNull: [
                       {
@@ -279,14 +288,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         },
       },
     },
-    {
-      $lookup: {
-        from: "products",
-        localField: "productId",
-        foreignField: "_id",
-        as: "product",
-      },
-    },
+
     {
       $lookup: {
         from: "businesses",
