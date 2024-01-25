@@ -199,6 +199,9 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                 { $arrayElemAt: ["$userSales", "$$index"] },
                 {
                   productImage: { $arrayElemAt: ["$product.imageURL", 0] },
+                  productNickName: {
+                    $arrayElemAt: ["$product.productNickName", 0],
+                  },
                   soldQuantity: {
                     $ifNull: [
                       {
