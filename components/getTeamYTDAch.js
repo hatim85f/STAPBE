@@ -152,6 +152,9 @@ const getTeamYTDAch = async (userId, startMonth, endMonth, year) => {
         productId: 1,
         businessId: 1,
         currencySymbol: 1,
+        startMonth: moment(new Date(year, startMonth - 1, 1)).format("MMMM"),
+        endMonth: moment(new Date(year, endMonth, 0)).format("MMMM"),
+        year: year,
         productNickName: { $arrayElemAt: ["$product.productNickName", 0] },
         productImage: { $arrayElemAt: ["$product.imageURL", 0] },
         businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
@@ -203,6 +206,9 @@ const getTeamYTDAch = async (userId, startMonth, endMonth, year) => {
         currencySymbol: { $first: "$currencySymbol" },
         totalBusinessTargetValue: { $sum: "$totalTargetValue" },
         totalBusinessSalesValue: { $sum: "$productSalesValue" },
+        startMonth: { $first: "$startMonth" },
+        endMonth: { $first: "$endMonth" },
+        year: { $first: "$year" },
         products: {
           $push: {
             productId: "$productId",
@@ -227,6 +233,9 @@ const getTeamYTDAch = async (userId, startMonth, endMonth, year) => {
         totalBusinessTargetValue: 1,
         totalBusinessSalesValue: 1,
         products: 1,
+        startMonth: 1,
+        endMonth: 1,
+        year: 1,
         businessAchievement: {
           $cond: {
             if: { $eq: ["$totalBusinessTargetValue", 0] },
