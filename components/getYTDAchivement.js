@@ -89,6 +89,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
           {
             $project: {
               targetPhases: "$target.yearTarget.targetPhases",
+              productPrice: "$target.yearTarget.productPrice",
               targetPercentage: {
                 $divide: [
                   {
@@ -127,8 +128,92 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                   { $eq: ["$user", "$$user_id"] }, // Adjust based on your data structure
                   { $gte: ["$startDate", startDate] },
                   { $lte: ["$endDate", endDate] },
-                  { isFinal: true },
                 ],
+              },
+              isFinal: true,
+            },
+          },
+          {
+            $addFields: {
+              salesData: {
+                $map: {
+                  input: "$salesData",
+                  as: "data",
+                  in: {
+                    $mergeObjects: [
+                      "$$data",
+                      {
+                        month: {
+                          $let: {
+                            vars: {
+                              monthString: {
+                                $dateToString: {
+                                  date: "$startDate",
+                                  format: "%m",
+                                },
+                              },
+                            },
+                            in: {
+                              $switch: {
+                                branches: [
+                                  {
+                                    case: { $eq: ["$$monthString", "12"] },
+                                    then: "January",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "01"] },
+                                    then: "February",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "02"] },
+                                    then: "March",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "03"] },
+                                    then: "April",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "04"] },
+                                    then: "May",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "05"] },
+                                    then: "June",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "06"] },
+                                    then: "July",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "07"] },
+                                    then: "August",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "08"] },
+                                    then: "September",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "09"] },
+                                    then: "October",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "10"] },
+                                    then: "November",
+                                  },
+                                  {
+                                    case: { $eq: ["$$monthString", "11"] },
+                                    then: "December",
+                                  },
+                                ],
+                                default: "Unknown",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
@@ -162,6 +247,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                   $multiply: ["$salesData.price", "$salesData.quantity"],
                 },
               },
+              month: { $first: "$salesData.month" },
               price: { $first: "$salesData.price" },
               productId: { $first: "$salesData.product" },
             },
@@ -171,6 +257,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
               _id: 1,
               soldQuantity: 1,
               salesValue: 1,
+              month: 1,
               price: 1,
               productId: 1,
             },
@@ -187,25 +274,38 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         as: "product",
       },
     },
+    // add new field called mergedData merge userSales and productTarget based on month
     {
       $addFields: {
         mergedData: {
           $map: {
-            input: { $range: [0, { $size: "$productTarget" }] },
-            as: "index",
+            input: "$productTarget",
+            as: "target",
             in: {
               $mergeObjects: [
-                { $arrayElemAt: ["$productTarget", "$$index"] },
-                { $arrayElemAt: ["$userSales", "$$index"] },
+                "$$target",
                 {
-                  productImage: { $arrayElemAt: ["$product.imageURL", 0] },
-                  productNickName: {
-                    $arrayElemAt: ["$product.productNickName", 0],
-                  },
                   soldQuantity: {
                     $ifNull: [
                       {
-                        $arrayElemAt: ["$userSales.soldQuantity", "$$index"],
+                        $arrayElemAt: [
+                          {
+                            $map: {
+                              input: {
+                                $filter: {
+                                  input: "$userSales",
+                                  as: "sales",
+                                  cond: {
+                                    $eq: ["$$sales.month", "$$target.month"],
+                                  },
+                                },
+                              },
+                              as: "sales",
+                              in: "$$sales.soldQuantity",
+                            },
+                          },
+                          0,
+                        ],
                       },
                       0,
                     ],
@@ -213,7 +313,24 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                   salesValue: {
                     $ifNull: [
                       {
-                        $arrayElemAt: ["$userSales.salesValue", "$$index"],
+                        $arrayElemAt: [
+                          {
+                            $map: {
+                              input: {
+                                $filter: {
+                                  input: "$userSales",
+                                  as: "sales",
+                                  cond: {
+                                    $eq: ["$$sales.month", "$$target.month"],
+                                  },
+                                },
+                              },
+                              as: "sales",
+                              in: "$$sales.salesValue",
+                            },
+                          },
+                          0,
+                        ],
                       },
                       0,
                     ],
@@ -221,32 +338,39 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                   price: {
                     $ifNull: [
                       {
-                        $arrayElemAt: ["$userSales.price", "$$index"],
+                        $arrayElemAt: [
+                          {
+                            $map: {
+                              input: {
+                                $filter: {
+                                  input: "$userSales",
+                                  as: "sales",
+                                  cond: {
+                                    $eq: ["$$sales.month", "$$target.month"],
+                                  },
+                                },
+                              },
+                              as: "sales",
+                              in: "$$sales.price",
+                            },
+                          },
+                          0,
+                        ],
                       },
-                      0,
+                      "$$target.productPrice",
                     ],
+                  },
+                  productNickName: {
+                    $arrayElemAt: ["$product.productNickName", 0],
+                  },
+                  productImage: {
+                    $arrayElemAt: ["$product.imageURL", 0],
                   },
                   targetUnits: {
-                    $multiply: [
-                      "$targetUnits",
-                      {
-                        $arrayElemAt: [
-                          "$productTarget.targetPercentage",
-                          "$$index",
-                        ],
-                      },
-                    ],
+                    $multiply: ["$$target.targetPercentage", "$targetUnits"],
                   },
                   targetValue: {
-                    $multiply: [
-                      "$targetValue",
-                      {
-                        $arrayElemAt: [
-                          "$productTarget.targetPercentage",
-                          "$$index",
-                        ],
-                      },
-                    ],
+                    $multiply: ["$$target.targetPercentage", "$targetValue"],
                   },
                   achievement: {
                     $multiply: [
@@ -256,27 +380,34 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                             $ifNull: [
                               {
                                 $arrayElemAt: [
-                                  "$userSales.salesValue",
-                                  "$$index",
+                                  {
+                                    $map: {
+                                      input: {
+                                        $filter: {
+                                          input: "$userSales",
+                                          as: "sales",
+                                          cond: {
+                                            $eq: [
+                                              "$$sales.month",
+                                              "$$target.month",
+                                            ],
+                                          },
+                                        },
+                                      },
+                                      as: "sales",
+                                      in: "$$sales.salesValue",
+                                    },
+                                  },
+                                  0,
                                 ],
                               },
                               0,
                             ],
                           },
                           {
-                            $ifNull: [
-                              {
-                                $multiply: [
-                                  "$targetValue",
-                                  {
-                                    $arrayElemAt: [
-                                      "$productTarget.targetPercentage",
-                                      "$$index",
-                                    ],
-                                  },
-                                ],
-                              },
-                              1, // Avoid division by zero
+                            $multiply: [
+                              "$$target.targetPercentage",
+                              "$targetValue",
                             ],
                           },
                         ],
@@ -291,7 +422,6 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         },
       },
     },
-
     {
       $lookup: {
         from: "businesses",
@@ -324,7 +454,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         businessName: { $arrayElemAt: ["$business.businessName", 0] },
         productNickName: { $arrayElemAt: ["$product.productNickName", 0] },
         productImage: { $arrayElemAt: ["$product.imageURL", 0] },
-        targetUnits: 1,
+        targetUnits: { $sum: "$mergedData.targetUnits" },
         currencySymbol: { $arrayElemAt: ["$business.currencySymbol", 0] },
         targetValue: { $sum: "$mergedData.targetValue" },
         salesValue: { $sum: "$mergedData.salesValue" },
