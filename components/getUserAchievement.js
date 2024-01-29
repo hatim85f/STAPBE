@@ -246,6 +246,8 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
         currencyName: "$product.currencyName",
         currencyCode: "$product.currencyCode",
         currencySymbol: "$product.currencySymbol",
+        month: "$month",
+        year: "$year",
       },
     },
     {
@@ -265,6 +267,8 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
           currencyName: "$currencyName",
           currencyCode: "$currencyCode",
           currencySymbol: "$currencySymbol",
+          month: "$month",
+          year: "$year",
         },
         salesData: { $push: "$salesData" },
         totalSalesValue: { $sum: "$salesData.salesValue" },
@@ -284,6 +288,8 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
         userId: "$_id.userId",
         userSalesId: "$_id.userSalesId",
         isFinal: "$_id.isFinal",
+        month: "$_id.month",
+        year: "$_id.year",
         totalSalesValue: { $round: ["$totalSalesValue", 2] },
         totalTargetValue: { $round: ["$totalTargetValue", 2] },
         totalAchievement: {
