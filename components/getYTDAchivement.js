@@ -500,6 +500,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
             totalSalesValue: "$salesValue",
             productAchievement: "$productAchievement",
             userAchievement: "$userAchievement",
+            price: "$price",
           },
         },
       },
