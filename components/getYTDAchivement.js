@@ -369,6 +369,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
                   targetUnits: {
                     $multiply: ["$$target.targetPercentage", "$targetUnits"],
                   },
+                  salesUnits: "$soldQuantity",
                   targetValue: {
                     $multiply: ["$$target.targetPercentage", "$targetValue"],
                   },
@@ -454,6 +455,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
         businessName: { $arrayElemAt: ["$business.businessName", 0] },
         productNickName: { $arrayElemAt: ["$product.productNickName", 0] },
         productImage: { $arrayElemAt: ["$product.imageURL", 0] },
+        salesUnits: { $sum: "$mergedData.soldQuantity" },
         targetUnits: { $sum: "$mergedData.targetUnits" },
         currencySymbol: { $arrayElemAt: ["$business.currencySymbol", 0] },
         targetValue: { $sum: "$mergedData.targetValue" },
@@ -493,6 +495,7 @@ const getYTDAchivement = async (userId, startMonth, endMonth, year) => {
             productNickName: "$productNickName",
             productImage: "$productImage",
             totalTargetUnits: "$targetUnits",
+            totalSalesUnits: "$salesUnits",
             totalTargetValue: "$targetValue",
             totalSalesValue: "$salesValue",
             productAchievement: "$productAchievement",
