@@ -246,8 +246,8 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
         currencyName: "$product.currencyName",
         currencyCode: "$product.currencyCode",
         currencySymbol: "$product.currencySymbol",
-        month: "$month",
-        year: "$year",
+        month: selectedMonth,
+        year: year,
       },
     },
     {
