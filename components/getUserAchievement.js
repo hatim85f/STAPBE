@@ -113,7 +113,6 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
                   2, // Number of decimal places
                 ],
               },
-              salesUnits: "$salesData.quantity",
               targetUnits: {
                 $multiply: [
                   "$userTarget.productsTargets.target.targetUnits",
