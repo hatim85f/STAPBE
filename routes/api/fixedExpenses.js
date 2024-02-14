@@ -81,6 +81,8 @@ router.post("/add", auth, async (req, res) => {
     description,
     recurringDay,
     dueIn,
+    recurringType,
+    source,
   } = req.body;
 
   const user = await User.findOne({ _id: userId });
@@ -104,16 +106,16 @@ router.post("/add", auth, async (req, res) => {
       userId,
       description,
       recurringDay,
+      recurringType,
+      source,
     });
 
     await FixedExpenses.insertMany(newFixedExpenses);
 
-    return res
-      .status(200)
-      .send({
-        message: "Fixed Expenses Added",
-        fixedExpenses: newFixedExpenses,
-      });
+    return res.status(200).send({
+      message: "Fixed Expenses Added",
+      fixedExpenses: newFixedExpenses,
+    });
   } catch (error) {
     const newSupport = new SupportCase({
       userId,

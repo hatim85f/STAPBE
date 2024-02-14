@@ -45,6 +45,15 @@ const FixedExpensesSchema = Schema({
     type: Date,
     default: Date.now,
   },
+  recurringTYpe: {
+    type: String,
+    enum: ["Weekly", "Monthly", "Yearly"],
+    required: true,
+  },
+  source: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = FiexedExpenses = mongoose.model(
