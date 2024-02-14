@@ -108,7 +108,12 @@ router.post("/add", auth, async (req, res) => {
 
     await FixedExpenses.insertMany(newFixedExpenses);
 
-    return res.status(200).send({ message: "Fixed Expenses Added" });
+    return res
+      .status(200)
+      .send({
+        message: "Fixed Expenses Added",
+        fixedExpenses: newFixedExpenses,
+      });
   } catch (error) {
     const newSupport = new SupportCase({
       userId,
