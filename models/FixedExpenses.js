@@ -45,7 +45,7 @@ const FixedExpensesSchema = Schema({
     type: Date,
     default: Date.now,
   },
-  recurringTYpe: {
+  recurringType: {
     type: String,
     enum: ["Weekly", "Monthly", "Yearly"],
     required: true,
