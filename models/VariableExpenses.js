@@ -73,6 +73,10 @@ const VariableExpensesSchema = Schema({
     default: Date.now,
     required: true,
   },
+  dateOfSubmission: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = VariableExpenses = mongoose.model(

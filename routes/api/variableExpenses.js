@@ -114,7 +114,7 @@ router.post("/add", auth, async (req, res) => {
         .json({ errors: [{ message: "Amount is required" }] });
     }
 
-    if (date === "") {
+    if (receiptDate === "") {
       return res
         .status(400)
         .json({ errors: [{ message: "Date is required" }] });
