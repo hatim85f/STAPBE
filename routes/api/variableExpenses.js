@@ -126,6 +126,8 @@ router.post("/add", auth, async (req, res) => {
         .json({ errors: [{ message: "Description is required" }] });
     }
 
+    const dateOfReceipt = new Date(receiptDate);
+
     const newVariableExpenses = new VariableExpenses({
       currency,
       businessId,
@@ -139,7 +141,7 @@ router.post("/add", auth, async (req, res) => {
       isReceiptAvailable,
       receiptImage,
       receiptAmount,
-      receiptDate,
+      receiptDate: dateOfReceipt,
       receiptCurrency,
       source,
     });
