@@ -74,6 +74,7 @@ router.post("/add", auth, async (req, res) => {
   const {
     userId,
     businessId,
+    title,
     currency,
     amount,
     category,
@@ -99,6 +100,7 @@ router.post("/add", auth, async (req, res) => {
     const newFixedExpenses = new FixedExpenses({
       currency,
       businessId,
+      title,
       amount,
       category,
       categoryOtherText,

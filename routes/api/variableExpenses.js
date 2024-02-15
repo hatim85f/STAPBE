@@ -70,6 +70,7 @@ router.post("/add", auth, async (req, res) => {
   const {
     userId,
     businessId,
+    title,
     currency,
     amount,
     category,
@@ -103,6 +104,7 @@ router.post("/add", auth, async (req, res) => {
     const newVariableExpenses = new VariableExpenses({
       currency,
       businessId,
+      title,
       amount,
       category,
       categoryOtherText,

@@ -12,6 +12,10 @@ const FixedExpensesSchema = Schema({
     ref: "business",
     required: true,
   },
+  title: {
+    type: String,
+    required: true,
+  },
   currency: {
     type: String,
     required: true,
