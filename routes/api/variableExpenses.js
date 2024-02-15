@@ -82,6 +82,7 @@ router.post("/add", auth, async (req, res) => {
     receiptAmount,
     receiptDate,
     receiptCurrency,
+    source,
   } = req.body;
 
   const user = await User.findOne({ _id: userId });
@@ -92,13 +93,37 @@ router.post("/add", auth, async (req, res) => {
     if (category === "Other" && !categoryOtherText) {
       return res
         .status(400)
-        .json({ errors: [{ msg: "Category Other Text is required" }] });
+        .json({ errors: [{ message: "Category Other Text is required" }] });
     }
 
     if (isReceiptAvailable && !receiptImage) {
       return res
         .status(400)
-        .json({ errors: [{ msg: "Receipt Image is required" }] });
+        .json({ errors: [{ message: "Receipt Image is required" }] });
+    }
+
+    if (title === "") {
+      return res
+        .status(400)
+        .json({ errors: [{ message: "Title is required" }] });
+    }
+
+    if (amount === 0) {
+      return res
+        .status(400)
+        .json({ errors: [{ message: "Amount is required" }] });
+    }
+
+    if (date === "") {
+      return res
+        .status(400)
+        .json({ errors: [{ message: "Date is required" }] });
+    }
+
+    if (description === "") {
+      return res
+        .status(400)
+        .json({ errors: [{ message: "Description is required" }] });
     }
 
     const newVariableExpenses = new VariableExpenses({
@@ -116,6 +141,7 @@ router.post("/add", auth, async (req, res) => {
       receiptAmount,
       receiptDate,
       receiptCurrency,
+      source,
     });
 
     await VariableExpenses.insertMany(newVariableExpenses);

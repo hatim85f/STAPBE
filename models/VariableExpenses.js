@@ -16,6 +16,10 @@ const VariableExpensesSchema = Schema({
     type: String,
     required: true,
   },
+  source: {
+    type: String,
+    required: true,
+  },
   currency: {
     type: String,
     required: true,
