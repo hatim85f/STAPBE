@@ -126,7 +126,12 @@ router.post("/add", auth, async (req, res) => {
         .json({ errors: [{ message: "Description is required" }] });
     }
 
-    const dateOfReceipt = new Date(receiptDate);
+    const receiptDateParts = receiptDate.split("/");
+    const day = parseInt(receiptDateParts[0], 10);
+    const month = parseInt(receiptDateParts[1] - 1, 10); // Months are 0-indexed in JavaScript Dates
+    const year = parseInt(receiptDateParts[2], 10);
+
+    const dateOfReceipt = new Date(year, month, day);
 
     const newVariableExpenses = new VariableExpenses({
       currency,
