@@ -7,6 +7,7 @@ const SupportCase = require("../../models/SupportCase");
 const MarketingExpenses = require("../../models/MarketingExpenses");
 const { default: mongoose } = require("mongoose");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
+const moment = require("moment");
 
 // manager get all the expenses of his/her team,
 
@@ -153,7 +154,7 @@ router.post("/", auth, async (req, res) => {
 
   try {
     const [day, month, year] = dueIn.split("/");
-    const dateObj = new Date(`${year}-${month}-${day}T00:00:00Z`);
+    const dateObj = moment(`${year}-${month}-${day}`, "YYYY-MM-DD");
     const isoDate = dateObj.toISOString();
 
     const newMarketingExpenses = new MarketingExpenses({
