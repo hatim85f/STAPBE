@@ -146,6 +146,7 @@ router.post("/", auth, async (req, res) => {
     amount,
     currency,
     dueIn,
+    kindOfExpense,
   } = req.body;
 
   const user = await User.findOne({ _id: requestedBy });
@@ -163,7 +164,8 @@ router.post("/", auth, async (req, res) => {
       rationale,
       amount,
       currency,
-      dueIn: isoDate ? isoDate : new Date(),
+      dueIn: isoDate,
+      kindOfExpense,
     });
 
     await MarketingExpenses.insertMany(newMarketingExpenses);

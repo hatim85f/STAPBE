@@ -33,6 +33,10 @@ const MarketingExpensesSchema = Schema({
     type: String,
     required: true,
   },
+  kindOfExpense: {
+    type: String,
+    required: true,
+  },
   isReceiptAvailable: {
     type: Boolean,
     default: false,
