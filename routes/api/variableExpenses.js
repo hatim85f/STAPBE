@@ -153,7 +153,10 @@ router.post("/add", auth, async (req, res) => {
 
     await VariableExpenses.insertMany(newVariableExpenses);
 
-    return res.status(200).send({ message: "Variable Expenses Added" });
+    return res.status(200).send({
+      message: "Variable Expenses Added",
+      variableExpense: newVariableExpenses,
+    });
   } catch (error) {
     const newSupport = new SupportCase({
       userId,

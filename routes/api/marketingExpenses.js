@@ -171,7 +171,10 @@ router.post("/", auth, async (req, res) => {
 
     await MarketingExpenses.insertMany(newMarketingExpenses);
 
-    return res.status(200).send({ message: "Expenses submitted successfully" });
+    return res.status(200).send({
+      message: "Expenses submitted successfully",
+      marketingExpense: newMarketingExpenses,
+    });
   } catch (error) {
     const newCase = new SupportCase({
       userId: requestedBy,

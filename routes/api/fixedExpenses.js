@@ -109,7 +109,7 @@ router.post("/add", auth, async (req, res) => {
         .json({ errors: [{ message: "Amount is required" }] });
     }
 
-    if (date === "") {
+    if (dueIn === "") {
       return res
         .status(400)
         .json({ errors: [{ message: "Date is required" }] });
@@ -140,7 +140,7 @@ router.post("/add", auth, async (req, res) => {
 
     return res.status(200).send({
       message: "Fixed Expenses Added",
-      fixedExpenses: newFixedExpenses,
+      fixedExpense: newFixedExpenses,
     });
   } catch (error) {
     const newSupport = new SupportCase({
