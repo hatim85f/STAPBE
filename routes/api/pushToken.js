@@ -14,7 +14,7 @@ router.post("/", auth, async (req, res) => {
     if (userToken) {
       if (userToken.token.includes(token)) {
         // Token already exists, no need to update
-        return res.status(200).end(); // Send an empty response
+        return; // Send an empty response
       } else {
         // Add the new token to the user's list of tokens
         await PushToken.updateMany(
