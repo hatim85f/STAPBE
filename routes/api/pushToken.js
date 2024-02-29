@@ -12,7 +12,7 @@ router.post("/", auth, async (req, res) => {
     const userToken = await PushToken.findOne({ user: userId });
 
     if (userToken) {
-      if (userToken.token === token) {
+      if (userToken.token.includes(token)) {
         // Token already exists, no need to update
         return res.status(200).end(); // Send an empty response
       } else {
