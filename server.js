@@ -99,7 +99,7 @@ app.use("/api/fixed-expenses", require("./routes/api/fixedExpenses"));
 app.use("/api/variable-expenses", require("./routes/api/variableExpenses"));
 app.use("/api/marketing-expenses", require("./routes/api/marketingExpenses"));
 app.use("/api/notifications", require("./routes/api/notifications"));
-app.user("/api/pushToken", require("./routes/api/pushToken"));
+app.use("/api/pushToken", require("./routes/api/pushToken"));
 app.use("/api/test", require("./routes/api/test"));
 
 const PORT = process.env.PORT || 5000;
