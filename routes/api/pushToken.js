@@ -8,10 +8,26 @@ router.post("/", auth, async (req, res) => {
   const { userId, token } = req.body;
 
   try {
-    const newPushToken = await new PushToken({
-      user: userId,
-      token: token,
-    });
+    // check if the user has a push token reigestered
+    const userToken = await PushToken.findOne({ user: userId });
+
+    if (userToken) {
+      await PushToken.updateMany(
+        { user: userId },
+        {
+          $addToSet: {
+            token: token,
+          },
+        }
+      );
+    } else {
+      const newPushToken = await new PushToken({
+        user: userId,
+        token: token,
+      });
+
+      await PushToken.insertMany(newPushToken);
+    }
 
     return res.status(200).send({
       message:

@@ -42,6 +42,8 @@ router.get("/:userId", auth, async (req, res) => {
   }
 });
 
+// save user notification push token to user document
+
 router.post("/", auth, async (req, res) => {
   const { to, title, message, route, webRoute, from } = req.body;
   try {
