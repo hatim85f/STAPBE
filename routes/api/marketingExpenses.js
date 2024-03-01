@@ -8,6 +8,8 @@ const MarketingExpenses = require("../../models/MarketingExpenses");
 const { default: mongoose } = require("mongoose");
 const isCompanyAdmin = require("../../middleware/isCompanyAdmin");
 const moment = require("moment");
+const { sendPushNotification } = require("../../components/sendNotifications");
+const Products = require("../../models/Products");
 
 // manager get all the expenses of his/her team,
 
@@ -170,6 +172,67 @@ router.post("/", auth, async (req, res) => {
     });
 
     await MarketingExpenses.insertMany(newMarketingExpenses);
+
+    // getting adding user
+    const user = await User.findOne({ _id: requestedBy });
+    const product = await Products.findOne({ _id: requestAgainst });
+
+    const managerTokens = await BusinessUsers.aggregate([
+      {
+        $match: {
+          businessId: new mongoose.Types.ObjectId(businessId),
+          isBusinessOwner: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "managerData",
+        },
+      },
+      {
+        $lookup: {
+          from: "pushtokens",
+          localField: "user",
+          foreignField: "userId",
+          as: "pushToken",
+        },
+      },
+      {
+        $unwind: "$pushToken", // Unwind the pushToken array
+      },
+      {
+        $project: {
+          pushTokens: "$pushToken.token", // Reshape the output to use pushTokens as the key
+          _id: 0, // Exclude the _id field
+          managerId: { $arrayElemAt: ["$managerData._id", 0] },
+        },
+      },
+    ]);
+
+    const neededTokens = managerTokens[0].pushTokens;
+    const managerId = managerTokens[0].managerId;
+
+    for (let token of neededTokens) {
+      sendPushNotification(
+        token,
+        "expenses", // Updated routeValue
+        `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
+      );
+    }
+
+    const newNotification = new Notification({
+      to: managerId,
+      title: `Marketing Expense by ${user.userName}`,
+      message: `New Marketing Expense of ${currency} ${amount} has been added by ${user.userName}`,
+      route: "expenses",
+      webRoute: "/expeeses/manage-expenses",
+      from: requestedBy,
+    });
+
+    await Notification.insertMany(newNotification);
 
     return res.status(200).send({
       message: "Expenses submitted successfully",
