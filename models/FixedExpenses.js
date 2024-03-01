@@ -32,7 +32,10 @@ const FixedExpensesSchema = Schema({
   categoryOtherText: {
     type: String,
   },
-
+  dueIn: {
+    type: Date,
+    required: true,
+  },
   description: {
     type: String,
     required: true,
@@ -51,7 +54,7 @@ const FixedExpensesSchema = Schema({
   },
   recurringType: {
     type: String,
-    enum: ["Weekly", "Monthly", "Yearly"],
+    enum: ["Weekly", "Monthly", "Quarterly", "Yearly"],
     required: true,
   },
   source: {

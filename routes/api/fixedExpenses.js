@@ -124,6 +124,11 @@ router.post("/add", auth, async (req, res) => {
         .json({ errors: [{ message: "Description is required" }] });
     }
 
+    const dueDate = dueIn.split("/");
+    const dueDateFormatted = new Date(
+      `${dueDate[2]}-${dueDate[1]}-${dueDate[0]}`
+    );
+
     const newFixedExpenses = new FixedExpenses({
       userId,
       businessId,
@@ -132,8 +137,7 @@ router.post("/add", auth, async (req, res) => {
       amount,
       category,
       categoryOtherText,
-      dueIn,
-
+      dueIn: dueDateFormatted,
       description,
       recurringDay,
       recurringType,
