@@ -38,16 +38,19 @@ router.get("/:userId", auth, async (req, res) => {
           businessName: { $arrayElemAt: ["$business.businessName", 0] },
           businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
           businessId: 1,
+          createdAt: 1,
         },
       },
       {
         $group: {
-          _id: null, // Grouping to get total across all documents
+          _id: 0, // Grouping to get total across all documents
           totalFixedExpenses: { $sum: "$amount" },
           fixedExpenses: {
             $push: {
               amount: "$amount",
               category: "$category",
+              currency: "$currency",
+              createdAt: "$createdAt",
               categoryOtherText: "$categoryOtherText",
               description: "$description",
               recurringDay: "$recurringDay",
@@ -122,14 +125,15 @@ router.post("/add", auth, async (req, res) => {
     }
 
     const newFixedExpenses = new FixedExpenses({
-      currency,
+      userId,
       businessId,
       title,
+      currency,
       amount,
       category,
       categoryOtherText,
       dueIn,
-      userId,
+
       description,
       recurringDay,
       recurringType,
