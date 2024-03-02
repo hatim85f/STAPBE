@@ -6,15 +6,27 @@ const BusinessUsers = require("../../models/BusinessUsers");
 const SupportCase = require("../../models/SupportCase");
 const FixedExpenses = require("../../models/FixedExpenses");
 const { default: mongoose } = require("mongoose");
+const moment = require("moment");
 
-router.get("/:userId", auth, async (req, res) => {
-  const { userId } = req.params;
+router.get("/:userId/:month/:year", auth, async (req, res) => {
+  const { userId, month, year } = req.params;
+
+  const startOfMonth = moment(`${month} ${year}`, "MMMM YYYY")
+    .startOf("month")
+    .toDate();
+  const endOfMonth = moment(`${month} ${year}`, "MMMM YYYY")
+    .endOf("month")
+    .toDate();
 
   try {
     const businessExpenses = await FixedExpenses.aggregate([
       {
         $match: {
           userId: new mongoose.Types.ObjectId(userId),
+          dueIn: {
+            $gte: startOfMonth,
+            $lte: endOfMonth,
+          },
         },
       },
       {
