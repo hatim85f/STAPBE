@@ -82,7 +82,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).json(businessExpenses);
+    return res.status(200).json({ businessExpenses });
   } catch (error) {
     return res.status(500).send({
       error: "Error",
