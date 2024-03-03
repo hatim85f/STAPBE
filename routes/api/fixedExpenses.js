@@ -197,6 +197,8 @@ router.put("/:id", auth, async (req, res) => {
     recurringDay,
     dueIn,
     businessId,
+    source,
+    recurringType,
   } = req.body;
 
   try {
@@ -212,6 +214,8 @@ router.put("/:id", auth, async (req, res) => {
           recurringDay,
           dueIn,
           businessId,
+          source,
+          recurringType,
         },
       }
     );
