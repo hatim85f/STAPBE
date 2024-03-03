@@ -213,12 +213,10 @@ router.post("/add", auth, async (req, res) => {
       },
     ]);
 
-    return res
-      .status(200)
-      .send({ message: "Manager Token has passed Normally" });
+    const neededTokens = managerTokens[0].pushTokens;
+    const managerId = managerTokens[0].managerId;
 
-    // const neededTokens = managerTokens[0].pushTokens;
-    // const managerId = managerTokens[0].managerId;
+    return res.status(200).send({ message: neededTokens.map((a) => a) });
 
     // for (let token of neededTokens) {
     //   sendPushNotification(
