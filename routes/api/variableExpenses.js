@@ -195,11 +195,11 @@ router.post("/add", auth, async (req, res) => {
         },
       },
       {
-        $unwind: "$pushtoken", // Unwind the pushToken array
+        $unwind: "$pushToken", // Unwind the pushToken array
       },
       {
         $project: {
-          pushTokens: "$pushtoken.token", // Reshape the output to use pushTokens as the key
+          pushTokens: "$pushToken.token", // Reshape the output to use pushTokens as the key
           _id: 0, // Exclude the _id field
           managerId: { $arrayElemAt: ["$managerData._id", 0] },
         },
