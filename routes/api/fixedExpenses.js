@@ -196,19 +196,23 @@ router.put("/:id", auth, async (req, res) => {
     description,
     recurringDay,
     dueIn,
+    businessId,
   } = req.body;
 
   try {
     await FixedExpenses.updateOne(
       { _id: id },
       {
-        currency,
-        amount,
-        category,
-        categoryOtherText,
-        description,
-        recurringDay,
-        dueIn,
+        $set: {
+          currency,
+          amount,
+          category,
+          categoryOtherText,
+          description,
+          recurringDay,
+          dueIn,
+          businessId,
+        },
       }
     );
 
