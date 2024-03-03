@@ -100,6 +100,26 @@ router.post("/add", auth, async (req, res) => {
     source,
   } = req.body;
 
+  return res.status(200).send({
+    message: {
+      userId,
+      businessId,
+      title,
+      currency,
+      amount,
+      category,
+      categoryOtherText,
+      description,
+      expenseDate,
+      isReceiptAvailable,
+      receiptImage,
+      receiptAmount,
+      receiptDate,
+      receiptCurrency,
+      source,
+    },
+  });
+
   const user = await User.findOne({ _id: userId });
   const business = await BusinessUsers.find({ userId: userId });
   const businessIds = business.map((a) => a.businessId);
@@ -215,8 +235,6 @@ router.post("/add", auth, async (req, res) => {
 
     const neededTokens = managerTokens[0].pushTokens;
     const managerId = managerTokens[0].managerId;
-
-    return res.status(200).send({ message: neededTokens.map((a) => a) });
 
     // for (let token of neededTokens) {
     //   sendPushNotification(
