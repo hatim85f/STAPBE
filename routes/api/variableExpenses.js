@@ -101,7 +101,7 @@ router.post("/add", auth, async (req, res) => {
   } = req.body;
 
   return res.status(200).send({
-    message: JSON.stringify(req.body),
+    message: JSON.stringify({ businessId, userId }),
   });
 
   const user = await User.findOne({ _id: userId });
