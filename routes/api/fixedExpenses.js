@@ -76,6 +76,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
               businessLogo: "$businessLogo",
               businessId: "$businessId",
               createdAt: "$createdAt",
+              expenseId: "$_id",
             },
           },
         },
