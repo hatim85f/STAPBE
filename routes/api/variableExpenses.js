@@ -100,10 +100,6 @@ router.post("/add", auth, async (req, res) => {
     source,
   } = req.body;
 
-  return res.status(200).send({
-    message: JSON.stringify({ businessId, userId }),
-  });
-
   const user = await User.findOne({ _id: userId });
   const business = await BusinessUsers.find({ userId: userId });
   const businessIds = business.map((a) => a.businessId);
@@ -220,24 +216,24 @@ router.post("/add", auth, async (req, res) => {
     const neededTokens = managerTokens[0].pushTokens;
     const managerId = managerTokens[0].managerId;
 
-    // for (let token of neededTokens) {
-    //   sendPushNotification(
-    //     token,
-    //     "expenses", // Updated routeValue
-    //     `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
-    //   );
-    // }
+    for (let token of neededTokens) {
+      sendPushNotification(
+        token,
+        "expenses", // Updated routeValue
+        `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
+      );
+    }
 
-    // const newNotification = new Notification({
-    //   to: managerId,
-    //   title: `Variable Expense by ${user.userName}`,
-    //   message: `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`,
-    //   route: "expenses",
-    //   webRoute: "/expeeses/manage-expenses",
-    //   from: userId,
-    // });
+    const newNotification = new Notification({
+      to: managerId,
+      title: `Variable Expense by ${user.userName}`,
+      message: `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`,
+      route: "expenses",
+      webRoute: "/expeeses/manage-expenses",
+      from: userId,
+    });
 
-    // await Notification.insertMany(newNotification);
+    await Notification.insertMany(newNotification);
 
     await VariableExpenses.insertMany(newVariableExpenses);
 
