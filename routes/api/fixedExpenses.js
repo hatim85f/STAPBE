@@ -202,6 +202,9 @@ router.put("/:id", auth, async (req, res) => {
   } = req.body;
 
   try {
+    const neededFixedExpense = await FixedExpenses.findOne({ _id: id });
+    const createdDate = neededFixedExpense.createdAt;
+
     await FixedExpenses.updateOne(
       { _id: id },
       {
@@ -216,6 +219,8 @@ router.put("/:id", auth, async (req, res) => {
           businessId,
           source,
           recurringType,
+          createdAt: createdDate,
+          updatedAt: new Date(),
         },
       }
     );
