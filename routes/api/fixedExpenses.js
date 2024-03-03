@@ -186,7 +186,7 @@ router.post("/add", auth, async (req, res) => {
   }
 });
 
-router.put("/update/:id", auth, async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   const { id } = req.params;
   const {
     currency,
