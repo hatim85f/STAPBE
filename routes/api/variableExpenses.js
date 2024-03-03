@@ -9,17 +9,29 @@ const { default: mongoose } = require("mongoose");
 const { Expo } = require("expo-server-sdk");
 const { sendPushNotification } = require("../../components/sendNotifications");
 const Notification = require("../../models/Notification");
+const moment = require("moment");
 
-router.get("/:userId", auth, async (req, res) => {
-  const { userId } = req.params;
+router.get("/:userId/:month/:year", auth, async (req, res) => {
+  const { userId, month, year } = req.params;
 
   try {
+    const startOfMonth = moment(`${month} ${year}`, "MMMM YYYY")
+      .startOf("month")
+      .toDate();
+    const endOfMonth = moment(`${month} ${year}`, "MMMM YYYY")
+      .endOf("month")
+      .toDate();
+
     const businesses = await BusinessUsers.find({ userId: userId });
 
     const variableExpenses = await VariableExpenses.aggregate([
       {
         $match: {
           businessId: { $in: businesses.map((a) => a.businessId) },
+          receiptDate: {
+            $gte: startOfMonth,
+            $lte: endOfMonth,
+          },
         },
       },
       {
@@ -183,7 +195,7 @@ router.post("/add", auth, async (req, res) => {
         },
       },
       {
-        $unwind: "$pushToken", // Unwind the pushToken array
+        $unwind: "$pushtokens", // Unwind the pushToken array
       },
       {
         $project: {
