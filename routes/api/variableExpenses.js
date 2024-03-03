@@ -148,6 +148,13 @@ router.post("/add", auth, async (req, res) => {
 
     const dateOfReceipt = new Date(year, month, day);
 
+    const expenseDateParts = expenseDate.split("/");
+    const dayExpense = parseInt(expenseDateParts[0], 10);
+    const monthExpense = parseInt(expenseDateParts[1] - 1, 10); // Months are 0-indexed in JavaScript Dates
+    const yearExpense = parseInt(expenseDateParts[2], 10);
+
+    const dateOfExpense = new Date(yearExpense, monthExpense, dayExpense);
+
     const newVariableExpenses = new VariableExpenses({
       currency,
       businessId,
@@ -157,7 +164,7 @@ router.post("/add", auth, async (req, res) => {
       categoryOtherText,
       userId,
       description,
-      expenseDate,
+      expenseDate: dateOfExpense,
       isReceiptAvailable,
       receiptImage,
       receiptAmount,
@@ -216,6 +223,7 @@ router.post("/add", auth, async (req, res) => {
         `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
       );
     }
+
     const newNotification = new Notification({
       to: managerId,
       title: `Variable Expense by ${user.userName}`,
