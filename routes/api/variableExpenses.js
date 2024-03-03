@@ -178,40 +178,44 @@ router.post("/add", auth, async (req, res) => {
 
     // sending notification for the manager
 
-    // const managerTokens = await BusinessUsers.aggregate([
-    //   {
-    //     $match: {
-    //       businessId: new mongoose.Types.ObjectId(businessId),
-    //       isBusinessOwner: true,
-    //     },
-    //   },
-    //   {
-    //     $lookup: {
-    //       from: "users",
-    //       localField: "userId",
-    //       foreignField: "_id",
-    //       as: "managerData",
-    //     },
-    //   },
-    //   {
-    //     $lookup: {
-    //       from: "pushtokens",
-    //       localField: "user",
-    //       foreignField: "userId",
-    //       as: "pushToken",
-    //     },
-    //   },
-    //   {
-    //     $unwind: "$pushToken", // Unwind the pushToken array
-    //   },
-    //   {
-    //     $project: {
-    //       pushTokens: "$pushToken.token", // Reshape the output to use pushTokens as the key
-    //       _id: 0, // Exclude the _id field
-    //       managerId: { $arrayElemAt: ["$managerData._id", 0] },
-    //     },
-    //   },
-    // ]);
+    const managerTokens = await BusinessUsers.aggregate([
+      {
+        $match: {
+          businessId: new mongoose.Types.ObjectId(businessId),
+          isBusinessOwner: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "managerData",
+        },
+      },
+      {
+        $lookup: {
+          from: "pushtokens",
+          localField: "user",
+          foreignField: "userId",
+          as: "pushToken",
+        },
+      },
+      {
+        $unwind: "$pushToken", // Unwind the pushToken array
+      },
+      {
+        $project: {
+          pushTokens: "$pushToken.token", // Reshape the output to use pushTokens as the key
+          _id: 0, // Exclude the _id field
+          managerId: { $arrayElemAt: ["$managerData._id", 0] },
+        },
+      },
+    ]);
+
+    return res
+      .status(200)
+      .send({ message: "Manager Token has passed Normally" });
 
     // const neededTokens = managerTokens[0].pushTokens;
     // const managerId = managerTokens[0].managerId;
