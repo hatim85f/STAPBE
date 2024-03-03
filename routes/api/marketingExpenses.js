@@ -219,7 +219,7 @@ router.post("/", auth, async (req, res) => {
       sendPushNotification(
         token,
         "expenses", // Updated routeValue
-        `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
+        `New Marketing Expense of ${currency} ${amount} has been added by ${user.userName}`
       );
     }
 

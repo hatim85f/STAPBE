@@ -216,7 +216,6 @@ router.post("/add", auth, async (req, res) => {
         `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
       );
     }
-
     const newNotification = new Notification({
       to: managerId,
       title: `Variable Expense by ${user.userName}`,
