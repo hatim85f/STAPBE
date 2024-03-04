@@ -326,7 +326,6 @@ router.put("/:id", auth, async (req, res) => {
       variableExpenses.userId = userId;
       variableExpenses.title = title;
       variableExpenses.amount = amount;
-      variableExpenses.receiptDate = receiptDate;
       variableExpenses.receiptCurrency = receiptCurrency;
 
       // getting adding user
