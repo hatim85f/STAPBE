@@ -53,6 +53,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       {
         $project: {
           expenseId: "$_id",
+          title: 1,
           currency: 1,
           amount: 1,
           category: 1,
