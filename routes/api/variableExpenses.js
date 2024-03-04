@@ -43,8 +43,16 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "created_by",
+        },
+      },
+      {
         $project: {
-          _id: 1,
+          expenseId: "$_id",
           currency: 1,
           amount: 1,
           category: 1,
@@ -61,11 +69,14 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           businessId: 1,
           createdAt: 1,
           updatedAt: 1,
+          createdBy: { $arrayElemAt: ["$created_by.userName", 0] },
+          createdById: "$userId",
+          createdByImage: { $arrayElemAt: ["$created_by.profileImage", 0] },
         },
       },
       {
         $group: {
-          _id: null,
+          _id: 0,
           totalAmount: { $sum: "$amount" },
           variableExpenses: { $push: "$$ROOT" },
         },
