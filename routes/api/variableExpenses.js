@@ -243,7 +243,7 @@ router.post("/add", auth, async (req, res) => {
       title: `Variable Expense by ${user.userName}`,
       message: `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`,
       route: "expenses",
-      webRoute: "/expeeses/manage-expenses",
+      webRoute: "/expenses/manage-expenses",
       from: userId,
     });
 
@@ -314,6 +314,68 @@ router.put("/:id", auth, async (req, res) => {
       variableExpenses.amount = amount;
       variableExpenses.receiptDate = receiptDate;
       variableExpenses.receiptCurrency = receiptCurrency;
+
+      // getting adding user
+      const user = await User.findOne({ _id: userId });
+
+      // sending notification for the manager
+
+      const managerTokens = await BusinessUsers.aggregate([
+        {
+          $match: {
+            businessId: new mongoose.Types.ObjectId(businessId),
+            isBusinessOwner: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "managerData",
+          },
+        },
+        {
+          $lookup: {
+            from: "pushtokens",
+            localField: "user",
+            foreignField: "userId",
+            as: "pushToken",
+          },
+        },
+        {
+          $unwind: "$pushToken", // Unwind the pushToken array
+        },
+        {
+          $project: {
+            pushTokens: "$pushToken.token", // Reshape the output to use pushTokens as the key
+            _id: 0, // Exclude the _id field
+            managerId: { $arrayElemAt: ["$managerData._id", 0] },
+          },
+        },
+      ]);
+
+      const neededTokens = managerTokens[0].pushTokens;
+      const managerId = managerTokens[0].managerId;
+
+      for (let token of neededTokens) {
+        sendPushNotification(
+          token,
+          "expenses", // Updated routeValue
+          `Variable Expense of ${currency} ${amount} has been updated by ${user.userName}`
+        );
+      }
+
+      const newNotification = new Notification({
+        to: managerId,
+        title: `Variable Expense by ${user.userName}`,
+        message: `Variable Expense of ${currency} ${amount} has been updated by ${user.userName}`,
+        route: "expenses",
+        webRoute: "/expenses/manage-expenses",
+        from: userId,
+      });
+
+      await Notification.insertMany(newNotification);
 
       await variableExpenses.save();
       return res.status(200).send({ message: "Variable Expenses Updated" });

@@ -228,7 +228,7 @@ router.post("/", auth, async (req, res) => {
       title: `Marketing Expense by ${user.userName}`,
       message: `New Marketing Expense of ${currency} ${amount} has been added by ${user.userName}`,
       route: "expenses",
-      webRoute: "/expeeses/manage-expenses",
+      webRoute: "/expenses/manage-expenses",
       from: requestedBy,
     });
 
