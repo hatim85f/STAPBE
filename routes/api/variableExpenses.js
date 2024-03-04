@@ -293,6 +293,20 @@ router.put("/:id", auth, async (req, res) => {
   } = req.body;
 
   try {
+    const receiptDateParts = receiptDate.split("/");
+    const day = parseInt(receiptDateParts[0], 10);
+    const month = parseInt(receiptDateParts[1] - 1, 10); // Months are 0-indexed in JavaScript Dates
+    const year = parseInt(receiptDateParts[2], 10);
+
+    const dateOfReceipt = new Date(year, month, day);
+
+    const expenseDateParts = expenseDate.split("/");
+    const dayExpense = parseInt(expenseDateParts[0], 10);
+    const monthExpense = parseInt(expenseDateParts[1] - 1, 10); // Months are 0-indexed in JavaScript Dates
+    const yearExpense = parseInt(expenseDateParts[2], 10);
+
+    const dateOfExpense = new Date(yearExpense, monthExpense, dayExpense);
+
     const variableExpenses = await VariableExpenses.findOne({ _id: id });
 
     if (variableExpenses) {
@@ -301,11 +315,11 @@ router.put("/:id", auth, async (req, res) => {
       variableExpenses.category = category;
       variableExpenses.categoryOtherText = categoryOtherText;
       variableExpenses.description = description;
-      variableExpenses.expenseDate = expenseDate;
+      variableExpenses.expenseDate = dateOfExpense;
       variableExpenses.isReceiptAvailable = isReceiptAvailable;
       variableExpenses.receiptImage = receiptImage;
       variableExpenses.receiptAmount = receiptAmount;
-      variableExpenses.receiptDate = receiptDate;
+      variableExpenses.receiptDate = dateOfReceipt;
       variableExpenses.updatedAt = Date.now();
       variableExpenses.source = source;
       variableExpenses.businessId = businessId;
