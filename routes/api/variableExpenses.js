@@ -272,19 +272,24 @@ router.post("/add", auth, async (req, res) => {
   }
 });
 
-router.put("/update/:id", auth, async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   const { id } = req.params;
   const {
     currency,
+    businessId,
+    title,
     amount,
     category,
     categoryOtherText,
+    userId,
     description,
     expenseDate,
     isReceiptAvailable,
     receiptImage,
     receiptAmount,
     receiptDate,
+    receiptCurrency,
+    source,
   } = req.body;
 
   try {
@@ -302,6 +307,13 @@ router.put("/update/:id", auth, async (req, res) => {
       variableExpenses.receiptAmount = receiptAmount;
       variableExpenses.receiptDate = receiptDate;
       variableExpenses.updatedAt = Date.now();
+      variableExpenses.source = source;
+      variableExpenses.businessId = businessId;
+      variableExpenses.userId = userId;
+      variableExpenses.title = title;
+      variableExpenses.amount = amount;
+      variableExpenses.receiptDate = receiptDate;
+      variableExpenses.receiptCurrency = receiptCurrency;
 
       await variableExpenses.save();
       return res.status(200).send({ message: "Variable Expenses Updated" });
