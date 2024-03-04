@@ -73,6 +73,8 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           createdBy: { $arrayElemAt: ["$created_by.userName", 0] },
           createdById: "$userId",
           createdByImage: { $arrayElemAt: ["$created_by.profileImage", 0] },
+          source: 1,
+          dateOfSubmission: 1,
         },
       },
       {
