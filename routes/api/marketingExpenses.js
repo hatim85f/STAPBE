@@ -15,22 +15,34 @@ const Products = require("../../models/Products");
 
 // the plan is get the data usually full data, and filter them at the end.
 // filter by product, approved, rejected, pending, claimed, not claimed, date, amount, currency, businessId, userId, etc.
-router.get("/manager/:userId/:month/:year", auth, async (req, res) => {
+router.get("/:userId/:month/:year", auth, async (req, res) => {
   const { userId, month, year } = req.params;
 
   const business = await BusinessUsers.find({ userId: userId });
   const businessIds = business.map((business) => business.businessId);
 
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
+  const start = moment(`${month} ${year}`, "MMMM YYYY")
+    .startOf("month")
+    .toDate();
+  const end = moment(`${month} ${year}`, "MMMM YYYY").endOf("month").toDate();
+
+  const user = await User.findOne({ _id: userId });
+
+  const matchCondition =
+    user.userType === "Business Owner"
+      ? {
+          businessId: { $in: businessIds },
+          dueIn: { $gte: start, $lte: end },
+        }
+      : {
+          requestedBy: new mongoose.Types.ObjectId(userId),
+          dueIn: { $gte: start, $lte: end },
+        };
 
   try {
     const expenses = await MarketingExpenses.aggregate([
       {
-        $match: {
-          businessId: { $in: businessIds },
-          dueIn: { $gte: start, $lte: end },
-        },
+        $match: matchCondition,
       },
       {
         $lookup: {
