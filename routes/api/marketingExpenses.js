@@ -21,22 +21,33 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
   const business = await BusinessUsers.find({ userId: userId });
   const businessIds = business.map((business) => business.businessId);
 
-  const start = moment(`${month} ${year}`, "MMMM YYYY")
+  const currentMonthStart = moment(`${month} ${year}`, "MMMM YYYY")
     .startOf("month")
     .toDate();
-  const end = moment(`${month} ${year}`, "MMMM YYYY").endOf("month").toDate();
+  const currentMonthEnd = moment(`${month} ${year}`, "MMMM YYYY")
+    .endOf("month")
+    .toDate();
 
+  // Calculate start and end dates for the previous month
+  const previousMonthStart = moment(currentMonthStart)
+    .subtract(1, "months")
+    .startOf("month")
+    .toDate();
+  const previousMonthEnd = moment(currentMonthEnd)
+    .subtract(1, "months")
+    .endOf("month")
+    .toDate();
   const user = await User.findOne({ _id: userId });
 
   const matchCondition =
     user.userType === "Business Owner"
       ? {
           businessId: { $in: businessIds },
-          dueIn: { $gte: start, $lte: end },
+          dueIn: { $gte: currentMonthStart, $lte: currentMonthEnd },
         }
       : {
           requestedBy: new mongoose.Types.ObjectId(userId),
-          dueIn: { $gte: start, $lte: end },
+          dueIn: { $gte: currentMonthStart, $lte: currentMonthEnd },
         };
 
   try {
@@ -140,7 +151,48 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).json({ expenses });
+    const previousMatch =
+      user.userType === "Business Owner"
+        ? {
+            businessId: { $in: businessIds },
+            dueIn: { $gte: previousMonthStart, $lte: previousMonthEnd },
+          }
+        : {
+            requestedBy: new mongoose.Types.ObjectId(userId),
+            dueIn: { $gte: previousMonthStart, $lte: previousMonthEnd },
+          };
+
+    const previousMonthExpenses = await MarketingExpenses.aggregate([
+      {
+        $match: previousMatch,
+      },
+      {
+        $project: {
+          amount: 1,
+          isClaimed: 1,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          numberOfPreviousMonthExpenses: { $sum: 1 },
+          numberOfClaimedExpenses: {
+            $sum: { $cond: [{ $eq: ["$isClaimed", true] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalAmount: 1,
+          numberOfPreviousMonthExpenses: 1,
+          numberOfClaimedExpenses: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json({ previousMonthExpenses, expenses });
   } catch (error) {
     return res.status(500).send({
       error: "Error",
