@@ -147,6 +147,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           statusChangedByName: {
             $arrayElemAt: ["$statusChangedBy_details.userName", 0],
           },
+          kindOfExpense: 1,
         },
       },
     ]);
@@ -192,7 +193,10 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).json({ previousMonthExpenses, expenses });
+    const total = expenses.map((a) => a.amount);
+    const totalValue = total.reduce((a, b) => a + b, 0);
+
+    return res.status(200).json({ previousMonthExpenses, totalValue });
   } catch (error) {
     return res.status(500).send({
       error: "Error",
