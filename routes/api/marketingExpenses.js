@@ -196,7 +196,9 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
     const total = expenses.map((a) => a.amount);
     const totalValue = total.reduce((a, b) => a + b, 0);
 
-    return res.status(200).json({ previousMonthExpenses, totalValue });
+    return res
+      .status(200)
+      .json({ previousMonthExpenses, totalValue, expenses });
   } catch (error) {
     return res.status(500).send({
       error: "Error",
