@@ -413,6 +413,36 @@ router.put("/approval/:expenseId", auth, isCompanyAdmin, async (req, res) => {
       }
     );
 
+    const message =
+      newStatus === "Approved"
+        ? `Your Marketing Expense with value ${expense.amount} ${expense.currency} has been approved`
+        : `Your Marketing Expense with value ${expense.amount} ${expense.currency} has been rejected, please revise and resubmit`;
+
+    const title =
+      newStatus === "Approved" ? "Expense Approved" : "Expense Rejected";
+
+    const newNotification = new Notification({
+      to: returnTo,
+      title: title,
+      message: message,
+      route: "expenses",
+      webRoute: "/expenses/manage-expenses",
+      from: statusChangedBy,
+    });
+
+    await Notification.insertMany(newNotification);
+
+    const userTokens = await PushToken.find({ user: returnTo });
+    const tokens = userTokens.token;
+
+    for (let token of tokens) {
+      sendPushNotification(
+        token,
+        "expenses", // Updated routeValue
+        message
+      );
+    }
+
     return res.status(200).send({
       message:
         newStatus === "Approved"
