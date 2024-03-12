@@ -387,7 +387,7 @@ router.put("/approval/:expenseId", auth, isCompanyAdmin, async (req, res) => {
     let returnTo;
 
     if (newStatus !== "Approved") {
-      if (expense.revisedBy.toString() === statusChangedBy.toString()) {
+      if (expense.revisedBy === statusChangedBy) {
         returnTo = expense.requestedBy;
       } else {
         returnTo = expense.revisedBy;
