@@ -448,7 +448,7 @@ router.put("/approval/:expenseId", auth, isCompanyAdmin, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: "Something went wrong, please try again later",
+      message: error.message,
     });
   }
 });
