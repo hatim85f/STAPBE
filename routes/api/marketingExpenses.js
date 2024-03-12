@@ -436,11 +436,7 @@ router.put("/approval/:expenseId", auth, isCompanyAdmin, async (req, res) => {
     const tokens = userTokens.token;
 
     for (let token of tokens) {
-      sendPushNotification(
-        token,
-        "expenses", // Updated routeValue
-        message
-      );
+      sendPushNotification(token, "expenses", message);
     }
 
     return res.status(200).send({
