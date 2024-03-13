@@ -430,25 +430,31 @@ router.put("/approval/:expenseId", auth, isCompanyAdmin, async (req, res) => {
       from: statusChangedBy,
     });
 
-    await Notification.insertMany(newNotification);
+    if (returnTo) {
+      await Notification.insertMany(newNotification);
 
-    const userTokens = await PushToken.find({ user: returnTo });
-    const tokens = userTokens.token;
+      const userTokens = await PushToken.findOne({ user: returnTo });
+      const tokens = userTokens.token;
 
-    for (let token of tokens) {
-      sendPushNotification(token, "expenses", message);
+      for (let token of tokens) {
+        sendPushNotification(token, "expenses", message);
+      }
     }
+
+    const returnMessage = returnTo
+      ? ` and the comment sent to ${returnedUser.userName}`
+      : "and the comment has been saved for the user to see when they check the expense";
 
     return res.status(200).send({
       message:
         newStatus === "Approved"
-          ? `Expense approved successfully and notification sent to ${resquestedUser.userName}`
-          : `Expense rejected and the comment sent to the user ${returnedUser.userName}`,
+          ? `Expense approved successfully ${returnMessage}`
+          : `Expense rejected ${returnMessage}`,
     });
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: error.message,
+      message: "Something went wrong, please try again later",
     });
   }
 });
