@@ -331,14 +331,12 @@ router.post("/", auth, async (req, res) => {
 
 router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
   const { expenseId } = req.params;
-  const { revisedBy, revisionComment } = req.body;
+  const { revisedBy, revisionComment, isRevisionPassed } = req.body;
 
   try {
     const user = await User.findOne({ _id: revisedBy });
 
     const revisedAt = new Date();
-
-    const isRevisionPassed = revisionComment.length === 0 ? false : true;
 
     const expense = await MarketingExpenses.findOne({ _id: expenseId });
 
