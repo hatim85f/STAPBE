@@ -338,7 +338,7 @@ router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
 
     const revisedAt = new Date();
 
-    const isRevisionPassed = revisionComment.length ? false : true;
+    const isRevisionPassed = revisionComment.length === 0 ? false : true;
 
     const expense = await MarketingExpenses.findOne({ _id: expenseId });
 
@@ -367,7 +367,7 @@ router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: error.message,
+      message: "Something went wrong, please try again later",
     });
   }
 });
