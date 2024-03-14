@@ -543,4 +543,140 @@ router.put("/claimed/:expenseId", isCompanyAdmin, auth, async (req, res) => {
   }
 });
 
+// create another route that close the case and update isClosed to true,
+// update the isClaimed, claimedBy, claimedAt, isRevisionPassed, isRevised, revisionComment to "Closed"
+// if !isReceiptSubmitted then update isReceiptAvailable to false and status to "Rejected", isClaimed to false, isRevisionPassed to false, isRevised to false, isStatusReturn to false, isRevisionReturned to false, isClaimed to false, closed to false
+// if isReceiptSubmitted then update isReceiptAvailable to true and status to "Approved", isClaimed to true, isRevisionPassed to true, isRevised to true, isStatusReturn to false, isRevisionReturned to false, isClaimed to true, closed to true
+
+// if the user is not isCompanyAdmin then the user can only close the case if the status is "Approved" and the isClaimed is true and the isReceiptSubmitted is true
+
+router.put("/close/:expenseId", auth, isCompanyAdmin, async (req, res) => {
+  const { expenseId } = req.params;
+
+  const expense = await MarketingExpenses.findOne({ _id: expenseId });
+
+  try {
+    const isReceiptSubmitted = expense.isReceiptSubmitted;
+
+    const business = await BusinessUsers.findOne({
+      businessName: expense.businessName,
+      isBusinessOwner: true,
+    });
+    const businessManagerId = business.userId;
+    const manager = await User.findOne({ _id: businessManagerId });
+
+    // isRevised: 1,
+    //       isReceiptSubmitted: 1,
+    //       closed: 1,
+    //       isClaimed: 1,
+    //       createdAt: 1,
+    //       updatedAt: 1,
+    //       isRevisionPassed: 1,
+    //       revisedAt: 1,
+    //       revisedByName: 1,
+    //       revisedBy: 1,
+    //       revisionComment: 1,
+    //       revisionReturnTo: 1,
+    //       revisionReturnToName: {
+    //         $arrayElemAt: ["$returnTo_details.userName", 0],
+    //       },
+    //       receiptAmount: 1,
+    //       receiptCurrency: 1,
+    //       receiptImage: 1,
+    //       receiptSubmittedAt: 1,
+    //       claimedBy: 1,
+    //       claimedAt: 1,
+    //       statusChangedAt: 1,
+    //       statusChangeComment: 1,
+    //       statusChangedBy: 1,
+    //       statusChangedByName: {
+    //         $arrayElemAt: ["$statusChangedBy_details.userName", 0],
+    //       },
+    //       kindOfExpense: 1,
+    //       isRevisionPassed: 1,
+    //       claimedAt: 1,
+
+    if (isReceiptSubmitted) {
+      await MarketingExpenses.updateMany(
+        { _id: expenseId },
+        {
+          $set: {
+            closed: true,
+            isClaimed: true,
+            updatedAt: new Date(),
+            isRevisionPassed: true,
+            revisedAt: expense.revisedAt ? expense.revisedAt : new Date(),
+            revisedByName: expense.revisedByName
+              ? expense.revisedByName
+              : manager.userName,
+            revisedBy: expense.revisedBy ? expense.revisedBy : manager._id,
+            revisionComment: expense.revisionComment
+              ? expense.revisionComment
+              : "Closed",
+            claimedBy: expense.requestedBy,
+            claimedAt: expense.claimedAt ? expense.claimedAt : new Date(),
+            status: "Approved",
+            statusChangedAt: expense.statusChangedAt
+              ? expense.statusChangedAt
+              : new Date(),
+            statusChangeComment: expense.statusChangeComment
+              ? expense.statusChangeComment
+              : "Closed",
+            statusChangedBy: expense.statusChangedBy
+              ? expense.statusChangedBy
+              : manager._id,
+            claimedAt: expense.claimedAt ? expense.claimedAt : new Date(),
+          },
+        }
+      );
+
+      return res.status(200).send({
+        message: "Expense closed successfully and the case is closed",
+      });
+    } else {
+      await MarketingExpenses.updateMany(
+        { _id: expenseId },
+        {
+          $set: {
+            closed: false,
+            isClaimed: false,
+            updatedAt: new Date(),
+            isRevisionPassed: false,
+            revisedAt: expense.revisedAt ? expense.revisedAt : new Date(),
+            revisedByName: expense.revisedByName
+              ? expense.revisedByName
+              : manager.userName,
+            revisedBy: expense.revisedBy ? expense.revisedBy : manager._id,
+            revisionComment: expense.revisionComment
+              ? expense.revisionComment
+              : "Closed",
+
+            status: "Rejected",
+            statusChangedAt: expense.statusChangedAt
+              ? expense.statusChangedAt
+              : new Date(),
+            statusChangeComment: expense.statusChangeComment
+              ? expense.statusChangeComment
+              : "Closed",
+            statusChangedBy: expense.statusChangedBy
+              ? expense.statusChangedBy
+              : manager._id,
+            claimedAt: expense.claimedAt ? expense.claimedAt : new Date(),
+          },
+        }
+      );
+
+      return res.status(200).send({
+        message:
+          "Expense closed successfully, and the initiator is requested to submit a new case if want to update the expense",
+      });
+    }
+  } catch (error) {
+    return res.status(500).send({
+      error: "Error",
+      message: "Something went wrong, please try again later",
+    });
+  }
+});
+
 module.exports = router;
