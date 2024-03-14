@@ -149,6 +149,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
           },
           kindOfExpense: 1,
           isRevisionPassed: 1,
+          claimedAt: 1,
         },
       },
     ]);
@@ -358,27 +359,25 @@ router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
       }
     );
 
-    if (!isRevisionPassed) {
-      const message = `Your Marketing Expense with value ${expense.amount} ${expense.currency} has been revised and the comment is: ${revisionComment}`;
+    const message = `Your Marketing Expense with value ${expense.amount} ${expense.currency} has been revised and the comment is: ${revisionComment}`;
 
-      const newNotification = new Notification({
-        to: expense.requestedBy,
-        title: "Expense Rejected",
-        message: message,
-        route: "expenses",
-        webRoute: "/expenses/manage-expenses",
-        from: revisedBy,
-      });
+    const newNotification = new Notification({
+      to: expense.requestedBy,
+      title: "Expense Rejected",
+      message: message,
+      route: "expenses",
+      webRoute: "/expenses/manage-expenses",
+      from: revisedBy,
+    });
 
-      await Notification.insertMany(newNotification);
+    await Notification.insertMany(newNotification);
 
-      const userTokens = await PushToken.findOne({ user: expense.requestedBy });
-      const tokens = userTokens.token;
+    const userTokens = await PushToken.findOne({ user: expense.requestedBy });
+    const tokens = userTokens.token;
 
-      if (tokens) {
-        for (let token of tokens) {
-          sendPushNotification(token, "expenses", message);
-        }
+    if (tokens) {
+      for (let token of tokens) {
+        sendPushNotification(token, "expenses", message);
       }
     }
 
