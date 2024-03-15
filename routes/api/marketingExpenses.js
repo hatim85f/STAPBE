@@ -389,7 +389,7 @@ router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: "Something went wrong, please try again later",
+      message: error.message,
     });
   }
 });
@@ -543,13 +543,6 @@ router.put("/claimed/:expenseId", isCompanyAdmin, auth, async (req, res) => {
   }
 });
 
-// create another route that close the case and update isClosed to true,
-// update the isClaimed, claimedBy, claimedAt, isRevisionPassed, isRevised, revisionComment to "Closed"
-// if !isReceiptSubmitted then update isReceiptAvailable to false and status to "Rejected", isClaimed to false, isRevisionPassed to false, isRevised to false, isStatusReturn to false, isRevisionReturned to false, isClaimed to false, closed to false
-// if isReceiptSubmitted then update isReceiptAvailable to true and status to "Approved", isClaimed to true, isRevisionPassed to true, isRevised to true, isStatusReturn to false, isRevisionReturned to false, isClaimed to true, closed to true
-
-// if the user is not isCompanyAdmin then the user can only close the case if the status is "Approved" and the isClaimed is true and the isReceiptSubmitted is true
-
 router.put("/close/:expenseId", auth, isCompanyAdmin, async (req, res) => {
   const { expenseId } = req.params;
 
@@ -564,37 +557,6 @@ router.put("/close/:expenseId", auth, isCompanyAdmin, async (req, res) => {
     });
     const businessManagerId = business.userId;
     const manager = await User.findOne({ _id: businessManagerId });
-
-    // isRevised: 1,
-    //       isReceiptSubmitted: 1,
-    //       closed: 1,
-    //       isClaimed: 1,
-    //       createdAt: 1,
-    //       updatedAt: 1,
-    //       isRevisionPassed: 1,
-    //       revisedAt: 1,
-    //       revisedByName: 1,
-    //       revisedBy: 1,
-    //       revisionComment: 1,
-    //       revisionReturnTo: 1,
-    //       revisionReturnToName: {
-    //         $arrayElemAt: ["$returnTo_details.userName", 0],
-    //       },
-    //       receiptAmount: 1,
-    //       receiptCurrency: 1,
-    //       receiptImage: 1,
-    //       receiptSubmittedAt: 1,
-    //       claimedBy: 1,
-    //       claimedAt: 1,
-    //       statusChangedAt: 1,
-    //       statusChangeComment: 1,
-    //       statusChangedBy: 1,
-    //       statusChangedByName: {
-    //         $arrayElemAt: ["$statusChangedBy_details.userName", 0],
-    //       },
-    //       kindOfExpense: 1,
-    //       isRevisionPassed: 1,
-    //       claimedAt: 1,
 
     if (isReceiptSubmitted) {
       await MarketingExpenses.updateMany(
@@ -668,7 +630,7 @@ router.put("/close/:expenseId", auth, isCompanyAdmin, async (req, res) => {
 
       return res.status(200).send({
         message:
-          "Expense closed successfully, and the initiator is requested to submit a new case if want to update the expense",
+          "Expense closed successfully, and the initiator can updated normally if wnat to make changes",
       });
     }
   } catch (error) {
