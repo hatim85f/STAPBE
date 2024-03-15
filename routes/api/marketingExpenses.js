@@ -373,11 +373,13 @@ router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
     await Notification.insertMany(newNotification);
 
     const userTokens = await PushToken.findOne({ user: expense.requestedBy });
-    const tokens = userTokens.token;
 
-    if (tokens) {
-      for (let token of tokens) {
-        sendPushNotification(token, "expenses", message);
+    if (userTokens) {
+      const tokens = userTokens.token;
+      if (tokens) {
+        for (let token of tokens) {
+          sendPushNotification(token, "expenses", message);
+        }
       }
     }
 
@@ -389,7 +391,7 @@ router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error",
-      message: error.message,
+      message: "Something went wrong, please try again later",
     });
   }
 });
