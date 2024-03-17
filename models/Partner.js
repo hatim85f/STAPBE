@@ -68,6 +68,10 @@ const PartnerSchema = Schema({
     type: Number,
     required: true,
   },
+  investementAmount: {
+    type: Number,
+    required: true,
+  },
   dateOfStart: {
     type: Date,
     required: true,

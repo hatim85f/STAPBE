@@ -42,6 +42,7 @@ router.post("/", auth, async (req, res) => {
     percentage,
     dateOfStart,
     responsiblitites,
+    investementAmount,
     DOB,
     password,
   } = req.body;
@@ -70,6 +71,7 @@ router.post("/", auth, async (req, res) => {
       isAuthorized: false,
       authority: ["Partner"],
       isActivated: true,
+      investementAmount,
     });
 
     await newUser.save();
@@ -103,6 +105,7 @@ router.post("/", auth, async (req, res) => {
         },
       ],
       percentage,
+      investementAmount,
       dateOfStart,
       responsiblitites,
       DOB,
@@ -145,6 +148,7 @@ router.put("/:id", auth, async (req, res) => {
     percentage,
     dateOfStart,
     responsiblitites,
+    investementAmount,
     DOB,
   } = req.body;
 
@@ -191,6 +195,7 @@ router.put("/:id", auth, async (req, res) => {
           ],
           percentage,
           dateOfStart,
+          investementAmount,
           responsiblitites,
           DOB,
         },
