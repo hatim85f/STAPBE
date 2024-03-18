@@ -25,7 +25,9 @@ router.get("/:userId", auth, isCompanyAdmin, async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Something went wrong, Please try again" });
+      .json({
+        message: "We are facing a server issue, please try again later",
+      });
   }
 });
 
