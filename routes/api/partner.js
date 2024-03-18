@@ -11,11 +11,16 @@ const BusinessUsers = require("../../models/BusinessUsers");
 // @route   GET api/partner
 // @desc    Get all partners
 // @access  Private
-router.get("/:businessId", auth, isCompanyAdmin, async (req, res) => {
-  const { businessId } = req.params;
+router.get("/:userId", auth, isCompanyAdmin, async (req, res) => {
+  const { userId } = req.params;
 
   try {
-    const partners = await Partner.find({ business: businessId });
+    const businesses = await BusinessUsers.find({ userId: userId });
+
+    const businessesIds = businesses.map((business) => business.businessId);
+
+    const partners = await Partner.find({ business: { $in: businessesIds } });
+
     return res.status(200).json(partners);
   } catch (error) {
     return res.status(500).json({ message: "Server Error, Please try again" });
@@ -41,7 +46,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     bankIBAN,
     percentage,
     dateOfStart,
-    responsiblitites,
+    responsibilities,
     investementAmount,
     DOB,
     password,
@@ -107,7 +112,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       percentage,
       investementAmount,
       dateOfStart,
-      responsiblitites,
+      responsibilities,
       DOB,
     });
 
