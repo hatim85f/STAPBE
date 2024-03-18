@@ -25,7 +25,7 @@ router.get("/:businessId", auth, isCompanyAdmin, async (req, res) => {
 // @route   POST api/partner
 // @desc    Create a new partner
 // @access  Private
-router.post("/", auth, async (req, res) => {
+router.post("/", auth, isCompanyAdmin, async (req, res) => {
   const {
     business,
     name,
