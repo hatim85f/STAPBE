@@ -19,15 +19,45 @@ router.get("/:userId", auth, isCompanyAdmin, async (req, res) => {
 
     const businessesIds = businesses.map((business) => business.businessId);
 
-    const partners = await Partner.find({ business: { $in: businessesIds } });
-
+    const partners = await Partner.aggregate([
+      {
+        $match: {
+          business: { $in: businessesIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "businesses",
+          localField: "business",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $project: {
+          businessId: { $arrayElemAt: ["$business._id", 0] },
+          businessLogo: { $arrayElemAt: ["$business.businessLogo", 0] },
+          businessName: { $arrayElemAt: ["$business.businessName", 0] },
+          name: 1,
+          email: 1,
+          phone: 1,
+          profileImage: 1,
+          address: 1,
+          idDetails: 1,
+          bankDetails: 1,
+          percentage: 1,
+          investementAmount: 1,
+          dateOfStart: 1,
+          responsibilities: 1,
+          DOB: 1,
+        },
+      },
+    ]);
     return res.status(200).json(partners);
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        message: "We are facing a server issue, please try again later",
-      });
+    return res.status(500).json({
+      message: "We are facing a server issue, please try again later",
+    });
   }
 });
 

@@ -5,6 +5,13 @@ const User = require("../models/User");
 module.exports = async (req, res, next) => {
   const userId = req.header("user-id");
 
+  if (!userId) {
+    return res.status(401).json({
+      message:
+        "You are not authorized to perform this opertaion, login or contact your provider",
+    });
+  }
+
   const user = await User.findOne({ _id: userId });
   const userType = user.userType;
 
