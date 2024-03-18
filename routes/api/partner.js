@@ -50,6 +50,9 @@ router.get("/:userId", auth, isCompanyAdmin, async (req, res) => {
           dateOfStart: 1,
           responsibilities: 1,
           DOB: 1,
+          businessCurrency: {
+            $arrayElemAt: ["$business.currencySymbol", 0],
+          },
         },
       },
     ]);
