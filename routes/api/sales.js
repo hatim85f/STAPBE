@@ -11,6 +11,7 @@ const BusinessUsers = require("../../models/BusinessUsers");
 const auth = require("../../middleware/auth");
 const Client = require("../../models/Client");
 const moment = require("moment");
+const Products = require("../../models/Products");
 
 // @route   GET api/sales
 // @desc    Get all sales
@@ -136,12 +137,20 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
+    const salesQuantities = [];
+
     const newSalesData = sales.map((item) => {
       const totalQuantity =
         item.bonusType === "Percentage"
           ? parseInt(item.quantity) +
             (parseInt(item.quantity) * parseInt(item.bonus)) / 100
           : parseInt(item.quantity);
+
+      salesQuantities.push({
+        productId: item.productId,
+        quantity: totalQuantity,
+      });
+
       return {
         ...item,
         discount: item.bonus,
@@ -150,6 +159,15 @@ router.post("/", auth, async (req, res) => {
         totalQuantity,
         date: new Date(item.date),
       };
+    });
+
+    salesQuantities.map(async (item) => {
+      await Products.updateMany(
+        { _id: item.productId },
+        {
+          $inc: { quantity: -item.quantity },
+        }
+      );
     });
 
     const newSales = new Sales({
