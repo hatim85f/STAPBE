@@ -56,6 +56,13 @@ router.get("/:userId", auth, async (req, res) => {
         $lookup: {
           from: "users",
           localField: "team.userId",
+          pipeline: [
+            {
+              $match: {
+                userType: { $ne: "Partner" },
+              },
+            },
+          ],
           foreignField: "_id",
           as: "teamMembers",
         },
