@@ -233,6 +233,7 @@ router.post("/add", auth, async (req, res) => {
     for (let token of neededTokens) {
       sendPushNotification(
         token,
+        "New Variable Expense", // Updated title
         "expenses", // Updated routeValue
         `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
       );
@@ -374,6 +375,7 @@ router.put("/:id", auth, async (req, res) => {
       for (let token of neededTokens) {
         sendPushNotification(
           token,
+          "Variable Expense Updated", // Updated title
           "expenses", // Updated routeValue
           `Variable Expense of ${currency} ${amount} has been updated by ${user.userName}`
         );

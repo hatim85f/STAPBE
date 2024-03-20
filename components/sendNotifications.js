@@ -1,12 +1,17 @@
 const { Expo } = require("expo-server-sdk");
 const expo = new Expo();
 
-const sendPushNotification = async (expoPushToken, routeValue, message) => {
+const sendPushNotification = async (
+  expoPushToken,
+  title,
+  routeValue,
+  message
+) => {
   let messages = [
     {
       to: expoPushToken,
       sound: "default",
-      title: "Your Notification Title",
+      title: title,
       body: message,
       data: {
         route: routeValue,

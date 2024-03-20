@@ -290,6 +290,7 @@ router.post("/", auth, async (req, res) => {
     for (let token of neededTokens) {
       sendPushNotification(
         token,
+        "New Marketing Expense Added",
         "expenses", // Updated routeValue
         `New Marketing Expense of ${currency} ${amount} has been added by ${user.userName} for ${product.productNickName}`
       );
@@ -378,7 +379,12 @@ router.put("/revision/:expenseId", auth, isCompanyAdmin, async (req, res) => {
       const tokens = userTokens.token;
       if (tokens) {
         for (let token of tokens) {
-          sendPushNotification(token, "expenses", message);
+          sendPushNotification(
+            token,
+            "Marketing Expenses",
+            "expenses",
+            message
+          );
         }
       }
     }
@@ -461,7 +467,7 @@ router.put("/approval/:expenseId", auth, isCompanyAdmin, async (req, res) => {
       const tokens = userTokens.token;
 
       for (let token of tokens) {
-        sendPushNotification(token, "expenses", message);
+        sendPushNotification(token, "Marketing Expenses", "expenses", message);
       }
     }
 
