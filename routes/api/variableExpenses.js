@@ -208,10 +208,13 @@ router.post("/add", auth, async (req, res) => {
         },
       },
       {
+        $unwind: "$managerData", // Unwind the managerData array to match on a document basis
+      },
+      {
         $lookup: {
           from: "pushtokens",
-          localField: "user",
-          foreignField: "userId",
+          localField: "managerData._id", // Corrected to use managerData._id
+          foreignField: "user", // Assuming pushtokens collection uses userId to refer to users
           as: "pushToken",
         },
       },
@@ -220,35 +223,37 @@ router.post("/add", auth, async (req, res) => {
       },
       {
         $project: {
-          pushTokens: "$pushToken.token", // Reshape the output to use pushTokens as the key
+          pushTokens: "$pushToken.token", // Keep the pushTokens field
           _id: 0, // Exclude the _id field
-          managerId: { $arrayElemAt: ["$managerData._id", 0] },
+          managerId: "$managerData._id", // Directly use managerData._id
         },
       },
     ]);
 
-    const neededTokens = managerTokens[0].pushTokens;
-    const managerId = managerTokens[0].managerId;
+    if (managerTokens.length > 0) {
+      const neededTokens = managerTokens[0].pushTokens;
+      const managerId = managerTokens[0].managerId;
 
-    for (let token of neededTokens) {
-      sendPushNotification(
-        token,
-        "New Variable Expense", // Updated title
-        "expenses", // Updated routeValue
-        `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
-      );
+      for (let token of neededTokens) {
+        sendPushNotification(
+          token,
+          title, // Updated title
+          "expenses", // Updated routeValue
+          `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`
+        );
+      }
+
+      const newNotification = new Notification({
+        to: managerId,
+        title: `Variable Expense by ${user.userName}`,
+        message: `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`,
+        route: "expenses",
+        webRoute: "/expenses/manage-expenses",
+        from: userId,
+      });
+
+      await Notification.insertMany(newNotification);
     }
-
-    const newNotification = new Notification({
-      to: managerId,
-      title: `Variable Expense by ${user.userName}`,
-      message: `New Variable Expense of ${currency} ${amount} has been added by ${user.userName}`,
-      route: "expenses",
-      webRoute: "/expenses/manage-expenses",
-      from: userId,
-    });
-
-    await Notification.insertMany(newNotification);
 
     await VariableExpenses.insertMany(newVariableExpenses);
 
@@ -350,10 +355,13 @@ router.put("/:id", auth, async (req, res) => {
           },
         },
         {
+          $unwind: "$managerData", // Unwind the managerData array to match on a document basis
+        },
+        {
           $lookup: {
             from: "pushtokens",
-            localField: "user",
-            foreignField: "userId",
+            localField: "managerData._id", // Corrected to use managerData._id
+            foreignField: "user", // Assuming pushtokens collection uses userId to refer to users
             as: "pushToken",
           },
         },
@@ -362,35 +370,37 @@ router.put("/:id", auth, async (req, res) => {
         },
         {
           $project: {
-            pushTokens: "$pushToken.token", // Reshape the output to use pushTokens as the key
+            pushTokens: "$pushToken.token", // Keep the pushTokens field
             _id: 0, // Exclude the _id field
-            managerId: { $arrayElemAt: ["$managerData._id", 0] },
+            managerId: "$managerData._id", // Directly use managerData._id
           },
         },
       ]);
 
-      const neededTokens = managerTokens[0].pushTokens;
-      const managerId = managerTokens[0].managerId;
+      if (managerTokens.length > 0) {
+        const neededTokens = managerTokens[0].pushTokens;
+        const managerId = managerTokens[0].managerId;
 
-      for (let token of neededTokens) {
-        sendPushNotification(
-          token,
-          "Variable Expense Updated", // Updated title
-          "expenses", // Updated routeValue
-          `Variable Expense of ${currency} ${amount} has been updated by ${user.userName}`
-        );
+        for (let token of neededTokens) {
+          sendPushNotification(
+            token,
+            title, // Updated title
+            "expenses", // Updated routeValue
+            `Variable Expense of ${currency} ${amount} has been updated by ${user.userName}`
+          );
+        }
+
+        const newNotification = new Notification({
+          to: managerId,
+          title: `Variable Expense by ${user.userName}`,
+          message: `Variable Expense of ${currency} ${amount} has been updated by ${user.userName}`,
+          route: "expenses",
+          webRoute: "/expenses/manage-expenses",
+          from: userId,
+        });
+
+        await Notification.insertMany(newNotification);
       }
-
-      const newNotification = new Notification({
-        to: managerId,
-        title: `Variable Expense by ${user.userName}`,
-        message: `Variable Expense of ${currency} ${amount} has been updated by ${user.userName}`,
-        route: "expenses",
-        webRoute: "/expenses/manage-expenses",
-        from: userId,
-      });
-
-      await Notification.insertMany(newNotification);
 
       await variableExpenses.save();
       return res.status(200).send({ message: "Variable Expenses Updated" });
