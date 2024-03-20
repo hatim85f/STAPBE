@@ -28,7 +28,7 @@ router.get("/:userId/:month/:year", auth, async (req, res) => {
       {
         $match: {
           businessId: { $in: businesses.map((a) => a.businessId) },
-          receiptDate: {
+          expenseDate: {
             $gte: startOfMonth,
             $lte: endOfMonth,
           },
