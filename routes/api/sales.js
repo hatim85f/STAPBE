@@ -139,7 +139,7 @@ router.post("/", auth, async (req, res) => {
 
     const salesQuantities = [];
 
-    const newSalesData = sales.map((item) => {
+    const newSalesData = sales.map(async (item) => {
       const totalQuantity =
         item.bonusType === "Percentage"
           ? parseInt(item.quantity) +
@@ -151,11 +151,13 @@ router.post("/", auth, async (req, res) => {
         quantity: totalQuantity,
       });
 
+      const productDetails = await Products.findOne({ _id: item.productId });
+
       return {
         ...item,
         discount: item.bonus,
         discountType: item.bonusType,
-        itemValue: item.quantity * item.productPrice,
+        itemValue: item.quantity * productDetails.sellingPrice,
         totalQuantity,
         date: new Date(item.date),
       };

@@ -101,6 +101,7 @@ app.use("/api/marketing-expenses", require("./routes/api/marketingExpenses"));
 app.use("/api/notifications", require("./routes/api/notifications"));
 app.use("/api/pushToken", require("./routes/api/pushToken"));
 app.use("/api/partner", require("./routes/api/partner"));
+app.use("/api/profit", require("./routes/api/profit"));
 app.use("/api/test", require("./routes/api/test"));
 
 const PORT = process.env.PORT || 5000;
