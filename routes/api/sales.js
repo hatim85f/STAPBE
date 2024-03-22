@@ -168,6 +168,7 @@ router.post("/", auth, async (req, res) => {
           discount: item.bonus,
           discountType: item.bonusType,
           itemValue: item.quantity * productDetails.sellingPrice,
+          sellingPrice: productDetails.sellingPrice,
           totalQuantity,
           date: new Date(item.date),
         };
@@ -186,6 +187,9 @@ router.post("/", auth, async (req, res) => {
       })
     );
 
+    const salesValues = newSalesData.map((item) => item.itemValue);
+    const totalSalesValues = salesValues.reduce((a, b) => a + b, 0);
+
     const newSales = new Sales({
       startPeriod: new Date(startPeriod),
       endPeriod: new Date(endPeriod),
@@ -195,7 +199,7 @@ router.post("/", auth, async (req, res) => {
         : `${moment(new Date()).format("DD/MM/YYYY HH:mm:ss")}`,
       salesData: newSalesData,
       addedBy: userId,
-      totalValue: salesValue,
+      totalValue: totalSalesValues,
       openedWith: userId,
     });
 
