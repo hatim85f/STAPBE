@@ -122,10 +122,8 @@ router.post("/", auth, async (req, res) => {
   const { salesData, userId, version, startPeriod, endPeriod } = req.body;
 
   const user = await User.findOne({ _id: userId });
-
+  const { businessId, sales, salesValue } = salesData;
   try {
-    const { businessId, sales, salesValue } = salesData;
-
     const trimmedVersion = version.trim();
 
     const previousVersion = await Sales.findOne({
@@ -139,56 +137,39 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    const salesQuantities = sales.map((item) => {
+    const salesQuantities = [];
+
+    const newSalesData = sales.map((item) => {
       const totalQuantity =
         item.bonusType === "Percentage"
           ? parseInt(item.quantity) +
             (parseInt(item.quantity) * parseInt(item.bonus)) / 100
           : parseInt(item.quantity);
 
-      return {
+      salesQuantities.push({
         productId: item.productId,
         quantity: totalQuantity,
+      });
+
+      return {
+        ...item,
+        discount: item.bonus,
+        discountType: item.bonusType,
+        itemValue: item.quantity * item.sellingPrice,
+        productPrice: item.productPrice,
+        totalQuantity,
+        date: new Date(item.date),
       };
     });
 
-    // Use Promise.all to wait for all product details to be fetched
-    const newSalesData = await Promise.all(
-      sales.map(async (item) => {
-        const totalQuantity =
-          item.bonusType === "Percentage"
-            ? parseInt(item.quantity) +
-              (parseInt(item.quantity) * parseInt(item.bonus)) / 100
-            : parseInt(item.quantity);
-
-        const productDetails = await Products.findOne({ _id: item.productId });
-
-        return {
-          ...item,
-          discount: item.bonus,
-          discountType: item.bonusType,
-          itemValue: item.quantity * productDetails.sellingPrice,
-          sellingPrice: productDetails.sellingPrice,
-          totalQuantity,
-          date: new Date(item.date),
-        };
-      })
-    );
-
-    // Now update all product quantities
-    await Promise.all(
-      salesQuantities.map((item) => {
-        return Products.updateMany(
-          { _id: item.productId },
-          {
-            $inc: { quantity: -item.quantity },
-          }
-        );
-      })
-    );
-
-    const salesValues = newSalesData.map((item) => item.itemValue);
-    const totalSalesValues = salesValues.reduce((a, b) => a + b, 0);
+    salesQuantities.map(async (item) => {
+      await Products.updateMany(
+        { _id: item.productId },
+        {
+          $inc: { quantity: -item.quantity },
+        }
+      );
+    });
 
     const newSales = new Sales({
       startPeriod: new Date(startPeriod),
@@ -199,11 +180,11 @@ router.post("/", auth, async (req, res) => {
         : `${moment(new Date()).format("DD/MM/YYYY HH:mm:ss")}`,
       salesData: newSalesData,
       addedBy: userId,
-      totalValue: totalSalesValues,
+      totalValue: salesValue,
       openedWith: userId,
     });
 
-    await Sales.insertMany([newSales]); // Make sure to pass an array to insertMany
+    await Sales.insertMany(newSales);
 
     return res.status(200).send({ message: "Sales Data Added" });
   } catch (error) {
@@ -216,7 +197,7 @@ router.post("/", auth, async (req, res) => {
       subject: "Error Uploading Excel Sales Data",
       message: error.message,
     });
-    await SupportCase.insertMany([newSupportCase]); // Make sure to pass an array to insertMany
+    await SupportCase.insertMany(newSupportCase);
     return res.status(500).send({
       error: "Error",
       message: "Something Went wrong, please try again later",
