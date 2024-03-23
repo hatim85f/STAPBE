@@ -234,8 +234,8 @@ router.put("/opened/:salesId", auth, async (req, res) => {
   }
 });
 
-router.put("/set_final/:salesId/:month/:year", auth, async (req, res) => {
-  const { salesId, year, month } = req.params;
+router.put("/set_final/:salesId", auth, async (req, res) => {
+  const { salesId } = req.params;
   const { userId } = req.body;
 
   try {
