@@ -45,6 +45,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
                     },
                   },
                 ],
+                isFinal: true,
                 "salesData.status": "Completed",
               },
             },

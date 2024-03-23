@@ -234,8 +234,8 @@ router.put("/opened/:salesId", auth, async (req, res) => {
   }
 });
 
-router.put("/set_final/:salesId", auth, async (req, res) => {
-  const { salesId } = req.params;
+router.put("/set_final/:salesId/:month/:year", auth, async (req, res) => {
+  const { salesId, year, month } = req.params;
   const { userId } = req.body;
 
   try {
@@ -243,9 +243,14 @@ router.put("/set_final/:salesId", auth, async (req, res) => {
 
     const businessIds = businesses.map((a) => a.businessId);
 
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+
     const sales = await Sales.find({
       businessId: { $in: businessIds },
       isFinal: true,
+      startPeriod: { $gte: startDate, $lte: endDate },
+      endPeriod: { $gte: startDate, $lte: endDate },
     });
 
     if (sales.length > 0) {
