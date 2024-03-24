@@ -262,6 +262,19 @@ router.put("/set_final/:salesId", auth, async (req, res) => {
           isFinal: false,
         }
       );
+
+      const salesData = sales.salesData;
+
+      for (let item of salesData) {
+        await Products.updateMany(
+          {
+            _id: item.productId,
+          },
+          {
+            $inc: { quantity: item.totalQuantity },
+          }
+        );
+      }
     }
 
     await Sales.updateMany(

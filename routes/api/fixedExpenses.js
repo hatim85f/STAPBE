@@ -112,6 +112,8 @@ router.post("/add", auth, async (req, res) => {
   const business = await BusinessUsers.find({ userId: userId });
   const businessIds = business.map((a) => a.businessId);
 
+  return res.status(200).send({ message: businessIds });
+
   try {
     if (category === "Other" && !categoryOtherText) {
       return res
