@@ -330,7 +330,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).send(businessesProfit);
+    return res.status(200).json({ businessesProfit });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
