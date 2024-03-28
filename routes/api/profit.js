@@ -256,6 +256,26 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "partners",
+          localField: "businessId",
+          foreignField: "business",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                email: 1,
+                phone: 1,
+                profileImage: 1,
+                percentage: 1,
+              },
+            },
+          ],
+          as: "partners",
+        },
+      },
+      {
         $project: {
           _id: 0,
           businessId: 1,
@@ -305,6 +325,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
               },
             ],
           },
+          partners: 1,
         },
       },
     ]);
