@@ -113,7 +113,8 @@ router.get("/:userId", auth, async (req, res) => {
     await SupportCase.insertMany(newSupportCase);
     return res.status(500).send({
       error: "Error",
-      message: error.message,
+      message:
+        "Server Error !, Please try again later. A case has been registered and someone will get back to you",
     });
   }
 });
@@ -200,7 +201,8 @@ router.post("/", auth, async (req, res) => {
     await SupportCase.insertMany(newSupportCase);
     return res.status(500).send({
       error: "Error",
-      message: "Something Went wrong, please try again later",
+      message:
+        "Something Went wrong, please try again later, an error case has been created and somwone will get back to you",
     });
   }
 });
