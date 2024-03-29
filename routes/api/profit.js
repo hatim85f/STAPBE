@@ -40,6 +40,9 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
                 productType: 1,
                 inventory: "$quantity",
                 imageURL: 1,
+                costPrice: 1,
+                sellingPrice: 1,
+                productId: "$_id",
               },
             },
           ],
@@ -175,10 +178,16 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
                         },
                         salesValue: { $ifNull: ["$$saleData.salesValue", 0] },
                         productPrice: {
-                          $ifNull: ["$$saleData.productPrice", 0],
+                          $ifNull: [
+                            "$$saleData.productPrice",
+                            "$$product.costPrice",
+                          ],
                         },
                         sellingPrice: {
-                          $ifNull: ["$$saleData.sellingPrice", 0],
+                          $ifNull: [
+                            "$$saleData.sellingPrice",
+                            "$$product.sellingPrice",
+                          ],
                         },
                         discount: { $ifNull: ["$$saleData.discount", 0] },
                         discountType: {
