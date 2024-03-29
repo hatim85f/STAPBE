@@ -326,6 +326,8 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
             ],
           },
           partners: 1,
+          startMonth: startMonth,
+          endMonth: endMonth,
         },
       },
     ]);
