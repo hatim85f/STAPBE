@@ -207,6 +207,37 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
                             0,
                           ],
                         },
+                        productProfit: {
+                          $subtract: [
+                            { $ifNull: ["$$saleData.salesValue", 0] },
+                            {
+                              $add: [
+                                {
+                                  $ifNull: [
+                                    {
+                                      $multiply: [
+                                        { $ifNull: ["$$saleData.quantity", 0] },
+                                        {
+                                          $ifNull: [
+                                            "$$saleData.productPrice",
+                                            0,
+                                          ],
+                                        },
+                                      ],
+                                    },
+                                    0,
+                                  ],
+                                },
+                                {
+                                  $ifNull: [
+                                    "$$matchedExpense.marketingExpenses",
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
                       },
                     },
                   },
