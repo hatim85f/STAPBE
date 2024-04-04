@@ -163,19 +163,19 @@ router.put("/:id", auth, async (req, res) => {
 // @desc    Delete a supplier
 // @access  Private
 
-router.delete("/:id", auth, async (req, res) => {
-  const { id } = req.params;
+router.delete("/:supplierId", auth, async (req, res) => {
+  const { supplierId } = req.params;
 
   try {
-    const supplier = await Supplier.find({ _id: id });
+    const supplier = await Supplier.findOne({ _id: supplierId });
 
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });
     }
 
-    await Supplier.deleteOne({ _id: id });
+    await Supplier.deleteOne({ _id: supplierId });
     res.json({
-      message: `Supplier ${supplier.supplierName} deleted successfully`,
+      message: `Supplier deleted successfully`,
     });
   } catch (error) {
     console.error(error.message);
