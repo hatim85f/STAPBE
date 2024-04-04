@@ -9,9 +9,21 @@ const BusinessUsers = require("../../models/BusinessUsers");
 // @desc    Get all suppliers
 // @access  Private
 
-router.get("/", auth, async (req, res) => {
+router.get("/:userId", auth, async (req, res) => {
   try {
-    const suppliers = await Supplier.find();
+    const { userId } = req.params;
+
+    const businessUser = await BusinessUsers.find({ userId: usrId });
+
+    if (!businessUser) {
+      return res.status(400).json({ message: "Business not found" });
+    }
+
+    const businessIds = businessUser.map((business) => business.businessId);
+
+    const suppliers = await Supplier.find({
+      businessIds: { $in: businessIds },
+    });
     res.json({ suppliers });
   } catch (error) {
     console.error(error.message);
