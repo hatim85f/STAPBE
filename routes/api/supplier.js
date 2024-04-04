@@ -109,7 +109,7 @@ router.put("/:id", auth, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const supplier = await Supplier.fi({ _id: id });
+    const supplier = await Supplier.find({ _id: id });
 
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });

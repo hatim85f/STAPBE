@@ -32,6 +32,10 @@ const PurchaseOrderSchema = Schema({
         type: Date,
         default: new Date(new Date().setMonth(new Date().getMonth() + 24)),
       },
+      previousStocks: {
+        type: Number,
+        required: true,
+      },
     },
   ],
   spplier: {
