@@ -102,7 +102,7 @@ app.use("/api/notifications", require("./routes/api/notifications"));
 app.use("/api/pushToken", require("./routes/api/pushToken"));
 app.use("/api/partner", require("./routes/api/partner"));
 app.use("/api/profit", require("./routes/api/profit"));
-app.use("/api/supplier", require("./routes/api/supplier"));
+app.use("/api/suppliers", require("./routes/api/supplier"));
 app.use("/api/purchaseOrder", require("./routes/api/purchaseOrder"));
 app.use("/api/inventory", require("./routes/api/inventory"));
 app.use("/api/test", require("./routes/api/test"));
