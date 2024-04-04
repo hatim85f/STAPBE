@@ -13,7 +13,7 @@ router.get("/:userId", auth, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const businessUser = await BusinessUsers.find({ userId: usrId });
+    const businessUser = await BusinessUsers.find({ userId: userId });
 
     if (!businessUser) {
       return res.status(400).json({ message: "Business not found" });
