@@ -60,6 +60,22 @@ router.post("/", auth, async (req, res) => {
       return res.status(400).json({ message: "Business not found" });
     }
 
+    const supplierNameRegex = new RegExp(
+      supplierName.trim().replace(/\s+/g, "\\s*"),
+      "i"
+    ); // 'i' for case-insensitive matching
+
+    const businessSuppliers = await Supplier.find({
+      businessIds: { $in: businessIds },
+      supplierName: { $regex: supplierNameRegex },
+    });
+
+    if (businessSuppliers.length > 0) {
+      return res.status(400).json({
+        message: `Supplier ${supplierName} already exists`,
+      });
+    }
+
     const newSupplier = new Supplier({
       supplierName,
       supplierEmail,
