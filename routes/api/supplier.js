@@ -115,9 +115,6 @@ router.put("/:id", auth, async (req, res) => {
       return res.status(404).json({ message: "Supplier not found" });
     }
 
-    const businessUser = await BusinessUsers.find({ userId: userId });
-    const businessIds = businessUser.map((business) => business.businessId);
-
     const {
       supplierName,
       supplierEmail,
@@ -131,6 +128,9 @@ router.put("/:id", auth, async (req, res) => {
       currency,
       userId,
     } = req.body;
+
+    const businessUser = await BusinessUsers.find({ userId: userId });
+    const businessIds = businessUser.map((business) => business.businessId);
 
     await Supplier.updateMany(
       { _id: id },
