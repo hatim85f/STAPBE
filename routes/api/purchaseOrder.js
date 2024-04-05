@@ -4,6 +4,7 @@ const auth = require("../../middleware/auth");
 const PurchaseOrder = require("../../models/PurchaseOrder");
 const Supplier = require("../../models/Suppliers");
 const BusinessUsers = require("../../models/BusinessUsers");
+const Products = require("../../models/Products");
 
 // @route   GET api/purchaseOrder
 // @desc    Get all purchase orders
@@ -31,8 +32,18 @@ router.post("/", auth, async (req, res) => {
   const businessIds = businessUser.map((business) => business.businessId);
 
   try {
+    let newOrder = [];
+    for (let key of order) {
+      const product = await Products.findOne({ _id: key.product });
+
+      newOrder.push({
+        ...key,
+        previousStocks: product.quantity,
+      });
+    }
+
     const newPurchaseOrder = new PurchaseOrder({
-      order,
+      newOrder,
       supplier,
       totalBill,
       businessIds,
