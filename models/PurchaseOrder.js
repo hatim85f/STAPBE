@@ -38,7 +38,7 @@ const PurchaseOrderSchema = Schema({
       },
     },
   ],
-  spplier: {
+  supplier: {
     type: mongoose.Types.ObjectId,
     ref: "supplier",
   },
