@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../../middleware/auth");
 const PurchaseOrder = require("../../models/PurchaseOrder");
 const Supplier = require("../../models/Suppliers");
+const BusinessUsers = require("../../models/BusinessUsers");
 
 // @route   GET api/purchaseOrder
 // @desc    Get all purchase orders
@@ -24,13 +25,17 @@ router.get("/", auth, async (req, res) => {
 // @desc    Create a new purchase order
 // @access  Private
 router.post("/", auth, async (req, res) => {
-  const { order, supplier, totalBill } = req.body;
+  const { order, supplier, totalBill, userId } = req.body;
+
+  const businessUser = await BusinessUsers.find({ userId: userId });
+  const businessIds = businessUser.map((business) => business.businessId);
 
   try {
     const newPurchaseOrder = new PurchaseOrder({
       order,
       supplier,
       totalBill,
+      businessIds,
     });
 
     await Supplier.updateOne(

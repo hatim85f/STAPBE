@@ -46,6 +46,10 @@ const PurchaseOrderSchema = Schema({
     type: Number,
     required: true,
   },
+  businessIds: {
+    type: [mongoose.Types.ObjectId],
+    ref: "business",
+  },
 });
 
 module.exports = PurchaseOrder = mongoose.model(
