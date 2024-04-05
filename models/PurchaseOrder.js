@@ -36,6 +36,10 @@ const PurchaseOrderSchema = Schema({
         type: Number,
         required: true,
       },
+      totalValue: {
+        type: Number,
+        required: true,
+      },
     },
   ],
   supplier: {
