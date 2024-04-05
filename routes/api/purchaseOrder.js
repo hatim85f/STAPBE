@@ -9,10 +9,21 @@ const Products = require("../../models/Products");
 // @route   GET api/purchaseOrder
 // @desc    Get all purchase orders
 // @access  Private
-router.get("/", auth, async (req, res) => {
+router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
+  const { userId, startMonth, endMonth, year } = req.params;
+
+  const businessUser = await BusinessUsers.find({ userId: userId });
+  const businessIds = businessUser.map((business) => business.businessId);
+
+  const startOfPeriod = new Date(year, startMonth - 1, 1);
+  const endOfPeriod = new Date(year, endMonth, 0, 23, 59, 59);
+
   try {
-    const purchaseOrders = await PurchaseOrder.find();
-    res.json({ purchaseOrders });
+    const purchaseOrders = await PurchaseOrder.find({
+      businessIds: { $in: businessIds },
+      purchaseDate: { $gte: startOfPeriod, $lte: endOfPeriod },
+    });
+    return res.status(200).json({ purchaseOrders });
   } catch (error) {
     console.error(error.message);
     res.status(500).send({
@@ -57,12 +68,10 @@ router.post("/", auth, async (req, res) => {
 
     await PurchaseOrder.insertMany(newPurchaseOrder);
 
-    return res
-      .status(200)
-      .json({
-        purchase: newPurchaseOrder,
-        message: "Your New Purchase added Successfully",
-      });
+    return res.status(200).json({
+      purchase: newPurchaseOrder,
+      message: "Your New Purchase added Successfully",
+    });
   } catch (error) {
     console.error(error.message);
     res.status(500).send({

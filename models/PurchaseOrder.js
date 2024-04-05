@@ -53,6 +53,10 @@ const PurchaseOrderSchema = Schema({
     type: [mongoose.Types.ObjectId],
     ref: "business",
   },
+  purchaseDate: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = PurchaseOrder = mongoose.model(
