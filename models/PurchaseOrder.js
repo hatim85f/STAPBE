@@ -29,8 +29,7 @@ const PurchaseOrderSchema = Schema({
         required: true,
       },
       expiryDate: {
-        type: Date,
-        default: new Date(new Date().setMonth(new Date().getMonth() + 24)),
+        type: String,
       },
       previousStocks: {
         type: Number,

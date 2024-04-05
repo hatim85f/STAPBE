@@ -57,7 +57,12 @@ router.post("/", auth, async (req, res) => {
 
     await PurchaseOrder.insertMany(newPurchaseOrder);
 
-    return res.status(200).json({ purchase: newPurchaseOrder });
+    return res
+      .status(200)
+      .json({
+        purchase: newPurchaseOrder,
+        message: "Your New Purchase added Successfully",
+      });
   } catch (error) {
     console.error(error.message);
     res.status(500).send({
