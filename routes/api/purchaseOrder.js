@@ -44,7 +44,7 @@ router.post("/", auth, async (req, res) => {
       { $set: { lastOrder: new Date() } }
     );
 
-    await newPurchaseOrder.save();
+    await PurchaseOrder.insertMany(newPurchaseOrder);
     res.json(newPurchaseOrder);
   } catch (error) {
     console.error(error.message);
