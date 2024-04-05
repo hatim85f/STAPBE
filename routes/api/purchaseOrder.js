@@ -43,7 +43,7 @@ router.post("/", auth, async (req, res) => {
     }
 
     const newPurchaseOrder = new PurchaseOrder({
-      newOrder,
+      order: newOrder,
       supplier,
       totalBill,
       businessIds,
