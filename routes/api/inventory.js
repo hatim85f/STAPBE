@@ -171,6 +171,92 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "purchaseorders",
+          localField: "businessIds",
+          foreignField: "businessId",
+          pipeline: [
+            {
+              $unwind: "$order",
+            },
+            {
+              $project: {
+                product: "$order.product",
+                purchasedQuantity: "$order.quantity",
+                bonus: "$order.bonus",
+                totalQuantity: "$order.totalQuantity",
+                expiryDate: "$order.expiryDate",
+                previousStocks: "$order.previousStocks",
+                totalValue: "$order.totalValue",
+                purchaseDate: "$purchaseDate",
+              },
+            },
+          ],
+          as: "purchaseOrders",
+        },
+      },
+      {
+        $addFields: {
+          products: {
+            $map: {
+              input: "$products",
+              as: "product",
+              in: {
+                $mergeObjects: [
+                  "$$product",
+                  {
+                    $let: {
+                      vars: {
+                        purchaseItem: {
+                          $arrayElemAt: [
+                            {
+                              $filter: {
+                                input: "$purchaseOrders",
+                                as: "purchase",
+                                cond: {
+                                  $eq: [
+                                    "$$purchase.product",
+                                    "$$product.productId",
+                                  ],
+                                },
+                              },
+                            },
+                            0,
+                          ],
+                        },
+                      },
+                      in: {
+                        purchasedQuantity: {
+                          $ifNull: ["$$purchaseItem.purchasedQuantity", 0],
+                        },
+                        bonus: {
+                          $ifNull: ["$$purchaseItem.bonus", 0],
+                        },
+                        totalQuantity: {
+                          $ifNull: ["$$purchaseItem.totalQuantity", 0],
+                        },
+                        expiryDate: {
+                          $ifNull: ["$$purchaseItem.expiryDate", null],
+                        },
+                        previousStocks: {
+                          $ifNull: ["$$purchaseItem.previousStocks", 0],
+                        },
+                        totalValue: {
+                          $ifNull: ["$$purchaseItem.totalValue", 0],
+                        },
+                        purchaseDate: {
+                          $ifNull: ["$$purchaseItem.purchaseDate", null],
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
         $project: {
           _id: 0,
           businessId: 1,
