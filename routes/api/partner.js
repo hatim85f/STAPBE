@@ -246,9 +246,7 @@ router.put("/:id", auth, async (req, res) => {
 
     return res.status(200).json({ message: "Partner updated successfully" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Server Error, Please try again later" });
+    return res.status(500).json({ message: error.message });
   }
 });
 
