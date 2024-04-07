@@ -166,7 +166,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       investementAmount,
       dateOfStart: startDate,
       responsibilities,
-      DOB,
+      DOB: dob,
     });
 
     await Partner.insertMany(newPartner);
