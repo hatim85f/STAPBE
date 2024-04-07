@@ -94,13 +94,29 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const dobDay = DOB.split("/")[0];
+    const dobMonth = DOB.split("/")[1];
+    const dobYear = DOB.split("/")[2];
+
+    const dob = new Date(dobYear, dobMonth - 1, dobDay);
+
+    const dateOfStartDay = dateOfStart.split("/")[0];
+    const dateOfStartMonth = dateOfStart.split("/")[1];
+    const dateOfStartYear = dateOfStart.split("/")[2];
+
+    const startDate = new Date(
+      dateOfStartYear,
+      dateOfStartMonth - 1,
+      dateOfStartDay
+    );
+
     // // create a normal user with a role of partner
     const newUser = User({
       userName: name,
       email,
       phone,
       profilePicture: profileImage,
-      DOB,
+      DOB: dob,
       joiningDate: dateOfStart,
       userType: "Partner",
       firstName: name.split(" ")[0],
@@ -148,7 +164,7 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       ],
       percentage,
       investementAmount,
-      dateOfStart,
+      dateOfStart: startDate,
       responsibilities,
       DOB,
     });
