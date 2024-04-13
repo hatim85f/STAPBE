@@ -38,6 +38,19 @@ router.get("/:userId", auth, async (req, res) => {
       },
       {
         $lookup: {
+          from: "partners",
+          localField: "businessId",
+          foreignField: "business",
+          as: "partners",
+        },
+      },
+      {
+        $addFields: {
+          "business.numberOfPartners": { $size: "$partners" },
+        },
+      },
+      {
+        $lookup: {
           from: "businessusers",
           localField: "businessId",
           pipeline: [
@@ -158,7 +171,7 @@ router.post("/create", auth, async (req, res) => {
     contactPerson,
     contactPersonEmail,
     contactNumber,
-    numberOfEmployees,
+
     webSite,
     userId,
     currencyCode,
@@ -228,7 +241,7 @@ router.post("/create", auth, async (req, res) => {
       contactPerson,
       contactPersonEmail,
       contactNumber,
-      numberOfEmployees,
+
       webSite,
       currencyCode,
       currencyName,
