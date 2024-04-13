@@ -33,6 +33,10 @@ const EligibilitySchema = Schema({
     type: Number,
     required: true,
   },
+  adminId: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+  },
 });
 
 module.exports = Eligibility = mongoose.model("eligibility", EligibilitySchema);

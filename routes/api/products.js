@@ -86,10 +86,27 @@ router.post("/", auth, async (req, res) => {
   } = req.body;
 
   try {
+    const user = await User.findOne({ _id: userId });
+
+    let targeted_user_id = userId;
+
+    if (
+      user.userType !== "Business Ownwe" &&
+      user.userType === "Business Admin"
+    ) {
+      const businessOwner = await BusinessUsers.findOne({
+        businessId,
+        isBusinessOwner: true,
+      });
+      targeted_user_id = businessOwner.userId;
+    }
+
     // check if product with the same name is already exists under the same business
 
     // check user eligibility to create new product
-    const userEligibilty = await Eligibility.findOne({ userId });
+    const userEligibilty = await Eligibility.findOne({
+      userId: targeted_user_id,
+    });
     const productsEligibility = userEligibilty.products;
 
     if (productsEligibility === 0) {

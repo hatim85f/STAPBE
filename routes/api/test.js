@@ -17,6 +17,7 @@ const ProductTarget = require("../../models/ProductTarget");
 const FixedExpenses = require("../../models/FixedExpenses");
 const VariableExpenses = require("../../models/VariableExpenses");
 const MarketingExpenses = require("../../models/MarketingExpenses");
+const Eligibility = require("../../models/Eligibility");
 
 router.get(
   "/:businessId/:startMonth/:endMonth/:year",
@@ -62,53 +63,25 @@ router.get(
 
 router.put("/", async (req, res) => {
   try {
-    const users = await User.find();
+    const admins = await BusinessUsers.find({ isBusinessAdmin: true });
 
-    for (let key in users) {
-      const user = users[key];
-      const userId = user._id;
-      const userType = user.userType;
+    for (let key in admins) {
+      const admin = admins[key];
+      const { businessId, userId } = admin;
 
-      if (userType === "Partner") {
-        await BusinessUsers.updateMany(
-          {
-            userId,
+      await Eligibility.updateMany(
+        {
+          businessId: businessId,
+        },
+        {
+          $set: {
+            adminId: userId,
           },
-          {
-            $set: {
-              isBusinessPartner: true,
-              isBusinessAdmin: false,
-            },
-          }
-        );
-      } else if (userType === "Business Admin") {
-        await BusinessUsers.updateMany(
-          {
-            userId,
-          },
-          {
-            $set: {
-              isBusinessAdmin: true,
-              isBusinessPartner: false,
-            },
-          }
-        );
-      } else {
-        await BusinessUsers.updateMany(
-          {
-            userId,
-          },
-          {
-            $set: {
-              isBusinessPartner: false,
-              isBusinessAdmin: false,
-            },
-          }
-        );
-      }
+        }
+      );
     }
 
-    return res.status(200).json({ users });
+    return res.status(200).json({ admins });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
