@@ -22,7 +22,7 @@ router.get("/:userId", auth, async (req, res) => {
       {
         $match: {
           userId: userObjId,
-          isBusinessOwner: true,
+          $or: [{ isBusinessOwner: true }, { isBusinessAdmin: true }],
         },
       },
       {
