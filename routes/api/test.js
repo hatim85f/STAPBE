@@ -60,4 +60,58 @@ router.get(
   }
 );
 
+router.put("/", async (req, res) => {
+  try {
+    const users = await User.find();
+
+    for (let key in users) {
+      const user = users[key];
+      const userId = user._id;
+      const userType = user.userType;
+
+      if (userType === "Partner") {
+        await BusinessUsers.updateMany(
+          {
+            userId,
+          },
+          {
+            $set: {
+              isBusinessPartner: true,
+              isBusinessAdmin: false,
+            },
+          }
+        );
+      } else if (userType === "Business Admin") {
+        await BusinessUsers.updateMany(
+          {
+            userId,
+          },
+          {
+            $set: {
+              isBusinessAdmin: true,
+              isBusinessPartner: false,
+            },
+          }
+        );
+      } else {
+        await BusinessUsers.updateMany(
+          {
+            userId,
+          },
+          {
+            $set: {
+              isBusinessPartner: false,
+              isBusinessAdmin: false,
+            },
+          }
+        );
+      }
+    }
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

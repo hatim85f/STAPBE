@@ -15,7 +15,17 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
       {
         $match: {
           userId: new mongoose.Types.ObjectId(userId),
-          isBusinessOwner: true,
+          $or: [
+            {
+              isBusinessOwner: true,
+            },
+            {
+              isBusinessAdmin: true,
+            },
+            {
+              isBusinessPartner: true,
+            },
+          ],
         },
       },
       {

@@ -19,6 +19,14 @@ const BusinessUsersSchema = Schema({
     type: Boolean,
     default: false,
   },
+  isBusinessAdmin: {
+    type: Boolean,
+    default: false,
+  },
+  isBusinessPartner: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 module.exports = BusinessUsers = mongoose.model(

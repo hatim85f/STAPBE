@@ -175,6 +175,8 @@ router.post("/", auth, isCompanyAdmin, async (req, res) => {
       userId: newUser._id,
       businessId: business,
       isBusinessOwner: false,
+      isBusinessAdmin: false,
+      isBusinessPartner: true,
     });
 
     await BusinessUsers.insertMany(newBusinessUser);
