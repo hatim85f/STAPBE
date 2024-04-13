@@ -48,9 +48,25 @@ router.post("/", auth, async (req, res) => {
   } = req.body;
 
   try {
+    const target_user = await User.findOne({ _id: userId });
+
+    let targeted_user_id = userId;
+
+    if (
+      target_user.userType !== "Business Owner" &&
+      target_user.userType === "Business Admin"
+    ) {
+      const businessOwner = await BusinessUsers.findOne({
+        businessId,
+        isBusinessOwner: true,
+      });
+      targeted_user_id = businessOwner.userId;
+    }
     // check if the user eligible to add new team member
 
-    const userEligibilty = await Eligibility.findOne({ userId });
+    const userEligibilty = await Eligibility.findOne({
+      userId: targeted_user_id,
+    });
     const teamMembers = userEligibilty.teamMembers;
 
     if (teamMembers === 0) {
@@ -132,7 +148,7 @@ router.post("/", auth, async (req, res) => {
       businessId,
       userId: newUser._id,
       isBusinessOwner: false,
-      isBusinessAdmin: userType === "Admin" ? true : false,
+      isBusinessAdmin: userType === "Business Admin" ? true : false,
       isBusinessPartner: false,
     });
 

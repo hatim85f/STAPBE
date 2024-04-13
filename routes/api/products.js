@@ -91,7 +91,7 @@ router.post("/", auth, async (req, res) => {
     let targeted_user_id = userId;
 
     if (
-      user.userType !== "Business Ownwe" &&
+      user.userType !== "Business Owner" &&
       user.userType === "Business Admin"
     ) {
       const businessOwner = await BusinessUsers.findOne({
@@ -142,7 +142,7 @@ router.post("/", auth, async (req, res) => {
       imageURL,
       minimumDiscount,
       maximumDiscount,
-      category,
+      category: category.trim(),
       productType,
       currencyCode: business.currencyCode,
       currencyName: business.currencyName,
