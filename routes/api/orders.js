@@ -5,10 +5,11 @@ const Orders = require("../../models/Orders");
 const OrderProducts = require("../../models/OrderProduct");
 const auth = require("../../middleware/auth");
 const BusinessUsers = require("../../models/BusinessUsers");
-const { default: mongoose } = require("mongoose");
+const { default: mongoose, version } = require("mongoose");
 const SupportCase = require("../../models/SupportCase");
 const User = require("../../models/User");
 const UserSales = require("../../models/UserSales");
+const Sales = require("../../models/Sales");
 
 // @route GET api/clients/test
 // @description tests clients route
@@ -211,6 +212,8 @@ router.post("/add_order/:orderId", auth, async (req, res) => {
       }
     );
 
+    await Products;
+
     return res.status(200).send({ message: `Order added sucessfully` });
   } catch (error) {
     const user = await User.findOne({ _id: userId });
@@ -327,6 +330,12 @@ router.put("/status/:orderId", auth, async (req, res) => {
               product: "$orderProducts.productId",
               quantity: "$orderProducts.quantity",
               price: "$orderProducts.productPrice",
+              productName: { $arrayElemAt: ["$product.productName", 0] },
+              productPrice: { $arrayElemAt: ["$product.costPrice", 0] },
+              discount: "$orderProducts.discount",
+              discountType: "$orderProducts.discountType",
+              clientName: { $arrayElemAt: ["$client.clientName", 0] },
+              itemValue: "$orderProducts.totalValue",
             },
           },
           client: { $first: "$client" },
@@ -418,6 +427,42 @@ router.put("/status/:orderId", auth, async (req, res) => {
         $set: { status },
       }
     );
+
+    const value = [];
+
+    const salesData = order[0].salesData.map((data) => {
+      value.push(data.itemValue);
+
+      return {
+        productId: data.product,
+        productName: data.productName,
+        date: order[0].timeStamp,
+        status: status,
+        quantity: data.quantity,
+        totalQuantity: data.quantity,
+        productPrice: data.productPrice,
+        sellingPrice: data.price,
+        discount: data.discount,
+        discountType: data.discountType,
+        itemValue: data.itemValue,
+        clientName: data.clientName,
+      };
+    });
+
+    const totalValue = value.reduce((a, b) => a + b, 0);
+
+    const sales = new Sales({
+      businessId: order[0].businessId,
+      version: order[0].versionName,
+      startPeriod: firstDayISO,
+      endPeriod: lastDayISO,
+      salesData: salesData,
+      addedBy: order[0].addingUser,
+      totalValue: totalValue,
+      isFinal: true,
+    });
+
+    await Sales.insertMany(sales);
 
     return res
       .status(200)
