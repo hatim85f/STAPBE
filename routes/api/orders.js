@@ -212,8 +212,6 @@ router.post("/add_order/:orderId", auth, async (req, res) => {
       }
     );
 
-    await Products;
-
     return res.status(200).send({ message: `Order added sucessfully` });
   } catch (error) {
     const user = await User.findOne({ _id: userId });
@@ -357,6 +355,8 @@ router.put("/status/:orderId", auth, async (req, res) => {
         },
       },
     ]);
+
+    return res.status(200).send({ order });
 
     const currentDate = new Date(order[0].timeStamp);
     const currentYear = currentDate.getFullYear();
