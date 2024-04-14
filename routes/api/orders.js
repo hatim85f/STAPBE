@@ -356,8 +356,6 @@ router.put("/status/:orderId", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).send({ order });
-
     const currentDate = new Date(order[0].timeStamp);
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
