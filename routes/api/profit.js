@@ -35,6 +35,14 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
       },
       {
         $lookup: {
+          from: "businesses",
+          localField: "businessId",
+          foreignField: "_id",
+          as: "business",
+        },
+      },
+      {
+        $lookup: {
           from: "products",
           localField: "businessId",
           foreignField: "businessId",
@@ -373,6 +381,9 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
                         "$$partner.percentage",
                       ],
                     },
+                    currencyCode: {
+                      $arrayElemAt: ["$business.currencySymbol", 0],
+                    },
                   },
                 ],
               },
@@ -433,6 +444,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
           partners: 1,
           startMonth: startMonth,
           endMonth: endMonth,
+          currencySymbol: { $arrayElemAt: ["$business.currencySymbol", 0] },
         },
       },
     ]);
