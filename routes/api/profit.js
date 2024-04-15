@@ -326,6 +326,61 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
         },
       },
       {
+        $addFields: {
+          partners: {
+            $map: {
+              input: "$partners",
+              as: "partner",
+              in: {
+                $mergeObjects: [
+                  "$$partner",
+                  {
+                    partnerProfit: {
+                      $multiply: [
+                        {
+                          $subtract: [
+                            { $sum: "$products.salesValue" }, // Total sales value
+                            {
+                              $add: [
+                                { $sum: "$products.marketingExpenses" }, // Total marketing expenses
+                                {
+                                  $ifNull: [
+                                    {
+                                      $arrayElemAt: [
+                                        "$fixedExpenses.totalFixedExpenses",
+                                        0,
+                                      ],
+                                    },
+                                    0,
+                                  ],
+                                }, // Total fixed expenses
+                                {
+                                  $ifNull: [
+                                    {
+                                      $arrayElemAt: [
+                                        "$variableExpenses.totalVariableExpenses",
+                                        0,
+                                      ],
+                                    },
+                                    0,
+                                  ],
+                                }, // Total variable expenses
+                                { $sum: "$products.totalCostPrice" }, // Total product cost
+                              ],
+                            },
+                          ],
+                        },
+                        "$$partner.percentage",
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
         $project: {
           _id: 0,
           businessId: 1,
