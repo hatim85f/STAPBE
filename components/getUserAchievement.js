@@ -363,7 +363,7 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
     currencySymbol: userAchievement[0].currencySymbol,
   };
 
-  return detailedUserAchievement;
+  return [detailedUserAchievement];
 };
 
 module.exports = { getFinalUserAchievement };
