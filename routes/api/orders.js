@@ -133,7 +133,12 @@ router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).send({ orders });
+    const finalOrders =
+      user.userType !== "Employee"
+        ? orders
+        : orders.filter((order) => order.userId === userId);
+
+    return res.status(200).send({ orders: finalOrders });
   } catch (error) {
     const newSupportCase = new SupportCase({
       userId,
