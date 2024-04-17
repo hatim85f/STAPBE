@@ -133,10 +133,15 @@ router.get("/:userId/:startDate/:endDate", auth, async (req, res) => {
       },
     ]);
 
-    const finalOrders =
-      user.userType !== "Employee"
-        ? orders
-        : orders.filter((order) => order.userId === userId);
+    let finalOrders;
+
+    if (user.userType === "Employee") {
+      finalOrders = orders.filter(
+        (a) => a.userId.toString() === userId.toString()
+      );
+    } else {
+      finalOrders = orders;
+    }
 
     return res.status(200).send({ orders: finalOrders });
   } catch (error) {
