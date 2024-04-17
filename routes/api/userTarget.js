@@ -166,7 +166,6 @@ router.get("/teamTarget/:userId/:year", auth, async (req, res) => {
       {
         $match: {
           userId: new mongoose.Types.ObjectId(userId),
-          $or: [{ isBusinessOwner: true }, { isBusinessAdmin: true }],
         },
       },
       {
