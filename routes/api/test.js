@@ -19,71 +19,51 @@ const VariableExpenses = require("../../models/VariableExpenses");
 const MarketingExpenses = require("../../models/MarketingExpenses");
 const Eligibility = require("../../models/Eligibility");
 
-router.get(
-  "/:businessId/:startMonth/:endMonth/:year",
-  auth,
-  async (req, res) => {
-    const { businessId, startMonth, endMonth, year } = req.params;
-
-    const start = new Date(year, startMonth - 1, 1);
-    const end = new Date(year, endMonth, 1);
-
-    try {
-      const fixedExpenses = await FixedExpenses.find({
-        businessId,
-        dueIn: { $gte: start, $lt: end },
-      });
-      const totalFixedAmounts = fixedExpenses.map((a) => a.amount);
-      const totalFixed = totalFixedAmounts.reduce((a, b) => a + b, 0);
-
-      const variableExpenses = await VariableExpenses.find({
-        businessId,
-        expenseDate: { $gte: start, $lt: end },
-      });
-      const totalVariableAmounts = variableExpenses.map((a) => a.amount);
-      const totalVariable = totalVariableAmounts.reduce((a, b) => a + b, 0);
-
-      const marketingExpenses = await MarketingExpenses.find({
-        businessId,
-        dueIn: { $gte: start, $lt: end },
-      });
-      const totalMarketingAmounts = marketingExpenses.map((a) => a.amount);
-      const totalMarketing = totalMarketingAmounts.reduce((a, b) => a + b, 0);
-
-      return res.status(200).json({
-        fixedExpenses: totalFixed,
-        variableExpenses: totalVariable,
-        marketingExpenses: totalMarketing,
-      });
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  }
-);
-
-router.put("/", async (req, res) => {
+router.get("/userAch/:userId", async (req, res) => {
   try {
-    const admins = await BusinessUsers.find({ isBusinessAdmin: true });
+    const { userId } = req.params;
 
-    for (let key in admins) {
-      const admin = admins[key];
-      const { businessId, userId } = admin;
+    // const userAch = await UserSales.aggregate([
+    //   {
+    //     $match: {
+    //       user: new mongoose.Types.ObjectId(userId),
+    //       isFinal: true,
+    //     },
+    //   },
+    //   {
+    //     $unwind: "$salesData",
+    //   },
 
-      await Eligibility.updateMany(
-        {
-          businessId: businessId,
-        },
-        {
-          $set: {
-            adminId: userId,
-          },
-        }
-      );
-    }
+    //   {
+    //     $project: {
+    //       productId: "$salesData.product",
+    //       salesValue: {
+    //         $multiply: ["$salesData.quantity", "$salesData.price"],
+    //       },
+    //       user: 1,
+    //       versionName: 1,
+    //     },
+    //   },
+    // ]);
 
-    return res.status(200).json({ admins });
+    const userAch = await UserSales.find({ user: userId });
+
+    const salesArray = userAch
+      .map((item) => {
+        return item.salesData;
+      })
+      .flat();
+
+    const salesValues = salesArray.map((item) => {
+      return item.quantity * item.price;
+    });
+    const toalValues = salesValues.reduce((a, b) => a + b, 0);
+
+    const target = await UserTarget.findOne({ userId });
+
+    return res.status(200).send({ toalValues, salesValues, target });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 });
 

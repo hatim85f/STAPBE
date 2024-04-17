@@ -311,7 +311,59 @@ const getFinalUserAchievement = async (userId, month, year, res) => {
     },
   ]);
 
-  return userAchievement;
+  const detailedSalesData = userAchievement.flatMap((item) => {
+    return item.salesData;
+  });
+
+  const mergedSalesData = detailedSalesData.reduce((acc, data) => {
+    const found = acc.find(
+      (item) => item.product.toString() === data.product.toString()
+    );
+
+    if (!found) {
+      acc.push(data);
+    } else {
+      found.salesValue += data.salesValue;
+      found.quantity += data.quantity;
+    }
+
+    return acc;
+  }, []);
+
+  const salesValues = mergedSalesData.map((item) => {
+    return item.salesValue;
+  });
+
+  const totalSalesValue = salesValues.reduce((a, b) => a + b, 0);
+
+  const targetValues = mergedSalesData.map((item) => {
+    return item.targetValue;
+  });
+
+  const totalTargetValue = targetValues.reduce((a, b) => a + b, 0);
+
+  const detailedUserAchievement = {
+    businessId: userAchievement[0].businessId,
+    businessLogo: userAchievement[0].businessLogo,
+    businessName: userAchievement[0].businessName,
+    salesData: mergedSalesData,
+    userName: userAchievement[0].userName,
+    designation: userAchievement[0].designation,
+    profilePicture: userAchievement[0].profilePicture,
+    userId: userAchievement[0].userId,
+    userSalesId: userAchievement[0].userSalesId,
+    isFinal: userAchievement[0].isFinal,
+    month: userAchievement[0].month,
+    year: userAchievement[0].year,
+    totalSalesValue: totalSalesValue,
+    totalTargetValue: totalTargetValue,
+    totalAchievement: (totalSalesValue / totalTargetValue) * 100,
+    currencyName: userAchievement[0].currencyName,
+    currencyCode: userAchievement[0].currencyCode,
+    currencySymbol: userAchievement[0].currencySymbol,
+  };
+
+  return detailedUserAchievement;
 };
 
 module.exports = { getFinalUserAchievement };
