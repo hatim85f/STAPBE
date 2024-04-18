@@ -105,6 +105,7 @@ app.use("/api/profit", require("./routes/api/profit"));
 app.use("/api/suppliers", require("./routes/api/supplier"));
 app.use("/api/purchaseOrder", require("./routes/api/purchaseOrder"));
 app.use("/api/inventory", require("./routes/api/inventory"));
+app.use("/api/personal_profit", require("./routes/api/personalProfit"));
 app.use("/api/test", require("./routes/api/test"));
 
 const PORT = process.env.PORT || 5000;

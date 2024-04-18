@@ -10,6 +10,7 @@ const SupportCase = require("../../models/SupportCase");
 const User = require("../../models/User");
 const UserSales = require("../../models/UserSales");
 const Sales = require("../../models/Sales");
+const Products = require("../../models/Products");
 
 // @route GET api/clients/test
 // @description tests clients route
@@ -365,6 +366,17 @@ router.put("/status/:orderId", auth, async (req, res) => {
         },
       },
     ]);
+
+    if (status === "Completed") {
+      for (let data of order.salesData) {
+        await Products.updateOne(
+          { _id: data.product },
+          {
+            $inc: { quantity: -data.quantity },
+          }
+        );
+      }
+    }
 
     const currentDate = new Date(order[0].timeStamp);
     const currentYear = currentDate.getFullYear();

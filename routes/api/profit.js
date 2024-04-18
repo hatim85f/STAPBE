@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../../middleware/auth");
 const BusinessUsers = require("../../models/BusinessUsers");
 const { default: mongoose } = require("mongoose");
+const UserSales = require("../../models/UserSales");
 
 router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
   const { userId, startMonth, endMonth, year } = req.params;
@@ -1374,6 +1375,20 @@ router.get(
       return res.status(200).json({ businessesProfit: businessesProfit[0] });
     } catch (error) {
       return res.status(500).send({ message: error.message });
+    }
+  }
+);
+
+router.get(
+  "/personal/:userId/:startMonth/:endMonth/:year",
+  auth,
+  async (req, res) => {
+    const { userId, startMonth, endMonth, year } = req.params;
+
+    try {
+      return res.status(200).send({ userId, startMonth, endMonth, year });
+    } catch (error) {
+      return res.status(500).json({ message: "Server Error" });
     }
   }
 );
