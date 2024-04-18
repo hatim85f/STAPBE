@@ -278,6 +278,9 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
         $project: {
           totalSalesValue: 1,
           totalProductTargetValue: 1,
+          startMonth: moment(new Date(year, startMonth - 1, 1)).format("MMMM"),
+          endMonth: moment(new Date(year, endMonth, 0)).format("MMMM"),
+          year: year,
           totalAchievement: {
             $cond: {
               if: { $gt: ["$totalProductTargetValue", 0] },
