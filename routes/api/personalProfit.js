@@ -27,7 +27,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
   // return res.status(200).send({ startDate, endDate });
 
   try {
-    const personalAchievement = await UserSales.aggregate([
+    let personalAchievement = await UserSales.aggregate([
       {
         $match: {
           user: new mongoose.Types.ObjectId(userId),
@@ -275,6 +275,9 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
         },
       },
       {
+        $sort: { "performanceData.productName": 1 }, // Sort by productName in ascending order
+      },
+      {
         $project: {
           totalSalesValue: 1,
           totalProductTargetValue: 1,
@@ -298,9 +301,40 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
       },
     ]);
 
-    return res.status(200).json({ personalAchievement });
+    // personalAchievement = personalAchievement[0].performanceData.sort(
+    //   (a, b) => {
+    //     return a.productName.localeCompare(b.productName);
+    //   }
+    // );
+
+    const finalAchievement = [
+      {
+        _id: personalAchievement[0]._id,
+        totalSalesValue: personalAchievement[0].totalSalesValue,
+        totalProductTargetValue: personalAchievement[0].totalProductTargetValue,
+        startMonth: startMonthName,
+        endMonth: endMonthName,
+        year: year,
+        totalAchievement: personalAchievement[0].totalAchievement,
+        performanceData: personalAchievement[0].performanceData.sort((a, b) => {
+          return a.productName.localeCompare(b.productName);
+        }),
+      },
+    ];
+
+    // const personalAchievementData = personalAchievement[0].performanceData;
+    // const sortedData = personalAchievementData.sort((a, b) => {
+    //   return b.productName.trim() - a.productName.trim();
+    // });
+
+    // return res.status(200).send({ sortedData });
+
+    return res.status(200).json({ personalAchievement: finalAchievement });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      error: "Error",
+      message: "Something Went wrong, please try again later",
+    });
   }
 });
 
