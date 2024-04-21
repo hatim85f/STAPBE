@@ -313,16 +313,19 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
 
     const finalAchievement = [
       {
-        _id: personalAchievement[0]._id,
-        totalSalesValue: personalAchievement[0].totalSalesValue,
-        totalProductTargetValue: personalAchievement[0].totalProductTargetValue,
+        _id: personalAchievement[0]?._id,
+        totalSalesValue: personalAchievement[0]?.totalSalesValue,
+        totalProductTargetValue:
+          personalAchievement[0]?.totalProductTargetValue,
         startMonth: startMonthName,
         endMonth: endMonthName,
         year: year,
-        totalAchievement: personalAchievement[0].totalAchievement,
-        performanceData: personalAchievement[0].performanceData.sort((a, b) => {
-          return a.productName.localeCompare(b.productName);
-        }),
+        totalAchievement: personalAchievement[0]?.totalAchievement,
+        performanceData: personalAchievement[0]?.performanceData.sort(
+          (a, b) => {
+            return a.productName.localeCompare(b.productName);
+          }
+        ),
       },
     ];
 
@@ -359,7 +362,6 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
           totalItems: { $sum: "$numberOfItems" },
           lastOrders: {
             $push: {
-              _id: "$_id",
               numberOfItems: "$numberOfItems",
               salesValue: "$salesValue",
               clientName: "$clientName",
@@ -377,7 +379,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       error: "Error",
-      message: "Something Went wrong, please try again later",
+      message: error.message,
     });
   }
 });
