@@ -347,6 +347,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
           salesValue: "$totalValue",
           clientName: { $arrayElemAt: ["$clientDetails.clientName", 0] },
           totalSalesValue: { $sum: "$totalValue" },
+          date: { $dateToString: { format: "%Y-%m-%d", date: "$timeStamp" } },
         },
       },
       {
@@ -360,6 +361,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
               numberOfItems: "$numberOfItems",
               salesValue: "$salesValue",
               clientName: "$clientName",
+              date: "$date",
             },
           },
         },
