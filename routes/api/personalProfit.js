@@ -4,6 +4,7 @@ const auth = require("../../middleware/auth");
 const UserSales = require("../../models/UserSales");
 const { default: mongoose } = require("mongoose");
 const moment = require("moment");
+const Orders = require("../../models/Orders");
 
 // @route GET api/personalProfit/personal/:userId/:startMonth/:endMonth/:year
 // @desc Get personal profit data
@@ -323,7 +324,52 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
       },
     ];
 
-    return res.status(200).json({ personalAchievement: finalAchievement });
+    const lastOrders = await Orders.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          timeStamp: { $gte: startDate, $lte: endDate },
+          status: "Completed",
+        },
+      },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "clientId",
+          foreignField: "_id",
+          as: "clientDetails",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          numberOfItems: { $size: "$details" },
+          salesValue: "$totalValue",
+          clientName: { $arrayElemAt: ["$clientDetails.clientName", 0] },
+          totalSalesValue: { $sum: "$totalValue" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalSalesValue: { $sum: "$totalSalesValue" },
+          totalItems: { $sum: "$numberOfItems" },
+          lastOrders: {
+            $push: {
+              _id: "$_id",
+              numberOfItems: "$numberOfItems",
+              salesValue: "$salesValue",
+              clientName: "$clientName",
+            },
+          },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      personalAchievement: finalAchievement,
+      lastOrders,
+    });
   } catch (error) {
     return res.status(500).json({
       error: "Error",
