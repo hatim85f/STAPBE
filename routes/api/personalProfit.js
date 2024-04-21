@@ -254,6 +254,7 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
           totalProductTargetValue: { $sum: "$productTargetValue" },
           performanceData: {
             $push: {
+              quantity: "$quantity",
               productId: "$productId",
               productName: "$productName",
               productNickName: "$productNickName",
@@ -321,13 +322,6 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
         }),
       },
     ];
-
-    // const personalAchievementData = personalAchievement[0].performanceData;
-    // const sortedData = personalAchievementData.sort((a, b) => {
-    //   return b.productName.trim() - a.productName.trim();
-    // });
-
-    // return res.status(200).send({ sortedData });
 
     return res.status(200).json({ personalAchievement: finalAchievement });
   } catch (error) {
