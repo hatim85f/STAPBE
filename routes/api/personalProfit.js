@@ -311,23 +311,38 @@ router.get("/:userId/:startMonth/:endMonth/:year", auth, async (req, res) => {
     //   }
     // );
 
-    const finalAchievement = [
-      {
-        _id: personalAchievement[0]?._id,
-        totalSalesValue: personalAchievement[0]?.totalSalesValue,
-        totalProductTargetValue:
-          personalAchievement[0]?.totalProductTargetValue,
+    let finalAchievement;
+
+    if (personalAchievement.length === 0) {
+      finalAchievement = {
+        _id: null,
+        totalSalesValue: 0,
+        totalProductTargetValue: 0,
         startMonth: startMonthName,
         endMonth: endMonthName,
         year: year,
-        totalAchievement: personalAchievement[0]?.totalAchievement,
-        performanceData: personalAchievement[0]?.performanceData.sort(
-          (a, b) => {
-            return a.productName.localeCompare(b.productName);
-          }
-        ),
-      },
-    ];
+        totalAchievement: 0,
+        performanceData: [],
+      };
+    } else {
+      finalAchievement = [
+        {
+          _id: personalAchievement[0]?._id,
+          totalSalesValue: personalAchievement[0]?.totalSalesValue,
+          totalProductTargetValue:
+            personalAchievement[0]?.totalProductTargetValue,
+          startMonth: startMonthName,
+          endMonth: endMonthName,
+          year: year,
+          totalAchievement: personalAchievement[0]?.totalAchievement,
+          performanceData: personalAchievement[0]?.performanceData.sort(
+            (a, b) => {
+              return a.productName.localeCompare(b.productName);
+            }
+          ),
+        },
+      ];
+    }
 
     const lastOrders = await Orders.aggregate([
       {
