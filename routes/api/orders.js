@@ -368,7 +368,7 @@ router.put("/status/:orderId", auth, async (req, res) => {
     ]);
 
     if (status === "Completed") {
-      for (let data of order.salesData) {
+      for (let data of order[0].salesData) {
         await Products.updateOne(
           { _id: data.product },
           {
@@ -490,7 +490,7 @@ router.put("/status/:orderId", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error !",
-      message: error.message,
+      message: "Something went wrong, please try again later",
     });
   }
 });
