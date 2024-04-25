@@ -490,7 +490,7 @@ router.put("/status/:orderId", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       error: "Error !",
-      message: "Error in updating your item, Try again later",
+      message: error.message,
     });
   }
 });
