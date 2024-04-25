@@ -68,6 +68,17 @@ router.post("/", auth, async (req, res) => {
 
     await PurchaseOrder.insertMany(newPurchaseOrder);
 
+    for (let item of order) {
+      await Products.updateOne(
+        {
+          _id: item.product,
+        },
+        {
+          $inc: { quantity: item.quantity },
+        }
+      );
+    }
+
     return res.status(200).json({
       purchase: newPurchaseOrder,
       message: "Your New Purchase added Successfully",
