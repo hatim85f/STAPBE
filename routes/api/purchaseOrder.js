@@ -74,7 +74,7 @@ router.post("/", auth, async (req, res) => {
           _id: item.product,
         },
         {
-          $inc: { quantity: item.quantity },
+          $inc: { quantity: item.quantity + item.bonus },
         }
       );
     }
