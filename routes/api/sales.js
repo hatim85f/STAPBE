@@ -202,7 +202,7 @@ router.post("/", auth, async (req, res) => {
     return res.status(500).send({
       error: "Error",
       message:
-        "Something Went wrong, please try again later, an error case has been created and somwone will get back to you",
+        "Something Went wrong, please try again later, an error case has been created and someone will get back to you",
     });
   }
 });
